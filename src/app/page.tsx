@@ -33,7 +33,7 @@ import { HelpCircle } from 'lucide-react';
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
 
-// --- 타입 정의 (변경 없음) ---
+// --- 타입 정의 ---
 type KakaoMap = {
   setCenter: (latlng: KakaoLatLng) => void;
   relayout: () => void;
@@ -164,7 +164,6 @@ export default function Home() {
   const [resultCount, setResultCount] = useState<number>(5);
   const [minRating, setMinRating] = useState<number>(4.0);
   
-  // [추가] 화면에 표시된 결과의 정렬 기준을 저장하는 상태
   const [displayedSortOrder, setDisplayedSortOrder] = useState<'accuracy' | 'distance' | 'rating'>('accuracy');
   
   // --- 필터 다이얼로그 전용 임시 상태 ---
@@ -302,8 +301,7 @@ export default function Home() {
 
   const recommendProcess = (isRoulette: boolean) => {
     setLoading(true);
-    // [수정] 검색 시작 시, 현재 필터의 정렬 값을 displayedSortOrder에 저장
-    setDisplayedSortOrder(sortOrder); 
+    setDisplayedSortOrder(sortOrder);
     clearMapAndResults();
     navigator.geolocation.getCurrentPosition(async (position) => {
       const { latitude, longitude } = position.coords;
@@ -420,7 +418,7 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
-      <Card className="relative w-full max-w-6xl p-6 md:p-8">
+      <Card className="w-full max-w-6xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-0 invisible' : 'opacity-100 visible'}`}></div>
@@ -430,11 +428,24 @@ export default function Home() {
                 {isRoadviewVisible ? '지도 보기' : '로드뷰 보기'}
               </Button>
             )}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="absolute bottom-4 right-4 h-8 w-8 rounded-full z-20">
+                  <HelpCircle className="h-5 w-5 text-gray-500" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader><DialogTitle>API 정보</DialogTitle></DialogHeader>
+                <div className="py-4 text-sm space-y-2">
+                  <p><strong className="font-semibold">📍 위치 검색:</strong><span className="ml-2">Kakao Maps API</span></p>
+                  <p><strong className="font-semibold">⭐ 별점 및 상세 정보:</strong><span className="ml-2">Google Maps API</span></p>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           
           <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
             <div className="w-full max-w-sm flex gap-2">
-              {/* [수정] 버튼 텍스트 변경 */}
               <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 검색</Button>
               <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 룰렛</Button>
               <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -501,7 +512,6 @@ export default function Home() {
             <div className="w-full max-w-sm space-y-4">
               {restaurantList.length > 0 ? (
                 <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
-                  {/* [수정] displayedSortOrder 사용 */}
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
                   {restaurantList.map(place => (
                     <Card key={place.id} className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2' : ''}`} onClick={() => handleListItemClick(place)}>
@@ -517,7 +527,7 @@ export default function Home() {
                     </Card>
                   ))}
                 </div>
-              ) : ( <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm"><p>음식점을 검색해보세요!</p></Card> )} {/* [수정] 텍스트 변경 */}
+              ) : ( <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm"><p>음식점을 검색해보세요!</p></Card> )}
               
               {recommendation && (
                 <Card className="w-full border shadow-sm min-h-[200px]">
@@ -556,22 +566,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-        
-        <Dialog>
-          <DialogTrigger asChild>
-            {/* [수정] 물음표 버튼 위치 조정 */}
-            <Button variant="ghost" size="icon" className="absolute bottom-6 right-6 h-8 w-8 rounded-full z-10">
-              <HelpCircle className="h-5 w-5 text-gray-500" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader><DialogTitle>API 정보</DialogTitle></DialogHeader>
-            <div className="py-4 text-sm space-y-2">
-              <p><strong className="font-semibold">📍 위치 검색:</strong><span className="ml-2">Kakao Maps API</span></p>
-              <p><strong className="font-semibold">⭐ 별점 및 상세 정보:</strong><span className="ml-2">Google Maps API</span></p>
-            </div>
-          </DialogContent>
-        </Dialog>
       </Card>
       
       <Dialog open={isRouletteOpen} onOpenChange={setIsRouletteOpen}>
