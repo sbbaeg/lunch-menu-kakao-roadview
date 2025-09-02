@@ -365,7 +365,6 @@ export default function Home() {
     setRoadviewVisible(false);
     markers.current.forEach(marker => {
         marker.setMap(null);
-        marker.setRoadview(null);
     });
     markers.current = [];
     if (polylineInstance.current) polylineInstance.current.setMap(null);
