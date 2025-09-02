@@ -33,12 +33,11 @@ import Image from 'next/image';
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
 
-// --- [수정] 타입 정의 확장 ---
+// --- 타입 정의 ---
 type KakaoMap = {
   setCenter: (latlng: KakaoLatLng) => void;
   relayout: () => void;
 };
-// [추가] 로드뷰 관련 타입
 type KakaoRoadview = {
   setPanoId: (panoId: number, position: KakaoLatLng) => void;
   relayout: () => void;
@@ -46,7 +45,6 @@ type KakaoRoadview = {
 type KakaoRoadviewClient = {
   getNearestPanoId: (position: KakaoLatLng, radius: number, callback: (panoId: number | null) => void) => void;
 };
-// [수정] KakaoMarker 타입을 확장하여 로드뷰 마커도 다룰 수 있게 합니다.
 type KakaoMarker = {
   setMap: (map: KakaoMap | null) => void;
   setRoadview: (roadview: KakaoRoadview | null) => void;
@@ -68,8 +66,8 @@ declare global {
         LatLng: new (lat: number, lng: number) => KakaoLatLng;
         Marker: new (options: { position: KakaoLatLng; }) => KakaoMarker;
         Polyline: new (options: { path: KakaoLatLng[]; strokeColor: string; strokeWeight: number; strokeOpacity: number; }) => KakaoPolyline;
-        Roadview: new (container: HTMLElement) => KakaoRoadview; // [추가]
-        RoadviewClient: new () => KakaoRoadviewClient; // [추가]
+        Roadview: new (container: HTMLElement) => KakaoRoadview;
+        RoadviewClient: new () => KakaoRoadviewClient;
       };
     };
   }
@@ -80,10 +78,14 @@ interface KakaoPlaceItem {
   place_name: string;
   category_name: string;
   road_address_name: string;
-  x: string; // lng
-  y: string; // lat
+  x: string;
+  y: string;
   place_url: string;
   distance: string;
+  googleDetails?: {
+    rating?: number;
+    photos?: string[];
+  }
 }
 interface KakaoSearchResponse {
   documents: KakaoPlaceItem[];
@@ -160,6 +162,7 @@ export default function Home() {
   const [selectedDistance, setSelectedDistance] = useState<string>('800');
   const [sortOrder, setSortOrder] = useState<'accuracy' | 'distance'>('accuracy');
   const [resultCount, setResultCount] = useState<number>(5);
+  const [minRating, setMinRating] = useState<number>(4.0);
 
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<KakaoMap | null>(null);
@@ -168,7 +171,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   
-  // --- [추가] 로드뷰 관련 상태 및 Ref ---
   const [isRoadviewVisible, setRoadviewVisible] = useState(false);
   const roadviewContainer = useRef<HTMLDivElement | null>(null);
   const roadviewInstance = useRef<KakaoRoadview | null>(null);
@@ -201,7 +203,6 @@ export default function Home() {
       };
       mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
 
-      // [추가] 로드뷰 및 클라이언트 인스턴스 생성
       if (roadviewContainer.current) {
         roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
         roadviewClient.current = new window.kakao.maps.RoadviewClient();
@@ -209,9 +210,7 @@ export default function Home() {
     }
   }, [isMapReady]);
   
-  // [추가] 로드뷰 토글 시 relayout을 호출하는 useEffect
   useEffect(() => {
-    // 맵/로드뷰 전환 시 부드러운 레이아웃 조정을 위해 setTimeout 사용
     const timerId = setTimeout(() => {
       if (isRoadviewVisible) {
         roadviewInstance.current?.relayout();
@@ -223,19 +222,27 @@ export default function Home() {
   
   useEffect(() => {
     if (!recommendation) return;
-    const fetchGoogleDetails = async () => {
+    const fetchFullGoogleDetails = async () => {
       setIsDetailsLoading(true);
       setGoogleDetails(null);
       try {
         const response = await fetch(`/api/details?name=${encodeURIComponent(recommendation.place_name)}&lat=${recommendation.y}&lng=${recommendation.x}`);
-        if (response.ok) setGoogleDetails(await response.json());
+        if (response.ok) {
+          const fullDetails = await response.json();
+          setGoogleDetails(fullDetails);
+        } else {
+          setGoogleDetails({
+            photos: recommendation.googleDetails?.photos || [],
+            rating: recommendation.googleDetails?.rating
+          });
+        }
       } catch (error) {
         console.error("Failed to fetch Google details:", error);
       } finally {
         setIsDetailsLoading(false);
       }
     };
-    fetchGoogleDetails();
+    fetchFullGoogleDetails();
   }, [recommendation]);
 
   useEffect(() => {
@@ -254,7 +261,7 @@ export default function Home() {
     const sort = sortOrder;
     const size = resultCount;
     
-    const response = await fetch(`/api/recommend?lat=${latitude}&lng=${longitude}&query=${encodeURIComponent(query)}&radius=${radius}&sort=${sort}&size=${size}`);
+    const response = await fetch(`/api/recommend?lat=${latitude}&lng=${longitude}&query=${encodeURIComponent(query)}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}`);
     if (!response.ok) throw new Error('API call failed');
     const data: KakaoSearchResponse = await response.json();
     return data.documents || [];
@@ -302,7 +309,6 @@ export default function Home() {
             : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
 
           setRestaurantList(finalRestaurants);
-          // [수정] 첫 번째 아이템에 대해 updateViews 호출
           if (finalRestaurants.length > 0) {
             updateViews(finalRestaurants[0], currentLocation);
           }
@@ -331,7 +337,7 @@ export default function Home() {
     setRecommendation(null);
     setGoogleDetails(null);
     setRestaurantList([]);
-    setRoadviewVisible(false); // [추가] 로드뷰 숨기기
+    setRoadviewVisible(false);
     markers.current.forEach(marker => {
         marker.setMap(null);
         marker.setRoadview(null);
@@ -340,12 +346,10 @@ export default function Home() {
     if (polylineInstance.current) polylineInstance.current.setMap(null);
   };
 
-  // --- [수정] updateMapAndCard -> updateViews로 기능 확장 및 재정의 ---
   const updateViews = async (place: KakaoPlaceItem, currentLoc: KakaoLatLng) => {
-    setRecommendation(place); // 카드 표시 및 UI 업데이트
+    setRecommendation(place);
     const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
 
-    // 1. 지도 중심 이동 및 경로 표시
     if (mapInstance.current) {
       mapInstance.current.setCenter(placePosition);
       if (polylineInstance.current) polylineInstance.current.setMap(null);
@@ -362,19 +366,16 @@ export default function Home() {
       } catch (error) { console.error("Directions fetch failed:", error); }
     }
 
-    // 2. 로드뷰 위치 업데이트
     if (roadviewClient.current && roadviewInstance.current) {
       roadviewClient.current.getNearestPanoId(placePosition, 50, (panoId) => {
         if (panoId) {
           roadviewInstance.current?.setPanoId(panoId, placePosition);
         } else {
           console.log("해당 위치에 로드뷰 정보가 없습니다.");
-          // 필요시 사용자에게 알림 추가
         }
       });
     }
 
-    // 3. 마커 업데이트
     markers.current.forEach(marker => {
       marker.setMap(null);
       marker.setRoadview(null);
@@ -399,7 +400,7 @@ export default function Home() {
   
   const handleListItemClick = (place: KakaoPlaceItem) => {
     if (userLocation) {
-        updateViews(place, userLocation); // [수정] updateViews 호출
+        updateViews(place, userLocation);
     }
   };
 
@@ -409,7 +410,6 @@ export default function Home() {
         <h1 className="text-3xl font-bold text-center">오늘 뭐 먹지? (카카오 ver.)</h1>
         
         <div className="flex flex-col md:flex-row gap-6">
-          {/* --- [수정] 지도/로드뷰 컨테이너 및 토글 버튼 --- */}
           <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-0 invisible' : 'opacity-100 visible'}`}></div>
             <div ref={roadviewContainer} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
@@ -475,6 +475,24 @@ export default function Home() {
                         <div className="flex items-center space-x-2"><RadioGroupItem value="distance" id="sort-distance" /><Label htmlFor="sort-distance">가까운 순</Label></div>
                       </RadioGroup>
                     </div>
+                    
+                    {/* --- [수정] 누락되었던 별점 필터 UI 부분 --- */}
+                    <div className="border-t border-gray-200"></div>
+                    <div>
+                      <Label htmlFor="min-rating" className="text-lg font-semibold">
+                        최소 별점: {minRating.toFixed(1)}점 이상
+                      </Label>
+                      <Slider
+                        id="min-rating"
+                        defaultValue={[4.0]}
+                        value={[minRating]}
+                        onValueChange={(value) => setMinRating(value[0])}
+                        min={0} max={5} step={0.1}
+                        className="mt-2"
+                      />
+                    </div>
+                    {/* --- 수정 끝 --- */}
+
                     <div className="border-t border-gray-200"></div>
                     <div>
                       <Label htmlFor="result-count" className="text-lg font-semibold">검색 개수: {resultCount}개</Label>
@@ -502,6 +520,12 @@ export default function Home() {
                       </CardHeader>
                       <CardContent className="px-2 pb-px pt-0 text-xs text-gray-700">
                         <p>{place.category_name}</p>
+                        {place.googleDetails?.rating && (
+                            <div className="flex items-center">
+                                <span className="text-yellow-400 text-xs mr-1">★</span>
+                                <span className="text-xs font-semibold">{place.googleDetails.rating.toFixed(1)}</span>
+                            </div>
+                        )}
                         <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block w-full">
                           <Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">
                             카카오맵 상세보기
@@ -589,7 +613,7 @@ export default function Home() {
                     setIsRouletteOpen(false);
                     if (userLocation) {
                       const winner = rouletteItems[prizeNumber];
-                      updateViews(winner, userLocation); // [수정] updateViews 호출
+                      updateViews(winner, userLocation);
                       setRestaurantList([winner]);
                     }
                   }, 2000);
