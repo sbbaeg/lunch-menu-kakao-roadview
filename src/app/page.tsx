@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -237,6 +239,7 @@ export default function Home() {
     const size = resultCount;
 
     const response = await fetch(`/api/recommend?lat=${latitude}&lng=${longitude}&query=${encodeURIComponent(query)}&radius=${radius}&sort=${sort}&size=${size}`);
+
     if (!response.ok) throw new Error('API call failed');
     const data = await response.json();
     return data.documents as KakaoPlaceItem[];
