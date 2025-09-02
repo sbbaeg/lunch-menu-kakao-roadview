@@ -15,7 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogClose
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -33,7 +32,7 @@ import Image from 'next/image';
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
 
-// --- 타입 정의 ---
+// --- 타입 정의 (변경 없음) ---
 type KakaoMap = {
   setCenter: (latlng: KakaoLatLng) => void;
   relayout: () => void;
@@ -148,6 +147,7 @@ const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null
 };
 
 export default function Home() {
+  // --- 실제 필터 및 데이터 상태 ---
   const [recommendation, setRecommendation] = useState<KakaoPlaceItem | null>(null);
   const [restaurantList, setRestaurantList] = useState<KakaoPlaceItem[]>([]);
   const [googleDetails, setGoogleDetails] = useState<GoogleDetails | null>(null);
@@ -157,25 +157,40 @@ export default function Home() {
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState(0);
   const [userLocation, setUserLocation] = useState<KakaoLatLng | null>(null);
-
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDistance, setSelectedDistance] = useState<string>('800');
   const [sortOrder, setSortOrder] = useState<'accuracy' | 'distance' | 'rating'>('accuracy');
   const [resultCount, setResultCount] = useState<number>(5);
   const [minRating, setMinRating] = useState<number>(4.0);
-
+  
+  // --- [추가] 필터 다이얼로그 전용 임시 상태 ---
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([]);
+  const [tempSelectedDistance, setTempSelectedDistance] = useState<string>('800');
+  const [tempSortOrder, setTempSortOrder] = useState<'accuracy' | 'distance' | 'rating'>('accuracy');
+  const [tempResultCount, setTempResultCount] = useState<number>(5);
+  const [tempMinRating, setTempMinRating] = useState<number>(4.0);
+  
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<KakaoMap | null>(null);
   const polylineInstance = useRef<KakaoPolyline | null>(null);
-  
   const [loading, setLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
-  
   const [isRoadviewVisible, setRoadviewVisible] = useState(false);
   const roadviewContainer = useRef<HTMLDivElement | null>(null);
   const roadviewInstance = useRef<KakaoRoadview | null>(null);
   const roadviewClient = useRef<KakaoRoadviewClient | null>(null);
   const markers = useRef<KakaoMarker[]>([]);
+
+  // [추가] 필터 다이얼로그가 열릴 때, 현재 필터 값을 임시 상태로 복사
+  const openFilterDialog = () => {
+    setTempSelectedCategories(selectedCategories);
+    setTempSelectedDistance(selectedDistance);
+    setTempSortOrder(sortOrder);
+    setTempResultCount(resultCount);
+    setTempMinRating(minRating);
+    setIsFilterOpen(true);
+  };
 
   useEffect(() => {
     const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
@@ -197,12 +212,8 @@ export default function Home() {
   
   useEffect(() => {
     if (isMapReady && mapContainer.current && !mapInstance.current) {
-      const mapOption = {
-        center: new window.kakao.maps.LatLng(36.3504, 127.3845),
-        level: 3,
-      };
+      const mapOption = { center: new window.kakao.maps.LatLng(36.3504, 127.3845), level: 3 };
       mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
-
       if (roadviewContainer.current) {
         roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
         roadviewClient.current = new window.kakao.maps.RoadviewClient();
@@ -212,9 +223,7 @@ export default function Home() {
   
   useEffect(() => {
     const timerId = setTimeout(() => {
-      if (isRoadviewVisible) {
-        roadviewInstance.current?.relayout();
-      }
+      if (isRoadviewVisible) { roadviewInstance.current?.relayout(); }
       mapInstance.current?.relayout();
     }, 10);
     return () => clearTimeout(timerId);
@@ -267,46 +276,35 @@ export default function Home() {
     return data.documents || [];
   };
   
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
+  const handleTempCategoryChange = (category: string) => {
+    setTempSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
   };
   
-  const handleSelectAll = (checked: boolean | 'indeterminate') => {
-    setSelectedCategories(checked === true ? CATEGORIES : []);
+  const handleTempSelectAll = (checked: boolean | 'indeterminate') => {
+    setTempSelectedCategories(checked === true ? CATEGORIES : []);
   };
 
-  // [추가] 모든 마커를 지도에 표시하는 함수
   const displayMarkers = (places: KakaoPlaceItem[]) => {
     if (!mapInstance.current) return;
-
-    // 기존 마커들을 지도에서 제거하고 배열을 비웁니다.
     markers.current.forEach(marker => marker.setMap(null));
     markers.current = [];
-
-    // 새로운 음식점 목록을 기반으로 마커들을 생성합니다.
     const newMarkers = places.map(place => {
       const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
-      const marker = new window.kakao.maps.Marker({
-        position: placePosition,
-      });
+      const marker = new window.kakao.maps.Marker({ position: placePosition });
       marker.setMap(mapInstance.current);
       return marker;
     });
-
-    // 새로 생성된 마커 배열을 Ref에 저장하여 추적합니다.
     markers.current = newMarkers;
   };
 
   const recommendProcess = (isRoulette: boolean) => {
     setLoading(true);
     clearMapAndResults();
-
     navigator.geolocation.getCurrentPosition(async (position) => {
       const { latitude, longitude } = position.coords;
       const currentLocation = new window.kakao.maps.LatLng(latitude, longitude);
       setUserLocation(currentLocation);
       if (mapInstance.current) mapInstance.current.setCenter(currentLocation);
-
       try {
         const restaurants = await getNearbyRestaurants(latitude, longitude);
         if (restaurants.length === 0) {
@@ -314,7 +312,6 @@ export default function Home() {
             setLoading(false);
             return;
         }
-
         if (isRoulette) {
           const rouletteCandidates = restaurants.slice(0, resultCount);
           if (rouletteCandidates.length < 2) {
@@ -329,10 +326,7 @@ export default function Home() {
           const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
             ? restaurants
             : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
-
           setRestaurantList(finalRestaurants);
-          
-          // [수정] 마커 표시 및 첫 항목 강조 로직 호출
           if (finalRestaurants.length > 0) {
             displayMarkers(finalRestaurants);
             updateViews(finalRestaurants[0], currentLocation);
@@ -341,9 +335,7 @@ export default function Home() {
       } catch (error) {
         console.error('Error:', error);
         alert('음식점을 불러오는 데 실패했습니다.');
-      } finally {
-        setLoading(false);
-      }
+      } finally { setLoading(false); }
     }, (error) => {
       console.error("Geolocation error:", error);
       alert("위치 정보를 가져오는 데 실패했습니다.");
@@ -363,18 +355,14 @@ export default function Home() {
     setGoogleDetails(null);
     setRestaurantList([]);
     setRoadviewVisible(false);
-    markers.current.forEach(marker => {
-        marker.setMap(null);
-    });
+    markers.current.forEach(marker => { marker.setMap(null); });
     markers.current = [];
     if (polylineInstance.current) polylineInstance.current.setMap(null);
   };
 
-  // [수정] 마커 관리 로직이 제거된 단순화된 updateViews 함수
   const updateViews = async (place: KakaoPlaceItem, currentLoc: KakaoLatLng) => {
     setRecommendation(place);
     const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
-
     if (mapInstance.current) {
       mapInstance.current.setCenter(placePosition);
       if (polylineInstance.current) polylineInstance.current.setMap(null);
@@ -383,14 +371,11 @@ export default function Home() {
         const data = await response.json();
         if (data.path && data.path.length > 0) {
           const linePath = data.path.map((point: DirectionPoint) => new window.kakao.maps.LatLng(point.lat, point.lng));
-          polylineInstance.current = new window.kakao.maps.Polyline({
-            path: linePath, strokeWeight: 6, strokeColor: '#007BFF', strokeOpacity: 0.8,
-          });
+          polylineInstance.current = new window.kakao.maps.Polyline({ path: linePath, strokeWeight: 6, strokeColor: '#007BFF', strokeOpacity: 0.8 });
           polylineInstance.current.setMap(mapInstance.current);
         }
       } catch (error) { console.error("Directions fetch failed:", error); }
     }
-
     if (roadviewClient.current && roadviewInstance.current) {
       roadviewClient.current.getNearestPanoId(placePosition, 50, (panoId) => {
         if (panoId) {
@@ -404,31 +389,29 @@ export default function Home() {
   
   const rouletteData: RouletteOption[] = rouletteItems.map((item, index) => {
     const colors = ['#FF6B6B', '#FFD966', '#96F291', '#66D9E8', '#63A4FF', '#f9a8d4', '#d9a8f9', '#f3a683', '#a29bfe', '#e17055', '#00b894', '#74b9ff', '#ff7675', '#fdcb6e', '#55efc4'];
-    return { 
-      option: item.place_name,
-      style: {
-        backgroundColor: colors[index % colors.length],
-        textColor: '#333333'
-      }
-    };
+    return { option: item.place_name, style: { backgroundColor: colors[index % colors.length], textColor: '#333333' } };
   });
   
   const handleListItemClick = (place: KakaoPlaceItem) => {
-    if (userLocation) {
-        updateViews(place, userLocation);
-    }
+    if (userLocation) { updateViews(place, userLocation); }
   };
 
   const getSortTitle = (sort: 'accuracy' | 'distance' | 'rating'): string => {
     switch (sort) {
-      case 'distance':
-        return '가까운 순 결과';
-      case 'rating':
-        return '별점 순 결과';
-      case 'accuracy':
-      default:
-        return '랜덤 추천 결과';
+      case 'distance': return '가까운 순 결과';
+      case 'rating': return '별점 순 결과';
+      case 'accuracy': default: return '랜덤 추천 결과';
     }
+  };
+
+  // [추가] '완료' 버튼 클릭 시 임시 필터를 실제 필터로 적용하는 함수
+  const handleApplyFilters = () => {
+    setSelectedCategories(tempSelectedCategories);
+    setSelectedDistance(tempSelectedDistance);
+    setSortOrder(tempSortOrder);
+    setResultCount(tempResultCount);
+    setMinRating(tempMinRating);
+    setIsFilterOpen(false);
   };
 
   return (
@@ -438,13 +421,8 @@ export default function Home() {
           <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-0 invisible' : 'opacity-100 visible'}`}></div>
             <div ref={roadviewContainer} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
-            
             {recommendation && (
-              <Button 
-                onClick={() => setRoadviewVisible(prev => !prev)} 
-                variant="secondary" 
-                className="absolute top-3 right-3 z-10 shadow-lg"
-              >
+              <Button onClick={() => setRoadviewVisible(prev => !prev)} variant="secondary" className="absolute top-3 right-3 z-10 shadow-lg">
                 {isRoadviewVisible ? '지도 보기' : '로드뷰 보기'}
               </Button>
             )}
@@ -452,14 +430,10 @@ export default function Home() {
           
           <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
             <div className="w-full max-w-sm flex gap-2">
-              <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">
-                음식점 추천
-              </Button>
-              <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">
-                음식점 룰렛
-              </Button>
-              <Dialog>
-                <DialogTrigger asChild><Button variant="outline" size="lg">필터</Button></DialogTrigger>
+              <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 추천</Button>
+              <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 룰렛</Button>
+              <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <DialogTrigger asChild><Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>검색 필터 설정</DialogTitle></DialogHeader>
                   <div className="py-4 space-y-4">
@@ -468,24 +442,24 @@ export default function Home() {
                       <div className="grid grid-cols-2 gap-4 pt-2">
                         {CATEGORIES.map(category => (
                           <div key={category} className="flex items-center space-x-2">
-                            <Checkbox id={category} checked={selectedCategories.includes(category)} onCheckedChange={() => handleCategoryChange(category)} />
-                            <Label htmlFor={category}>{category}</Label>
+                            <Checkbox id={`temp-${category}`} checked={tempSelectedCategories.includes(category)} onCheckedChange={() => handleTempCategoryChange(category)} />
+                            <Label htmlFor={`temp-${category}`}>{category}</Label>
                           </div>
                         ))}
                       </div>
                       <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
-                        <Checkbox id="select-all" checked={selectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleSelectAll(checked)} />
-                        <Label htmlFor="select-all" className="font-semibold">모두 선택</Label>
+                        <Checkbox id="temp-select-all" checked={tempSelectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleTempSelectAll(checked)} />
+                        <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
                       </div>
                     </div>
                     <div className="border-t border-gray-200"></div>
                     <div>
                       <Label className="text-lg font-semibold">검색 반경</Label>
-                      <RadioGroup defaultValue="800" value={selectedDistance} onValueChange={setSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                      <RadioGroup value={tempSelectedDistance} onValueChange={setTempSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
                         {DISTANCES.map(dist => (
                           <div key={dist.value} className="flex items-center space-x-2">
-                            <RadioGroupItem value={dist.value} id={dist.value} />
-                            <Label htmlFor={dist.value} className="cursor-pointer">
+                            <RadioGroupItem value={dist.value} id={`temp-${dist.value}`} />
+                            <Label htmlFor={`temp-${dist.value}`} className="cursor-pointer">
                               <div className="flex flex-col"><span className="font-semibold">{dist.label}</span><span className="text-xs text-gray-500">{`(${dist.value}m ${dist.walkTime})`}</span></div>
                             </Label>
                           </div>
@@ -495,47 +469,26 @@ export default function Home() {
                     <div className="border-t border-gray-200"></div>
                     <div>
                       <Label className="text-lg font-semibold">정렬 방식</Label>
-                      <RadioGroup 
-                        defaultValue="accuracy" 
-                        value={sortOrder} 
-                        onValueChange={(value) => setSortOrder(value as 'accuracy' | 'distance' | 'rating')} 
-                        className="flex flex-wrap gap-4 pt-2"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="accuracy" id="sort-accuracy" />
-                          <Label htmlFor="sort-accuracy">랜덤 추천</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="distance" id="sort-distance" />
-                          <Label htmlFor="sort-distance">가까운 순</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="rating" id="sort-rating" />
-                          <Label htmlFor="sort-rating">별점 순</Label>
-                        </div>
+                      <RadioGroup value={tempSortOrder} onValueChange={(value) => setTempSortOrder(value as 'accuracy' | 'distance' | 'rating')} className="flex flex-wrap gap-4 pt-2">
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="accuracy" id="temp-sort-accuracy" /><Label htmlFor="temp-sort-accuracy">랜덤 추천</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="distance" id="temp-sort-distance" /><Label htmlFor="temp-sort-distance">가까운 순</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="rating" id="temp-sort-rating" /><Label htmlFor="temp-sort-rating">별점 순</Label></div>
                       </RadioGroup>
                     </div>
                     <div className="border-t border-gray-200"></div>
                     <div>
-                      <Label htmlFor="min-rating" className="text-lg font-semibold">
-                        최소 별점: {minRating.toFixed(1)}점 이상
-                      </Label>
-                      <Slider
-                        id="min-rating"
-                        defaultValue={[4.0]}
-                        value={[minRating]}
-                        onValueChange={(value) => setMinRating(value[0])}
-                        min={0} max={5} step={0.1}
-                        className="mt-2"
-                      />
+                      <Label htmlFor="temp-min-rating" className="text-lg font-semibold">최소 별점: {tempMinRating.toFixed(1)}점 이상</Label>
+                      <Slider id="temp-min-rating" value={[tempMinRating]} onValueChange={(value) => setTempMinRating(value[0])} min={0} max={5} step={0.1} className="mt-2" />
                     </div>
                     <div className="border-t border-gray-200"></div>
                     <div>
-                      <Label htmlFor="result-count" className="text-lg font-semibold">검색 개수: {resultCount}개</Label>
-                      <Slider id="result-count" defaultValue={[5]} value={[resultCount]} onValueChange={(value) => setResultCount(value[0])} min={5} max={15} step={1} className="mt-2" />
+                      <Label htmlFor="temp-result-count" className="text-lg font-semibold">검색 개수: {tempResultCount}개</Label>
+                      <Slider id="temp-result-count" value={[tempResultCount]} onValueChange={(value) => setTempResultCount(value[0])} min={5} max={15} step={1} className="mt-2" />
                     </div>
                   </div>
-                  <DialogFooter><DialogClose asChild><Button>완료</Button></DialogClose></DialogFooter>
+                  <DialogFooter>
+                    <Button onClick={handleApplyFilters}>완료</Button>
+                  </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
@@ -543,41 +496,22 @@ export default function Home() {
             <div className="w-full max-w-sm space-y-4">
               {restaurantList.length > 0 ? (
                 <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
-                  <p className="text-sm font-semibold text-gray-600 pl-1">
-                    {getSortTitle(sortOrder)}: {restaurantList.length}개
-                  </p>
+                  <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(sortOrder)}: {restaurantList.length}개</p>
                   {restaurantList.map(place => (
-                    <Card 
-                      key={place.id} 
-                      className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2' : ''}`}
-                      onClick={() => handleListItemClick(place)}
-                    >
+                    <Card key={place.id} className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2' : ''}`} onClick={() => handleListItemClick(place)}>
                       <CardHeader className="px-2 pt-px pb-1 flex flex-row items-center justify-between">
                         <CardTitle className="text-md">{place.place_name}</CardTitle>
                         <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
                       </CardHeader>
                       <CardContent className="px-2 pb-px pt-0 text-xs text-gray-700">
                         <p>{place.category_name}</p>
-                        {place.googleDetails?.rating && (
-                            <div className="flex items-center">
-                                <span className="text-yellow-400 text-xs mr-1">★</span>
-                                <span className="text-xs font-semibold">{place.googleDetails.rating.toFixed(1)}</span>
-                            </div>
-                        )}
-                        <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block w-full">
-                          <Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">
-                            카카오맵 상세보기
-                          </Button>
-                        </a>
+                        {place.googleDetails?.rating && (<div className="flex items-center"><span className="text-yellow-400 text-xs mr-1">★</span><span className="text-xs font-semibold">{place.googleDetails.rating.toFixed(1)}</span></div>)}
+                        <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block w-full"><Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">카카오맵 상세보기</Button></a>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-              ) : (
-                <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm">
-                  <p>음식점을 추천받아보세요!</p>
-                </Card>
-              )}
+              ) : ( <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm"><p>음식점을 추천받아보세요!</p></Card> )}
               
               {recommendation && (
                 <Card className="w-full border shadow-sm min-h-[200px]">
@@ -586,27 +520,12 @@ export default function Home() {
                     <p className="text-xs text-gray-500">Google Maps 제공</p>
                   </CardHeader>
                   <CardContent className="text-sm space-y-2 pt-2">
-                    {googleDetails?.url && (
-                      <a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="mb-2 inline-block">
-                        <Button variant="link" size="sm" className="p-0 h-auto text-xs">
-                          구글맵 상세보기
-                        </Button>
-                      </a>
-                    )}
+                    {googleDetails?.url && (<a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="mb-2 inline-block"><Button variant="link" size="sm" className="p-0 h-auto text-xs">구글맵 상세보기</Button></a>)}
                     {isDetailsLoading && <p>상세 정보를 불러오는 중...</p>}
                     {!isDetailsLoading && !googleDetails && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
-                    {googleDetails?.rating && (
-                      <div className="flex items-center gap-1"><StarRating rating={googleDetails.rating} /></div>
-                    )}
-                    {googleDetails?.opening_hours && (
-                      <div className="flex flex-col">
-                        <p><strong>영업:</strong> <span className={googleDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{googleDetails.opening_hours.open_now ? ' 영업 중' : ' 영업 종료'}</span></p>
-                        <p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(googleDetails.opening_hours)})</p>
-                      </div>
-                    )}
-                    {googleDetails?.phone && (
-                      <p><strong>전화:</strong> <a href={`tel:${googleDetails.phone}`} className="text-blue-600 hover:underline">{googleDetails.phone}</a></p>
-                    )}
+                    {googleDetails?.rating && (<div className="flex items-center gap-1"><StarRating rating={googleDetails.rating} /></div>)}
+                    {googleDetails?.opening_hours && (<div className="flex flex-col"><p><strong>영업:</strong> <span className={googleDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{googleDetails.opening_hours.open_now ? ' 영업 중' : ' 영업 종료'}</span></p><p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(googleDetails.opening_hours)})</p></div>)}
+                    {googleDetails?.phone && (<p><strong>전화:</strong> <a href={`tel:${googleDetails.phone}`} className="text-blue-600 hover:underline">{googleDetails.phone}</a></p>)}
                     {googleDetails?.photos && googleDetails.photos.length > 0 && (
                       <div>
                         <strong>사진:</strong>
@@ -616,15 +535,12 @@ export default function Home() {
                               <CarouselItem key={index}>
                                 <Dialog>
                                   <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
-                                  <DialogContent className="max-w-3xl h-[80vh] p-2">
-                                    <Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} />
-                                  </DialogContent>
+                                  <DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent>
                                 </Dialog>
                               </CarouselItem>
                             ))}
                           </CarouselContent>
-                          <CarouselPrevious className="left-2" />
-                          <CarouselNext className="right-2" />
+                          <CarouselPrevious className="left-2" /><CarouselNext className="right-2" />
                         </Carousel>
                       </div>
                     )}
@@ -651,8 +567,6 @@ export default function Home() {
                     setIsRouletteOpen(false);
                     if (userLocation) {
                       const winner = rouletteItems[prizeNumber];
-                      // [수정] 룰렛 결과도 displayMarkers를 거치지 않으므로, updateViews를 단독으로 호출하지 않습니다.
-                      // 대신, 목록을 업데이트하고 첫 항목을 클릭하는 것과 동일한 효과를 줍니다.
                       setRestaurantList([winner]);
                       displayMarkers([winner]);
                       updateViews(winner, userLocation);
@@ -661,9 +575,7 @@ export default function Home() {
                 }}
               />
             )}
-            <Button onClick={handleSpinClick} disabled={mustSpin} className="w-full max-w-[150px]">
-              돌리기
-            </Button>
+            <Button onClick={handleSpinClick} disabled={mustSpin} className="w-full max-w-[isRouletteOpen, setIsRouletteOpen]0px]">돌리기</Button>
           </div>
         </DialogContent>
       </Dialog>
