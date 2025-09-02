@@ -275,6 +275,28 @@ export default function Home() {
     setSelectedCategories(checked === true ? CATEGORIES : []);
   };
 
+  // [추가] 모든 마커를 지도에 표시하는 함수
+  const displayMarkers = (places: KakaoPlaceItem[]) => {
+    if (!mapInstance.current) return;
+
+    // 기존 마커들을 지도에서 제거하고 배열을 비웁니다.
+    markers.current.forEach(marker => marker.setMap(null));
+    markers.current = [];
+
+    // 새로운 음식점 목록을 기반으로 마커들을 생성합니다.
+    const newMarkers = places.map(place => {
+      const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
+      const marker = new window.kakao.maps.Marker({
+        position: placePosition,
+      });
+      marker.setMap(mapInstance.current);
+      return marker;
+    });
+
+    // 새로 생성된 마커 배열을 Ref에 저장하여 추적합니다.
+    markers.current = newMarkers;
+  };
+
   const recommendProcess = (isRoulette: boolean) => {
     setLoading(true);
     clearMapAndResults();
@@ -304,12 +326,15 @@ export default function Home() {
           setIsRouletteOpen(true);
           setMustSpin(false);
         } else {
-          const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating') 
-            ? restaurants 
+          const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
+            ? restaurants
             : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
 
           setRestaurantList(finalRestaurants);
+          
+          // [수정] 마커 표시 및 첫 항목 강조 로직 호출
           if (finalRestaurants.length > 0) {
+            displayMarkers(finalRestaurants);
             updateViews(finalRestaurants[0], currentLocation);
           }
         }
@@ -346,6 +371,7 @@ export default function Home() {
     if (polylineInstance.current) polylineInstance.current.setMap(null);
   };
 
+  // [수정] 마커 관리 로직이 제거된 단순화된 updateViews 함수
   const updateViews = async (place: KakaoPlaceItem, currentLoc: KakaoLatLng) => {
     setRecommendation(place);
     const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
@@ -375,16 +401,6 @@ export default function Home() {
         }
       });
     }
-
-    markers.current.forEach(marker => {
-      marker.setMap(null);
-      marker.setRoadview(null);
-    });
-    markers.current = [];
-    const marker = new window.kakao.maps.Marker({ position: placePosition });
-    marker.setMap(mapInstance.current);
-    marker.setRoadview(roadviewInstance.current);
-    markers.current.push(marker);
   };
   
   const rouletteData: RouletteOption[] = rouletteItems.map((item, index) => {
@@ -403,20 +419,22 @@ export default function Home() {
         updateViews(place, userLocation);
     }
   };
+
   const getSortTitle = (sort: 'accuracy' | 'distance' | 'rating'): string => {
     switch (sort) {
       case 'distance':
         return '가까운 순 결과';
-     case 'rating':
-       return '별점 순 결과';
-     case 'accuracy':
+      case 'rating':
+        return '별점 순 결과';
+      case 'accuracy':
       default:
         return '랜덤 추천 결과';
-   }
+    }
   };
+
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
-      <Card className="w-full max-w-6xl p-6 md:p-8"> {/* space-y-6 제거 */}
+      <Card className="w-full max-w-6xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-0 invisible' : 'opacity-100 visible'}`}></div>
@@ -478,14 +496,26 @@ export default function Home() {
                     <div className="border-t border-gray-200"></div>
                     <div>
                       <Label className="text-lg font-semibold">정렬 방식</Label>
-                      <RadioGroup defaultValue="accuracy" value={sortOrder} onValueChange={(value) => setSortOrder(value as 'accuracy' | 'distance')} className="flex gap-4 pt-2">
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="accuracy" id="sort-accuracy" /><Label htmlFor="sort-accuracy">랜덤 추천</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="distance" id="sort-distance" /><Label htmlFor="sort-distance">가까운 순</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="rating" id="sort-rating" /><Label htmlFor="sort-rating">별점 순</Label></div>
+                      <RadioGroup 
+                        defaultValue="accuracy" 
+                        value={sortOrder} 
+                        onValueChange={(value) => setSortOrder(value as 'accuracy' | 'distance' | 'rating')} 
+                        className="flex flex-wrap gap-4 pt-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="accuracy" id="sort-accuracy" />
+                          <Label htmlFor="sort-accuracy">랜덤 추천</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="distance" id="sort-distance" />
+                          <Label htmlFor="sort-distance">가까운 순</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rating" id="sort-rating" />
+                          <Label htmlFor="sort-rating">별점 순</Label>
+                        </div>
                       </RadioGroup>
                     </div>
-                    
-                    {/* --- [수정] 누락되었던 별점 필터 UI 부분 --- */}
                     <div className="border-t border-gray-200"></div>
                     <div>
                       <Label htmlFor="min-rating" className="text-lg font-semibold">
@@ -500,8 +530,6 @@ export default function Home() {
                         className="mt-2"
                       />
                     </div>
-                    {/* --- 수정 끝 --- */}
-
                     <div className="border-t border-gray-200"></div>
                     <div>
                       <Label htmlFor="result-count" className="text-lg font-semibold">검색 개수: {resultCount}개</Label>
@@ -516,7 +544,9 @@ export default function Home() {
             <div className="w-full max-w-sm space-y-4">
               {restaurantList.length > 0 ? (
                 <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
-                  <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(sortOrder)}: {restaurantList.length}개</p>
+                  <p className="text-sm font-semibold text-gray-600 pl-1">
+                    {getSortTitle(sortOrder)}: {restaurantList.length}개
+                  </p>
                   {restaurantList.map(place => (
                     <Card 
                       key={place.id} 
@@ -622,8 +652,11 @@ export default function Home() {
                     setIsRouletteOpen(false);
                     if (userLocation) {
                       const winner = rouletteItems[prizeNumber];
-                      updateViews(winner, userLocation);
+                      // [수정] 룰렛 결과도 displayMarkers를 거치지 않으므로, updateViews를 단독으로 호출하지 않습니다.
+                      // 대신, 목록을 업데이트하고 첫 항목을 클릭하는 것과 동일한 효과를 줍니다.
                       setRestaurantList([winner]);
+                      displayMarkers([winner]);
+                      updateViews(winner, userLocation);
                     }
                   }, 2000);
                 }}
