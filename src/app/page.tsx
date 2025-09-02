@@ -304,7 +304,7 @@ export default function Home() {
           setIsRouletteOpen(true);
           setMustSpin(false);
         } else {
-          const finalRestaurants = sortOrder === 'distance' 
+          const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating') 
             ? restaurants 
             : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
 
