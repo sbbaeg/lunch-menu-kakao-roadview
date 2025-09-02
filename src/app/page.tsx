@@ -406,9 +406,7 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
-      <Card className="w-full max-w-6xl p-6 md:p-8 space-y-6">
-        <h1 className="text-3xl font-bold text-center">오늘 뭐 먹지? (카카오 ver.)</h1>
-        
+      <Card className="w-full max-w-6xl p-6 md:p-8"> {/* space-y-6 제거 */}
         <div className="flex flex-col md:flex-row gap-6">
           <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-0 invisible' : 'opacity-100 visible'}`}></div>
