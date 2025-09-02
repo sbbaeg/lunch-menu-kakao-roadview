@@ -51,6 +51,16 @@ type KakaoLatLng = {
   getLng: () => number;
 };
 
+// (수정) Roadview 관련 타입을 명확히 정의합니다.
+type Roadview = {
+  setPanoId: (panoId: number, latlng: KakaoLatLng) => void;
+  relayout: () => void;
+};
+
+type RoadviewClient = {
+  getNearestPanoId: (latlng: KakaoLatLng, radius: number, callback: (panoId: number) => void) => void;
+};
+
 declare global {
   interface Window {
     kakao: {
@@ -60,8 +70,9 @@ declare global {
         LatLng: new (lat: number, lng: number) => KakaoLatLng;
         Marker: new (options: { position: KakaoLatLng; }) => KakaoMarker;
         Polyline: new (options: { path: KakaoLatLng[]; strokeColor: string; strokeWeight: number; strokeOpacity: number; }) => KakaoPolyline;
-        Roadview: new (container: HTMLElement) => any; // Roadview 객체 타입 추가
-        RoadviewClient: new () => any; // RoadviewClient 객체 타입 추가
+        // (수정) any 타입 대신 명시적인 타입을 사용합니다.
+        Roadview: new (container: HTMLElement) => Roadview;
+        RoadviewClient: new () => RoadviewClient;
       };
     };
   }
@@ -155,6 +166,9 @@ export default function Home() {
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState(0);
   const [userLocation, setUserLocation] = useState<KakaoLatLng | null>(null);
+  
+  // (추가) 로드뷰 팝업 상태
+  const [isRoadviewOpen, setIsRoadviewOpen] = useState(false);
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDistance, setSelectedDistance] = useState<string>('800');
@@ -479,6 +493,9 @@ export default function Home() {
                     <p className="text-xs text-gray-500">Google Maps 제공</p>
                   </CardHeader>
                   <CardContent className="text-sm space-y-2 pt-2">
+                    <Button onClick={() => setIsRoadviewOpen(true)} className="w-full mb-2">
+                      로드뷰 보기
+                    </Button>
                     {googleDetails?.url && (
                       <a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="mb-2 inline-block">
                         <Button variant="link" size="sm" className="p-0 h-auto text-xs">
@@ -524,16 +541,6 @@ export default function Home() {
                   </CardContent>
                 </Card>
               )}
-              {recommendation && (
-                <Card className="w-full border shadow-sm min-h-[400px]">
-                  <CardHeader>
-                    <CardTitle>로드뷰</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Roadview lat={Number(recommendation.y)} lng={Number(recommendation.x)} />
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
         </div>
@@ -575,6 +582,18 @@ export default function Home() {
               돌리기
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* (추가) 로드뷰 팝업 */}
+      <Dialog open={isRoadviewOpen} onOpenChange={setIsRoadviewOpen}>
+        <DialogContent className="max-w-3xl h-[80vh] p-2">
+          <DialogHeader>
+            <DialogTitle>{recommendation?.place_name} 로드뷰</DialogTitle>
+          </DialogHeader>
+          {recommendation && (
+            <Roadview lat={Number(recommendation.y)} lng={Number(recommendation.x)} />
+          )}
         </DialogContent>
       </Dialog>
     </main>
