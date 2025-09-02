@@ -303,7 +303,7 @@ export default function Home() {
   const recommendProcess = (isRoulette: boolean) => {
     setLoading(true);
     // [수정] 검색 시작 시, 현재 필터의 정렬 값을 displayedSortOrder에 저장
-    setDisplayedSortOrder(sortOrder);
+    setDisplayedSortOrder(sortOrder); 
     clearMapAndResults();
     navigator.geolocation.getCurrentPosition(async (position) => {
       const { latitude, longitude } = position.coords;
@@ -434,6 +434,7 @@ export default function Home() {
           
           <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
             <div className="w-full max-w-sm flex gap-2">
+              {/* [수정] 버튼 텍스트 변경 */}
               <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 검색</Button>
               <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 룰렛</Button>
               <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -500,6 +501,7 @@ export default function Home() {
             <div className="w-full max-w-sm space-y-4">
               {restaurantList.length > 0 ? (
                 <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
+                  {/* [수정] displayedSortOrder 사용 */}
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
                   {restaurantList.map(place => (
                     <Card key={place.id} className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2' : ''}`} onClick={() => handleListItemClick(place)}>
@@ -515,7 +517,7 @@ export default function Home() {
                     </Card>
                   ))}
                 </div>
-              ) : ( <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm"><p>음식점을 검색해보세요!</p></Card> )}
+              ) : ( <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm"><p>음식점을 검색해보세요!</p></Card> )} {/* [수정] 텍스트 변경 */}
               
               {recommendation && (
                 <Card className="w-full border shadow-sm min-h-[200px]">
@@ -557,7 +559,8 @@ export default function Home() {
         
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="absolute bottom-4 right-4 h-8 w-8 rounded-full">
+            {/* [수정] 물음표 버튼 위치 조정 */}
+            <Button variant="ghost" size="icon" className="absolute bottom-6 right-6 h-8 w-8 rounded-full z-10">
               <HelpCircle className="h-5 w-5 text-gray-500" />
             </Button>
           </DialogTrigger>
