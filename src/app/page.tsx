@@ -160,7 +160,7 @@ export default function Home() {
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDistance, setSelectedDistance] = useState<string>('800');
-  const [sortOrder, setSortOrder] = useState<'accuracy' | 'distance'>('accuracy');
+  const [sortOrder, setSortOrder] = useState<'accuracy' | 'distance' | 'rating'>('accuracy');
   const [resultCount, setResultCount] = useState<number>(5);
   const [minRating, setMinRating] = useState<number>(4.0);
 
@@ -471,6 +471,7 @@ export default function Home() {
                       <RadioGroup defaultValue="accuracy" value={sortOrder} onValueChange={(value) => setSortOrder(value as 'accuracy' | 'distance')} className="flex gap-4 pt-2">
                         <div className="flex items-center space-x-2"><RadioGroupItem value="accuracy" id="sort-accuracy" /><Label htmlFor="sort-accuracy">랜덤 추천</Label></div>
                         <div className="flex items-center space-x-2"><RadioGroupItem value="distance" id="sort-distance" /><Label htmlFor="sort-distance">가까운 순</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="rating" id="sort-rating" /><Label htmlFor="sort-rating">별점 순</Label></div>
                       </RadioGroup>
                     </div>
                     
