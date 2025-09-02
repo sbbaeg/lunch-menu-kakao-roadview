@@ -403,7 +403,17 @@ export default function Home() {
         updateViews(place, userLocation);
     }
   };
-
+  const getSortTitle = (sort: 'accuracy' | 'distance' | 'rating'): string => {
+    switch (sort) {
+      case 'distance':
+        return '가까운 순 결과';
+     case 'rating':
+       return '별점 순 결과';
+     case 'accuracy':
+      default:
+        return '랜덤 추천 결과';
+   }
+  };
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
       <Card className="w-full max-w-6xl p-6 md:p-8"> {/* space-y-6 제거 */}
@@ -506,7 +516,7 @@ export default function Home() {
             <div className="w-full max-w-sm space-y-4">
               {restaurantList.length > 0 ? (
                 <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
-                  <p className="text-sm font-semibold text-gray-600 pl-1">{sortOrder === 'distance' ? '가까운 순 결과' : '랜덤 추천 결과'}: {restaurantList.length}개</p>
+                  <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(sortOrder)}: {restaurantList.length}개</p>
                   {restaurantList.map(place => (
                     <Card 
                       key={place.id} 
