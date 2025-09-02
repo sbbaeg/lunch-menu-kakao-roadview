@@ -92,6 +92,9 @@ export async function GET(request: Request) {
   const size = searchParams.get('size') || '5';
   const minRating = Number(searchParams.get('minRating') || '0');
 
+  // [수정] 카카오 API는 'rating' 정렬을 지원하지 않으므로, 'accuracy'로 대체하여 후보군을 가져옵니다.
+  const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
+
   if (!lat || !lng) {
     return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
   }
@@ -100,11 +103,12 @@ export async function GET(request: Request) {
     // 1. 카카오 API로 카테고리별 검색 및 중복 제거
     const categories = query.split(',');
     let allResults: KakaoPlace[] = [];
-    const searchSize = Math.min(Number(size) + 10, 15); // 필터링될 것을 대비해 조금 더 많이 요청
+    const searchSize = Math.min(Number(size) + 10, 15);
 
     for (const category of categories) {
       const response = await fetch(
-        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(category.trim())}&y=${lat}&x=${lng}&radius=${radius}&sort=${sort}&size=${searchSize}`,
+        // [수정] fetch URL의 sort 값을 kakaoSort로 변경
+        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(category.trim())}&y=${lat}&x=${lng}&radius=${radius}&sort=${kakaoSort}&size=${searchSize}`,
         {
           headers: {
             Authorization: `KakaoAK ${process.env.KAKAO_REST_API_KEY}`,
@@ -129,8 +133,20 @@ export async function GET(request: Request) {
       (place.googleDetails?.rating || 0) >= minRating
     );
 
-    // 3. 최종 처리: 거리순 정렬 및 개수 제한
-    const sortedResults = filteredByRating.sort((a, b) => Number(a.distance) - Number(b.distance));
+    // 3. 최종 처리: 정렬 및 개수 제한
+    let sortedResults: EnrichedPlace[] = [];
+
+    if (sort === 'rating') {
+      // '별점 순'일 경우: 별점(rating) 기준으로 내림차순 정렬 (높은 별점이 먼저)
+      sortedResults = filteredByRating.sort((a, b) => 
+        (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0)
+      );
+    } else {
+      // '가까운 순' 또는 '정확도 순'일 경우: 거리(distance) 기준으로 오름차순 정렬
+      sortedResults = filteredByRating.sort((a, b) => 
+        Number(a.distance) - Number(b.distance)
+      );
+    }
     
     const finalResults = sortedResults.slice(0, Number(size));
 
