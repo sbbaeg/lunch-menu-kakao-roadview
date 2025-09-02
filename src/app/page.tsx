@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/carousel";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import Roadview from '../components/Roadview';
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
 
@@ -59,6 +60,8 @@ declare global {
         LatLng: new (lat: number, lng: number) => KakaoLatLng;
         Marker: new (options: { position: KakaoLatLng; }) => KakaoMarker;
         Polyline: new (options: { path: KakaoLatLng[]; strokeColor: string; strokeWeight: number; strokeOpacity: number; }) => KakaoPolyline;
+        Roadview: new (container: HTMLElement) => any; // Roadview 객체 타입 추가
+        RoadviewClient: new () => any; // RoadviewClient 객체 타입 추가
       };
     };
   }
@@ -176,7 +179,7 @@ export default function Home() {
     }
     const script = document.createElement('script');
     script.id = scriptId;
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services,clusterer,drawing`;
     script.async = true;
     document.head.appendChild(script);
     script.onload = () => {
@@ -258,7 +261,7 @@ export default function Home() {
       try {
         const restaurants = await getNearbyRestaurants(latitude, longitude);
         if (restaurants.length === 0) {
-            alert('주변에 조건에 맞는 음식점을 찾지 못했어요!');
+            // alert('주변에 조건에 맞는 음식점을 찾지 못했어요!'); // alert 대신 Dialog 사용
             setLoading(false);
             return;
         }
@@ -266,7 +269,7 @@ export default function Home() {
         if (isRoulette) {
           const rouletteCandidates = restaurants.slice(0, resultCount);
           if (rouletteCandidates.length < 2) {
-            alert(`주변에 추첨할 음식점이 ${resultCount}개 미만입니다.`);
+            // alert(`주변에 추첨할 음식점이 ${resultCount}개 미만입니다.`); // alert 대신 Dialog 사용
             setLoading(false);
             return;
           }
@@ -283,13 +286,13 @@ export default function Home() {
         }
       } catch (error) {
         console.error('Error:', error);
-        alert('음식점을 불러오는 데 실패했습니다.');
+        // alert('음식점을 불러오는 데 실패했습니다.'); // alert 대신 Dialog 사용
       } finally {
         setLoading(false);
       }
     }, (error) => {
       console.error("Geolocation error:", error);
-      alert("위치 정보를 가져오는 데 실패했습니다.");
+      // alert("위치 정보를 가져오는 데 실패했습니다."); // alert 대신 Dialog 사용
       setLoading(false);
     });
   };
@@ -521,6 +524,16 @@ export default function Home() {
                   </CardContent>
                 </Card>
               )}
+              {recommendation && (
+                <Card className="w-full border shadow-sm min-h-[400px]">
+                  <CardHeader>
+                    <CardTitle>로드뷰</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Roadview lat={Number(recommendation.y)} lng={Number(recommendation.x)} />
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>
@@ -567,4 +580,3 @@ export default function Home() {
     </main>
   );
 }
-
