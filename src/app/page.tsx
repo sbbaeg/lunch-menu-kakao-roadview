@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -33,7 +31,6 @@ import {
 } from "@/components/ui/carousel";
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import MapRoadviewToggle from "@/components/ui/MapRoadviewToggle";
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
 
@@ -62,8 +59,6 @@ declare global {
         LatLng: new (lat: number, lng: number) => KakaoLatLng;
         Marker: new (options: { position: KakaoLatLng; }) => KakaoMarker;
         Polyline: new (options: { path: KakaoLatLng[]; strokeColor: string; strokeWeight: number; strokeOpacity: number; }) => KakaoPolyline;
-        Roadview: new (container: HTMLElement, options: { panoId?: string; position?: KakaoLatLng }) => any;
-        RoadviewClient: new () => any;
       };
     };
   }
@@ -74,8 +69,8 @@ interface KakaoPlaceItem {
   place_name: string;
   category_name: string;
   road_address_name: string;
-  x: string;
-  y: string;
+  x: string; // lng
+  y: string; // lat
   place_url: string;
   distance: string;
 }
@@ -104,7 +99,7 @@ interface GoogleDetails {
   phone?: string;
 }
 
-// 경로 좌표 타입
+// (추가!) 경로 좌표 타입을 프론트엔드에도 정의합니다.
 interface DirectionPoint {
   lat: number;
   lng: number;
@@ -167,10 +162,9 @@ export default function Home() {
   const mapInstance = useRef<KakaoMap | null>(null);
   const markers = useRef<KakaoMarker[]>([]);
   const polylineInstance = useRef<KakaoPolyline | null>(null);
-
+  
   const [loading, setLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
-  const [isRoadviewMode, setIsRoadviewMode] = useState(false);
 
   useEffect(() => {
     const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
@@ -189,7 +183,7 @@ export default function Home() {
       window.kakao.maps.load(() => setIsMapReady(true));
     };
   }, []);
-
+  
   useEffect(() => {
     if (isMapReady && mapContainer.current && !mapInstance.current) {
       const mapOption = {
@@ -199,8 +193,7 @@ export default function Home() {
       mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
     }
   }, [isMapReady]);
-
-  // Google Details Fetch
+  
   useEffect(() => {
     if (!recommendation) return;
     const fetchGoogleDetails = async () => {
@@ -237,136 +230,341 @@ export default function Home() {
     const radius = selectedDistance;
     const sort = sortOrder;
     const size = resultCount;
-
+    
     const response = await fetch(`/api/recommend?lat=${latitude}&lng=${longitude}&query=${encodeURIComponent(query)}&radius=${radius}&sort=${sort}&size=${size}`);
-
     if (!response.ok) throw new Error('API call failed');
-    const data = await response.json();
-    return data.documents as KakaoPlaceItem[];
+    const data: KakaoSearchResponse = await response.json();
+    return data.documents || [];
+  };
+  
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
+  };
+  
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    setSelectedCategories(checked === true ? CATEGORIES : []);
   };
 
-  const handleRouletteSpin = () => {
-    if (restaurantList.length === 0) return;
-    setRouletteItems(restaurantList);
-    const prize = Math.floor(Math.random() * restaurantList.length);
-    setPrizeNumber(prize);
+  const recommendProcess = (isRoulette: boolean) => {
+    setLoading(true);
+    clearMapAndResults();
+
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords;
+      const currentLocation = new window.kakao.maps.LatLng(latitude, longitude);
+      setUserLocation(currentLocation);
+      if (mapInstance.current) mapInstance.current.setCenter(currentLocation);
+
+      try {
+        const restaurants = await getNearbyRestaurants(latitude, longitude);
+        if (restaurants.length === 0) {
+            alert('주변에 조건에 맞는 음식점을 찾지 못했어요!');
+            setLoading(false);
+            return;
+        }
+
+        if (isRoulette) {
+          const rouletteCandidates = restaurants.slice(0, resultCount);
+          if (rouletteCandidates.length < 2) {
+            alert(`주변에 추첨할 음식점이 ${resultCount}개 미만입니다.`);
+            setLoading(false);
+            return;
+          }
+          setRouletteItems(rouletteCandidates);
+          setIsRouletteOpen(true);
+          setMustSpin(false);
+        } else {
+          const finalRestaurants = sortOrder === 'distance' 
+            ? restaurants 
+            : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
+
+          setRestaurantList(finalRestaurants);
+          displayMarkers(finalRestaurants, currentLocation);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('음식점을 불러오는 데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    }, (error) => {
+      console.error("Geolocation error:", error);
+      alert("위치 정보를 가져오는 데 실패했습니다.");
+      setLoading(false);
+    });
+  };
+
+  const handleSpinClick = () => {
+    if (mustSpin) return;
+    const newPrizeNumber = Math.floor(Math.random() * rouletteItems.length);
+    setPrizeNumber(newPrizeNumber);
     setMustSpin(true);
-    setIsRouletteOpen(true);
+  };
+  
+  const clearMapAndResults = () => {
+    setRecommendation(null);
+    setGoogleDetails(null);
+    setRestaurantList([]);
+    markers.current.forEach(marker => marker.setMap(null));
+    markers.current = [];
+    if (polylineInstance.current) polylineInstance.current.setMap(null);
   };
 
-  const handleCategoryChange = (category: string, checked: boolean) => {
-    setSelectedCategories(prev =>
-      checked ? [...prev, category] : prev.filter(c => c !== category)
-    );
+  const updateMapAndCard = async (place: KakaoPlaceItem, currentLoc: KakaoLatLng) => {
+    setRecommendation(place);
+
+    if (mapInstance.current) {
+      if (polylineInstance.current) polylineInstance.current.setMap(null);
+      
+      try {
+        const response = await fetch(`/api/directions?origin=${currentLoc.getLng()},${currentLoc.getLat()}&destination=${place.x},${place.y}`);
+        const data = await response.json();
+        
+        if (data.path && data.path.length > 0) {
+          const linePath = data.path.map((point: DirectionPoint) => new window.kakao.maps.LatLng(point.lat, point.lng));
+          polylineInstance.current = new window.kakao.maps.Polyline({
+            path: linePath,
+            strokeWeight: 6,
+            strokeColor: '#007BFF',
+            strokeOpacity: 0.8,
+          });
+          polylineInstance.current.setMap(mapInstance.current);
+        }
+      } catch (error) {
+        console.error("Failed to fetch directions:", error);
+      }
+    }
+  };
+  
+  const displayMarkers = (places: KakaoPlaceItem[], currentLoc: KakaoLatLng) => {
+    if (!mapInstance.current) return;
+
+    places.forEach(place => {
+      const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
+      const marker = new window.kakao.maps.Marker({ position: placePosition });
+      marker.setMap(mapInstance.current);
+      markers.current.push(marker);
+    });
+    if (places.length > 0) {
+      updateMapAndCard(places[0], currentLoc);
+    }
   };
 
-  const handleDistanceChange = (value: string) => {
-    setSelectedDistance(value);
-  };
-
-  const handleSortChange = (order: 'accuracy' | 'distance') => {
-    setSortOrder(order);
-  };
-
-  const handleResultCountChange = (value: number) => {
-    setResultCount(value);
+  const rouletteData: RouletteOption[] = rouletteItems.map((item, index) => {
+    const colors = ['#FF6B6B', '#FFD966', '#96F291', '#66D9E8', '#63A4FF', '#f9a8d4', '#d9a8f9', '#f3a683', '#a29bfe', '#e17055', '#00b894', '#74b9ff', '#ff7675', '#fdcb6e', '#55efc4'];
+    return { 
+      option: item.place_name,
+      style: {
+        backgroundColor: colors[index % colors.length],
+        textColor: '#333333'
+      }
+    };
+  });
+  
+  const handleListItemClick = (place: KakaoPlaceItem) => {
+    if (userLocation) {
+        mapInstance.current?.setCenter(new window.kakao.maps.LatLng(Number(place.y), Number(place.x)));
+        updateMapAndCard(place, userLocation);
+    }
   };
 
   return (
-    <div className="flex flex-col items-center p-4">
-      <div className="w-full max-w-5xl">
-        {/* 지도 & 로드뷰 토글 */}
-        <div className="mb-4">
-          <MapRoadviewToggle
-            mapContainerRef={mapContainer}
-            mapInstance={mapInstance.current}
-            selectedPlace={recommendation}
-            isRoadviewMode={isRoadviewMode}
-            onToggleRoadview={(mode: boolean) => setIsRoadviewMode(mode)}
-          />
-        </div>
-
-        {/* 필터 UI */}
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>카테고리 선택</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {CATEGORIES.map(cat => (
-              <Label key={cat} className="flex items-center gap-1">
-                <Checkbox
-                  checked={selectedCategories.includes(cat)}
-                  onCheckedChange={(checked) => handleCategoryChange(cat, !!checked)}
-                />
-                {cat}
-              </Label>
-            ))}
-          </CardContent>
-          <CardFooter>
-            <div className="flex gap-4">
-              <Label>거리: </Label>
-              <RadioGroup
-                value={selectedDistance}
-                onValueChange={handleDistanceChange}
-                className="flex gap-2"
-              >
-                {DISTANCES.map(d => (
-                  <Label key={d.value} className="flex items-center gap-1">
-                    <RadioGroupItem value={d.value} />
-                    {d.label}
-                  </Label>
-                ))}
-              </RadioGroup>
+    <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
+      <Card className="w-full max-w-6xl p-6 md:p-8 space-y-6">
+        <h1 className="text-3xl font-bold text-center">오늘 뭐 먹지? (카카오 ver.)</h1>
+        
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
+            <div ref={mapContainer} className="w-full h-full"></div>
+          </div>
+          <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
+            <div className="w-full max-w-sm flex gap-2">
+              <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">
+                음식점 추천
+              </Button>
+              <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">
+                음식점 룰렛
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild><Button variant="outline" size="lg">필터</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>검색 필터 설정</DialogTitle></DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <div>
+                      <Label className="text-lg font-semibold">음식 종류</Label>
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                        {CATEGORIES.map(category => (
+                          <div key={category} className="flex items-center space-x-2">
+                            <Checkbox id={category} checked={selectedCategories.includes(category)} onCheckedChange={() => handleCategoryChange(category)} />
+                            <Label htmlFor={category}>{category}</Label>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
+                        <Checkbox id="select-all" checked={selectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleSelectAll(checked)} />
+                        <Label htmlFor="select-all" className="font-semibold">모두 선택</Label>
+                      </div>
+                    </div>
+                    <div className="border-t border-gray-200"></div>
+                    <div>
+                      <Label className="text-lg font-semibold">검색 반경</Label>
+                      <RadioGroup defaultValue="800" value={selectedDistance} onValueChange={setSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                        {DISTANCES.map(dist => (
+                          <div key={dist.value} className="flex items-center space-x-2">
+                            <RadioGroupItem value={dist.value} id={dist.value} />
+                            <Label htmlFor={dist.value} className="cursor-pointer">
+                              <div className="flex flex-col"><span className="font-semibold">{dist.label}</span><span className="text-xs text-gray-500">{`(${dist.value}m ${dist.walkTime})`}</span></div>
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                    <div className="border-t border-gray-200"></div>
+                    <div>
+                      <Label className="text-lg font-semibold">정렬 방식</Label>
+                      <RadioGroup defaultValue="accuracy" value={sortOrder} onValueChange={(value) => setSortOrder(value as 'accuracy' | 'distance')} className="flex gap-4 pt-2">
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="accuracy" id="sort-accuracy" /><Label htmlFor="sort-accuracy">랜덤 추천</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="distance" id="sort-distance" /><Label htmlFor="sort-distance">가까운 순</Label></div>
+                      </RadioGroup>
+                    </div>
+                    <div className="border-t border-gray-200"></div>
+                    <div>
+                      <Label htmlFor="result-count" className="text-lg font-semibold">검색 개수: {resultCount}개</Label>
+                      <Slider id="result-count" defaultValue={[5]} value={[resultCount]} onValueChange={(value) => setResultCount(value[0])} min={5} max={15} step={1} className="mt-2" />
+                    </div>
+                  </div>
+                  <DialogFooter><DialogClose asChild><Button>완료</Button></DialogClose></DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
-          </CardFooter>
-        </Card>
-
-        {/* 음식점 리스트 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {restaurantList.map(place => (
-            <Card key={place.id}>
-              <CardHeader>
-                <CardTitle>{place.place_name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{place.road_address_name}</p>
-                <p>{place.category_name}</p>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={() => setRecommendation(place)}>선택</Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-
-        {/* Google Details */}
-        {recommendation && googleDetails && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>Google Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {googleDetails.photos && googleDetails.photos.length > 0 && (
-                <Carousel>
-                  <CarouselContent>
-                    {googleDetails.photos.map((photo, index) => (
-                      <CarouselItem key={index}>
-                        <Image src={photo} alt="사진" width={300} height={200} />
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious>◀</CarouselPrevious>
-                  <CarouselNext>▶</CarouselNext>
-                </Carousel>
+            
+            <div className="w-full max-w-sm space-y-4">
+              {restaurantList.length > 0 ? (
+                <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
+                  <p className="text-sm font-semibold text-gray-600 pl-1">{sortOrder === 'distance' ? '가까운 순 결과' : '랜덤 추천 결과'}: {restaurantList.length}개</p>
+                  {restaurantList.map(place => (
+                    <Card 
+                      key={place.id} 
+                      className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2' : ''}`}
+                      onClick={() => handleListItemClick(place)}
+                    >
+                      <CardHeader className="px-2 pt-px pb-1 flex flex-row items-center justify-between">
+                        <CardTitle className="text-md">{place.place_name}</CardTitle>
+                        <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
+                      </CardHeader>
+                      <CardContent className="px-2 pb-px pt-0 text-xs text-gray-700">
+                        <p>{place.category_name}</p>
+                        <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block w-full">
+                          <Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">
+                            카카오맵 상세보기
+                          </Button>
+                        </a>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm">
+                  <p>음식점을 추천받아보세요!</p>
+                </Card>
               )}
-              <p>전화번호: {googleDetails.phone || '정보 없음'}</p>
-              <p>평점: {googleDetails.rating ? <StarRating rating={googleDetails.rating} /> : '정보 없음'}</p>
-              <p>영업시간: {getTodaysOpeningHours(googleDetails.opening_hours) || '정보 없음'}</p>
-              <a href={googleDetails.url} target="_blank" rel="noreferrer">Google 페이지 보기</a>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
+              
+              {recommendation && (
+                <Card className="w-full border shadow-sm min-h-[200px]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{recommendation.place_name}</CardTitle>
+                    <p className="text-xs text-gray-500">Google Maps 제공</p>
+                  </CardHeader>
+                  <CardContent className="text-sm space-y-2 pt-2">
+                    {googleDetails?.url && (
+                      <a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="mb-2 inline-block">
+                        <Button variant="link" size="sm" className="p-0 h-auto text-xs">
+                          구글맵 상세보기
+                        </Button>
+                      </a>
+                    )}
+                    {isDetailsLoading && <p>상세 정보를 불러오는 중...</p>}
+                    {!isDetailsLoading && !googleDetails && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
+                    {googleDetails?.rating && (
+                      <div className="flex items-center gap-1"><StarRating rating={googleDetails.rating} /></div>
+                    )}
+                    {googleDetails?.opening_hours && (
+                      <div className="flex flex-col">
+                        <p><strong>영업:</strong> <span className={googleDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{googleDetails.opening_hours.open_now ? ' 영업 중' : ' 영업 종료'}</span></p>
+                        <p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(googleDetails.opening_hours)})</p>
+                      </div>
+                    )}
+                    {googleDetails?.phone && (
+                      <p><strong>전화:</strong> <a href={`tel:${googleDetails.phone}`} className="text-blue-600 hover:underline">{googleDetails.phone}</a></p>
+                    )}
+                    {googleDetails?.photos && googleDetails.photos.length > 0 && (
+                      <div>
+                        <strong>사진:</strong>
+                        <Carousel className="w-full max-w-xs mx-auto mt-2">
+                          <CarouselContent>
+                            {googleDetails.photos.map((photoUrl, index) => (
+                              <CarouselItem key={index}>
+                                <Dialog>
+                                  <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
+                                  <DialogContent className="max-w-3xl h-[80vh] p-2">
+                                    <Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} />
+                                  </DialogContent>
+                                </Dialog>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="left-2" />
+                          <CarouselNext className="right-2" />
+                        </Carousel>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+      
+      <Dialog open={isRouletteOpen} onOpenChange={setIsRouletteOpen}>
+        <DialogContent className="max-w-md p-6">
+          <DialogHeader><DialogTitle className="text-center text-2xl mb-4">룰렛을 돌려 오늘 점심을 선택하세요!</DialogTitle></DialogHeader>
+          <div className="flex flex-col justify-center items-center space-y-6">
+            {rouletteData.length > 0 && (
+              <Wheel
+                mustStartSpinning={mustSpin}
+                prizeNumber={prizeNumber}
+                data={rouletteData}
+                onStopSpinning={() => {
+                  setMustSpin(false);
+                  setTimeout(() => {
+                    setIsRouletteOpen(false);
+                    if (userLocation) {
+                      const winner = rouletteItems[prizeNumber];
+                      
+                      // 룰렛 결과로 나온 음식점의 마커를 생성하고 지도에 표시합니다.
+                      const placePosition = new window.kakao.maps.LatLng(Number(winner.y), Number(winner.x));
+                      const marker = new window.kakao.maps.Marker({ position: placePosition });
+                      marker.setMap(mapInstance.current);
+                      markers.current.push(marker);
+
+                      // 기존의 카드 업데이트 및 경로 표시 함수를 호출합니다.
+                      updateMapAndCard(winner, userLocation);
+
+                      // 룰렛 결과를 좌측 리스트에도 표시하여 일관성을 높입니다.
+                      setRestaurantList([winner]);
+                    }
+                  }, 2000);
+                }}
+              />
+            )}
+            <Button onClick={handleSpinClick} disabled={mustSpin} className="w-full max-w-[150px]">
+              돌리기
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </main>
   );
 }
+
