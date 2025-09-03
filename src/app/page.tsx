@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -68,6 +69,13 @@ declare global {
         Polyline: new (options: { path: KakaoLatLng[]; strokeColor: string; strokeWeight: number; strokeOpacity: number; }) => KakaoPolyline;
         Roadview: new (container: HTMLElement) => KakaoRoadview;
         RoadviewClient: new () => KakaoRoadviewClient;
+        event: {
+          addListener: (
+            target: KakaoMarker | KakaoMap,
+            type: string,
+            callback: (mouseEvent?: { latLng: KakaoLatLng }) => void
+          ) => void;
+        };
       };
     };
   }
@@ -204,7 +212,7 @@ export default function Home() {
     }
     const script = document.createElement('script');
     script.id = scriptId;
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services,event`;
     script.async = true;
     document.head.appendChild(script);
     script.onload = () => {
@@ -294,6 +302,11 @@ export default function Home() {
       const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
       const marker = new window.kakao.maps.Marker({ position: placePosition });
       marker.setMap(mapInstance.current);
+      window.kakao.maps.event.addListener(marker, 'click', () => {
+        if (userLocation) {
+          updateViews(place, userLocation);
+        }
+      });
       return marker;
     });
     markers.current = newMarkers;
@@ -301,7 +314,7 @@ export default function Home() {
 
   const recommendProcess = (isRoulette: boolean) => {
     setLoading(true);
-    setDisplayedSortOrder(sortOrder);
+    setDisplayedSortOrder(sortOrder); 
     clearMapAndResults();
     navigator.geolocation.getCurrentPosition(async (position) => {
       const { latitude, longitude } = position.coords;
@@ -418,10 +431,12 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
-      <Card className="w-full max-w-6xl p-6 md:p-8">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
-            <div ref={mapContainer} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-0 invisible' : 'opacity-100 visible'}`}></div>
+      <Card className="w-full max-w-7xl p-6 md:p-8">
+        <div className="flex flex-col md:flex-row gap-4">
+
+          {/* 1. 왼쪽: 지도 영역 (너비: 12칸 중 5칸) */}
+          <div className="relative w-full md:w-5/12 h-80 md:h-[calc(100vh-8rem)] rounded-lg overflow-hidden border shadow-sm">
+            <div ref={mapContainer} className={`w-full h-full`}></div>
             <div ref={roadviewContainer} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
             {recommendation && (
               <Button onClick={() => setRoadviewVisible(prev => !prev)} variant="secondary" className="absolute top-3 right-3 z-10 shadow-lg">
@@ -435,7 +450,10 @@ export default function Home() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader><DialogTitle>API 정보</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>API 정보</DialogTitle>
+                  <DialogDescription>이 서비스에서 사용하는 외부 API의 출처를 안내합니다.</DialogDescription>
+                </DialogHeader>
                 <div className="py-4 text-sm space-y-2">
                   <p><strong className="font-semibold">📍 위치 검색:</strong><span className="ml-2">Kakao Maps API</span></p>
                   <p><strong className="font-semibold">⭐ 별점 및 상세 정보:</strong><span className="ml-2">Google Maps API</span></p>
@@ -444,8 +462,9 @@ export default function Home() {
             </Dialog>
           </div>
           
-          <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
-            <div className="w-full max-w-sm flex gap-2">
+          {/* 2. 중간: 음식점 목록 (너비: 12칸 중 3칸) */}
+          <div className="w-full md:w-3/12 flex flex-col">
+            <div className="w-full flex gap-2 mb-4">
               <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 검색</Button>
               <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 룰렛</Button>
               <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -454,8 +473,14 @@ export default function Home() {
                   <DialogHeader><DialogTitle>검색 필터 설정</DialogTitle></DialogHeader>
                   <div className="py-4 space-y-4">
                     <div>
-                      <Label className="text-lg font-semibold">음식 종류</Label>
-                      <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <Label className="text-lg font-semibold">음식 종류</Label>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Checkbox id="temp-select-all" checked={tempSelectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleTempSelectAll(checked)} />
+                          <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-3 border-t">
                         {CATEGORIES.map(category => (
                           <div key={category} className="flex items-center space-x-2">
                             <Checkbox id={`temp-${category}`} checked={tempSelectedCategories.includes(category)} onCheckedChange={() => handleTempCategoryChange(category)} />
@@ -463,33 +488,28 @@ export default function Home() {
                           </div>
                         ))}
                       </div>
-                      <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
-                        <Checkbox id="temp-select-all" checked={tempSelectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleTempSelectAll(checked)} />
-                        <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
+                    </div>
+                    <div className="border-t border-gray-200"></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                      <div>
+                        <Label className="text-lg font-semibold">검색 반경</Label>
+                        <RadioGroup value={tempSelectedDistance} onValueChange={setTempSelectedDistance} className="grid grid-cols-1 gap-2 pt-2">
+                          {DISTANCES.map(dist => (
+                            <div key={dist.value} className="flex items-center space-x-2">
+                              <RadioGroupItem value={dist.value} id={`temp-${dist.value}`} />
+                              <Label htmlFor={`temp-${dist.value}`} className="cursor-pointer"><div className="flex flex-col"><span className="font-semibold">{dist.label}</span><span className="text-xs text-gray-500">{`(${dist.value}m ${dist.walkTime})`}</span></div></Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
                       </div>
-                    </div>
-                    <div className="border-t border-gray-200"></div>
-                    <div>
-                      <Label className="text-lg font-semibold">검색 반경</Label>
-                      <RadioGroup value={tempSelectedDistance} onValueChange={setTempSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
-                        {DISTANCES.map(dist => (
-                          <div key={dist.value} className="flex items-center space-x-2">
-                            <RadioGroupItem value={dist.value} id={`temp-${dist.value}`} />
-                            <Label htmlFor={`temp-${dist.value}`} className="cursor-pointer">
-                              <div className="flex flex-col"><span className="font-semibold">{dist.label}</span><span className="text-xs text-gray-500">{`(${dist.value}m ${dist.walkTime})`}</span></div>
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                    <div className="border-t border-gray-200"></div>
-                    <div>
-                      <Label className="text-lg font-semibold">정렬 방식</Label>
-                      <RadioGroup value={tempSortOrder} onValueChange={(value) => setTempSortOrder(value as 'accuracy' | 'distance' | 'rating')} className="flex flex-wrap gap-4 pt-2">
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="accuracy" id="temp-sort-accuracy" /><Label htmlFor="temp-sort-accuracy">랜덤 추천</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="distance" id="temp-sort-distance" /><Label htmlFor="temp-sort-distance">가까운 순</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="rating" id="temp-sort-rating" /><Label htmlFor="temp-sort-rating">별점 순</Label></div>
-                      </RadioGroup>
+                      <div>
+                        <Label className="text-lg font-semibold">정렬 방식</Label>
+                        <RadioGroup value={tempSortOrder} onValueChange={(value) => setTempSortOrder(value as 'accuracy' | 'distance' | 'rating')} className="flex flex-col space-y-2 pt-2">
+                          <div className="flex items-center space-x-2"><RadioGroupItem value="accuracy" id="temp-sort-accuracy" /><Label htmlFor="temp-sort-accuracy">랜덤 추천</Label></div>
+                          <div className="flex items-center space-x-2"><RadioGroupItem value="distance" id="temp-sort-distance" /><Label htmlFor="temp-sort-distance">가까운 순</Label></div>
+                          <div className="flex items-center space-x-2"><RadioGroupItem value="rating" id="temp-sort-rating" /><Label htmlFor="temp-sort-rating">별점 순</Label></div>
+                        </RadioGroup>
+                      </div>
                     </div>
                     <div className="border-t border-gray-200"></div>
                     <div>
@@ -508,62 +528,66 @@ export default function Home() {
                 </DialogContent>
               </Dialog>
             </div>
-            
-            <div className="w-full max-w-sm space-y-4">
-              {restaurantList.length > 0 ? (
-                <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
-                  <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
-                  {restaurantList.map(place => (
-                    <Card key={place.id} className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2' : ''}`} onClick={() => handleListItemClick(place)}>
-                      <CardHeader className="px-2 pt-px pb-1 flex flex-row items-center justify-between">
-                        <CardTitle className="text-md">{place.place_name}</CardTitle>
-                        <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
-                      </CardHeader>
-                      <CardContent className="px-2 pb-px pt-0 text-xs text-gray-700">
-                        <p>{place.category_name}</p>
-                        {place.googleDetails?.rating && (<div className="flex items-center"><span className="text-yellow-400 text-xs mr-1">★</span><span className="text-xs font-semibold">{place.googleDetails.rating.toFixed(1)}</span></div>)}
-                        <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block w-full"><Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">카카오맵 상세보기</Button></a>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : ( <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm"><p>음식점을 검색해보세요!</p></Card> )}
-              
-              {recommendation && (
-                <Card className="w-full border shadow-sm min-h-[200px]">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">{recommendation.place_name}</CardTitle>
-                    <p className="text-xs text-gray-500">Google Maps 제공</p>
-                  </CardHeader>
-                  <CardContent className="text-sm space-y-2 pt-2">
-                    {googleDetails?.url && (<a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="mb-2 inline-block"><Button variant="link" size="sm" className="p-0 h-auto text-xs">구글맵 상세보기</Button></a>)}
-                    {isDetailsLoading && <p>상세 정보를 불러오는 중...</p>}
-                    {!isDetailsLoading && !googleDetails && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
-                    {googleDetails?.rating && (<div className="flex items-center gap-1"><StarRating rating={googleDetails.rating} /></div>)}
-                    {googleDetails?.opening_hours && (<div className="flex flex-col"><p><strong>영업:</strong> <span className={googleDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{googleDetails.opening_hours.open_now ? ' 영업 중' : ' 영업 종료'}</span></p><p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(googleDetails.opening_hours)})</p></div>)}
-                    {googleDetails?.phone && (<p><strong>전화:</strong> <a href={`tel:${googleDetails.phone}`} className="text-blue-600 hover:underline">{googleDetails.phone}</a></p>)}
-                    {googleDetails?.photos && googleDetails.photos.length > 0 && (
-                      <div>
-                        <strong>사진:</strong>
-                        <Carousel className="w-full max-w-xs mx-auto mt-2">
-                          <CarouselContent>
-                            {googleDetails.photos.map((photoUrl, index) => (
-                              <CarouselItem key={index}>
-                                <Dialog>
-                                  <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
-                                  <DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent>
-                                </Dialog>
-                              </CarouselItem>
-                            ))}
-                          </CarouselContent>
-                          <CarouselPrevious className="left-2" /><CarouselNext className="right-2" />
-                        </Carousel>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            {restaurantList.length > 0 ? (
+              <div className="space-y-2 flex-1 overflow-y-auto pr-2 md:max-h-[calc(100vh-12rem)]">
+                <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
+                {restaurantList.map(place => (
+                  <Card key={place.id} className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2 bg-blue-50' : 'bg-white'}`} onClick={() => handleListItemClick(place)}>
+                    <CardHeader className="px-2 pt-px pb-1 flex flex-row items-center justify-between">
+                      <CardTitle className="text-md">{place.place_name}</CardTitle>
+                      <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
+                    </CardHeader>
+                    <CardContent className="px-2 pb-px pt-0 text-xs text-gray-700">
+                      <p>{place.category_name}</p>
+                      {place.googleDetails?.rating && (<div className="flex items-center"><span className="text-yellow-400 text-xs mr-1">★</span><span className="text-xs font-semibold">{place.googleDetails.rating.toFixed(1)}</span></div>)}
+                      <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block w-full"><Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">카카오맵 상세보기</Button></a>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : ( <Card className="w-full flex-1 flex items-center justify-center h-40 text-gray-500 border-dashed border-2"><p>음식점을 검색해보세요!</p></Card> )}
+          </div>
+          
+          {/* 3. 오른쪽: 상세 정보 카드 (너비: 12칸 중 4칸) */}
+          <div className="w-full md:w-4/12">
+            {recommendation ? (
+              <Card className="w-full border shadow-sm min-h-[200px] md:h-full md:max-h-[calc(100vh-8rem)] overflow-y-auto">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{recommendation.place_name}</CardTitle>
+                  <p className="text-xs text-gray-500">Google Maps 제공</p>
+                </CardHeader>
+                <CardContent className="text-sm space-y-2 pt-2">
+                  {googleDetails?.url && (<a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="mb-2 inline-block"><Button variant="link" size="sm" className="p-0 h-auto text-xs">구글맵 상세보기</Button></a>)}
+                  {isDetailsLoading && <p>상세 정보를 불러오는 중...</p>}
+                  {!isDetailsLoading && !googleDetails && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
+                  {googleDetails?.rating && (<div className="flex items-center gap-1"><StarRating rating={googleDetails.rating} /></div>)}
+                  {googleDetails?.opening_hours && (<div className="flex flex-col"><p><strong>영업:</strong> <span className={googleDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{googleDetails.opening_hours.open_now ? ' 영업 중' : ' 영업 종료'}</span></p><p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(googleDetails.opening_hours)})</p></div>)}
+                  {googleDetails?.phone && (<p><strong>전화:</strong> <a href={`tel:${googleDetails.phone}`} className="text-blue-600 hover:underline">{googleDetails.phone}</a></p>)}
+                  {googleDetails?.photos && googleDetails.photos.length > 0 && (
+                    <div>
+                      <strong>사진:</strong>
+                      <Carousel className="w-full max-w-xs mx-auto mt-2">
+                        <CarouselContent>
+                          {googleDetails.photos.map((photoUrl, index) => (
+                            <CarouselItem key={index}>
+                              <Dialog>
+                                <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
+                                <DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent>
+                              </Dialog>
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="left-2" /><CarouselNext className="right-2" />
+                      </Carousel>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="w-full hidden md:flex items-center justify-center h-full min-h-[200px] text-gray-500 border-dashed border-2">
+                <p>목록에서 음식점을 선택하세요.</p>
+              </Card>
+            )}
           </div>
         </div>
       </Card>
