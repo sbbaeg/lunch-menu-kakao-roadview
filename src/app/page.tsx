@@ -76,11 +76,27 @@ declare global {
             callback: (mouseEvent?: { latLng: KakaoLatLng }) => void
           ) => void;
         };
+        services: {
+          Geocoder: new () => KakaoGeocoder;
+          Status: {
+            OK: 'OK';
+          };
+        };
       };
     };
   }
 }
 
+interface KakaoGeocoder {
+  addressSearch: (
+    address: string,
+    callback: (result: GeocoderResult[], status: 'OK' | 'ZERO_RESULT' | 'ERROR') => void
+  ) => void;
+}
+interface GeocoderResult {
+  x: string; // lng
+  y: string; // lat
+}
 interface KakaoPlaceItem {
   id: string;
   place_name: string;
@@ -222,12 +238,17 @@ export default function Home() {
   
   useEffect(() => {
     if (isMapReady && mapContainer.current && !mapInstance.current) {
-      const mapOption = { center: new window.kakao.maps.LatLng(36.3504, 127.3845), level: 3 };
-      mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
-      if (roadviewContainer.current) {
-        roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
-        roadviewClient.current = new window.kakao.maps.RoadviewClient();
-      }
+      // [수정] setTimeout으로 감싸서 DOM 렌더링 후 실행되도록 보장
+      setTimeout(() => {
+        if (mapContainer.current) { // setTimeout 내부에서 한번 더 확인
+          const mapOption = { center: new window.kakao.maps.LatLng(36.350701, 127.384567), level: 3 };
+          mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
+          if (roadviewContainer.current) {
+            roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
+            roadviewClient.current = new window.kakao.maps.RoadviewClient();
+          }
+        }
+      }, 0); // 0초 딜레이를 주어 실행 순서를 맨 뒤로 미룸
     }
   }, [isMapReady]);
   
@@ -434,7 +455,7 @@ export default function Home() {
       <Card className="w-full max-w-7xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row gap-4">
 
-          {/* 1. 왼쪽: 지도 영역 (너비: 12칸 중 5칸) */}
+          {/* 1. 왼쪽: 지도 영역 */}
           <div className="relative w-full md:w-5/12 h-80 md:h-[calc(100vh-8rem)] rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full`}></div>
             <div ref={roadviewContainer} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
@@ -462,7 +483,7 @@ export default function Home() {
             </Dialog>
           </div>
           
-          {/* 2. 중간: 음식점 목록 (너비: 12칸 중 3칸) */}
+          {/* 2. 중간: 음식점 목록 및 컨트롤 */}
           <div className="w-full md:w-3/12 flex flex-col">
             <div className="w-full flex gap-2 mb-4">
               <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 검색</Button>
@@ -548,7 +569,7 @@ export default function Home() {
             ) : ( <Card className="w-full flex-1 flex items-center justify-center h-40 text-gray-500 border-dashed border-2"><p>음식점을 검색해보세요!</p></Card> )}
           </div>
           
-          {/* 3. 오른쪽: 상세 정보 카드 (너비: 12칸 중 4칸) */}
+          {/* 3. 오른쪽: 상세 정보 카드 */}
           <div className="w-full md:w-4/12">
             {recommendation ? (
               <Card className="w-full border shadow-sm min-h-[200px] md:h-full md:max-h-[calc(100vh-8rem)] overflow-y-auto">
