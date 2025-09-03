@@ -238,17 +238,12 @@ export default function Home() {
   
   useEffect(() => {
     if (isMapReady && mapContainer.current && !mapInstance.current) {
-      // [수정] setTimeout으로 감싸서 DOM 렌더링 후 실행되도록 보장
-      setTimeout(() => {
-        if (mapContainer.current) { // setTimeout 내부에서 한번 더 확인
-          const mapOption = { center: new window.kakao.maps.LatLng(36.350701, 127.384567), level: 3 };
-          mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
-          if (roadviewContainer.current) {
-            roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
-            roadviewClient.current = new window.kakao.maps.RoadviewClient();
-          }
-        }
-      }, 0); // 0초 딜레이를 주어 실행 순서를 맨 뒤로 미룸
+      const mapOption = { center: new window.kakao.maps.LatLng(36.3504, 127.3845), level: 3 };
+      mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
+      if (roadviewContainer.current) {
+        roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
+        roadviewClient.current = new window.kakao.maps.RoadviewClient();
+      }
     }
   }, [isMapReady]);
   
@@ -452,11 +447,9 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
-      <Card className="w-full max-w-7xl p-6 md:p-8">
-        <div className="flex flex-col md:flex-row gap-4">
-
-          {/* 1. 왼쪽: 지도 영역 */}
-          <div className="relative w-full md:w-5/12 h-80 md:h-[calc(100vh-8rem)] rounded-lg overflow-hidden border shadow-sm">
+      <Card className="w-full max-w-6xl p-6 md:p-8">
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full`}></div>
             <div ref={roadviewContainer} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
             {recommendation && (
@@ -483,9 +476,8 @@ export default function Home() {
             </Dialog>
           </div>
           
-          {/* 2. 중간: 음식점 목록 및 컨트롤 */}
-          <div className="w-full md:w-3/12 flex flex-col">
-            <div className="w-full flex gap-2 mb-4">
+          <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
+            <div className="w-full max-w-sm flex gap-2">
               <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 검색</Button>
               <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 룰렛</Button>
               <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -549,66 +541,61 @@ export default function Home() {
                 </DialogContent>
               </Dialog>
             </div>
-            {restaurantList.length > 0 ? (
-              <div className="space-y-2 flex-1 overflow-y-auto pr-2 md:max-h-[calc(100vh-12rem)]">
-                <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
-                {restaurantList.map(place => (
-                  <Card key={place.id} className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2 bg-blue-50' : 'bg-white'}`} onClick={() => handleListItemClick(place)}>
-                    <CardHeader className="px-2 pt-px pb-1 flex flex-row items-center justify-between">
-                      <CardTitle className="text-md">{place.place_name}</CardTitle>
-                      <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
-                    </CardHeader>
-                    <CardContent className="px-2 pb-px pt-0 text-xs text-gray-700">
-                      <p>{place.category_name}</p>
-                      {place.googleDetails?.rating && (<div className="flex items-center"><span className="text-yellow-400 text-xs mr-1">★</span><span className="text-xs font-semibold">{place.googleDetails.rating.toFixed(1)}</span></div>)}
-                      <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block w-full"><Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">카카오맵 상세보기</Button></a>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : ( <Card className="w-full flex-1 flex items-center justify-center h-40 text-gray-500 border-dashed border-2"><p>음식점을 검색해보세요!</p></Card> )}
-          </div>
-          
-          {/* 3. 오른쪽: 상세 정보 카드 */}
-          <div className="w-full md:w-4/12">
-            {recommendation ? (
-              <Card className="w-full border shadow-sm min-h-[200px] md:h-full md:max-h-[calc(100vh-8rem)] overflow-y-auto">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{recommendation.place_name}</CardTitle>
-                  <p className="text-xs text-gray-500">Google Maps 제공</p>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2 pt-2">
-                  {googleDetails?.url && (<a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="mb-2 inline-block"><Button variant="link" size="sm" className="p-0 h-auto text-xs">구글맵 상세보기</Button></a>)}
-                  {isDetailsLoading && <p>상세 정보를 불러오는 중...</p>}
-                  {!isDetailsLoading && !googleDetails && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
-                  {googleDetails?.rating && (<div className="flex items-center gap-1"><StarRating rating={googleDetails.rating} /></div>)}
-                  {googleDetails?.opening_hours && (<div className="flex flex-col"><p><strong>영업:</strong> <span className={googleDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{googleDetails.opening_hours.open_now ? ' 영업 중' : ' 영업 종료'}</span></p><p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(googleDetails.opening_hours)})</p></div>)}
-                  {googleDetails?.phone && (<p><strong>전화:</strong> <a href={`tel:${googleDetails.phone}`} className="text-blue-600 hover:underline">{googleDetails.phone}</a></p>)}
-                  {googleDetails?.photos && googleDetails.photos.length > 0 && (
-                    <div>
-                      <strong>사진:</strong>
-                      <Carousel className="w-full max-w-xs mx-auto mt-2">
-                        <CarouselContent>
-                          {googleDetails.photos.map((photoUrl, index) => (
-                            <CarouselItem key={index}>
-                              <Dialog>
-                                <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
-                                <DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent>
-                              </Dialog>
-                            </CarouselItem>
-                          ))}
-                        </CarouselContent>
-                        <CarouselPrevious className="left-2" /><CarouselNext className="right-2" />
-                      </Carousel>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="w-full hidden md:flex items-center justify-center h-full min-h-[200px] text-gray-500 border-dashed border-2">
-                <p>목록에서 음식점을 선택하세요.</p>
-              </Card>
-            )}
+            <div className="w-full max-w-sm space-y-4">
+              {restaurantList.length > 0 ? (
+                <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
+                  <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
+                  {restaurantList.map(place => (
+                    <Card key={place.id} className={`w-full border shadow-sm cursor-pointer hover:border-blue-500 transition-all ${recommendation?.id === place.id ? 'border-blue-500 border-2 bg-blue-50' : 'bg-white'}`} onClick={() => handleListItemClick(place)}>
+                      <CardHeader className="px-2 pt-px pb-1 flex flex-row items-center justify-between">
+                        <CardTitle className="text-md">{place.place_name}</CardTitle>
+                        <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
+                      </CardHeader>
+                      <CardContent className="px-2 pb-px pt-0 text-xs text-gray-700">
+                        <p>{place.category_name}</p>
+                        {place.googleDetails?.rating && (<div className="flex items-center"><span className="text-yellow-400 text-xs mr-1">★</span><span className="text-xs font-semibold">{place.googleDetails.rating.toFixed(1)}</span></div>)}
+                        <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block w-full"><Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">카카오맵 상세보기</Button></a>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : ( <Card className="w-full flex items-center justify-center h-40 text-gray-500 border-dashed border-2"><p>음식점을 검색해보세요!</p></Card> )}
+              
+              {recommendation && (
+                <Card className="w-full border shadow-sm min-h-[200px]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{recommendation.place_name}</CardTitle>
+                    <p className="text-xs text-gray-500">Google Maps 제공</p>
+                  </CardHeader>
+                  <CardContent className="text-sm space-y-2 pt-2">
+                    {googleDetails?.url && (<a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="mb-2 inline-block"><Button variant="link" size="sm" className="p-0 h-auto text-xs">구글맵 상세보기</Button></a>)}
+                    {isDetailsLoading && <p>상세 정보를 불러오는 중...</p>}
+                    {!isDetailsLoading && !googleDetails && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
+                    {googleDetails?.rating && (<div className="flex items-center gap-1"><StarRating rating={googleDetails.rating} /></div>)}
+                    {googleDetails?.opening_hours && (<div className="flex flex-col"><p><strong>영업:</strong> <span className={googleDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{googleDetails.opening_hours.open_now ? ' 영업 중' : ' 영업 종료'}</span></p><p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(googleDetails.opening_hours)})</p></div>)}
+                    {googleDetails?.phone && (<p><strong>전화:</strong> <a href={`tel:${googleDetails.phone}`} className="text-blue-600 hover:underline">{googleDetails.phone}</a></p>)}
+                    {googleDetails?.photos && googleDetails.photos.length > 0 && (
+                      <div>
+                        <strong>사진:</strong>
+                        <Carousel className="w-full max-w-xs mx-auto mt-2">
+                          <CarouselContent>
+                            {googleDetails.photos.map((photoUrl, index) => (
+                              <CarouselItem key={index}>
+                                <Dialog>
+                                  <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
+                                  <DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent>
+                                </Dialog>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="left-2" /><CarouselNext className="right-2" />
+                        </Carousel>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         </div>
       </Card>
