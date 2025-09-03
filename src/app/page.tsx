@@ -68,13 +68,6 @@ declare global {
         Polyline: new (options: { path: KakaoLatLng[]; strokeColor: string; strokeWeight: number; strokeOpacity: number; }) => KakaoPolyline;
         Roadview: new (container: HTMLElement) => KakaoRoadview;
         RoadviewClient: new () => KakaoRoadviewClient;
-        event: {
-          addListener: (
-            target: KakaoMarker | KakaoMap, // 이벤트 대상 (마커 또는 지도)
-            type: string,                   // 이벤트 이름 (예: 'click')
-            callback: () => void            // 콜백 함수
-          ) => void;
-        };
       };
     };
   }
@@ -211,7 +204,7 @@ export default function Home() {
     }
     const script = document.createElement('script');
     script.id = scriptId;
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=event`;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
     script.async = true;
     document.head.appendChild(script);
     script.onload = () => {
@@ -301,11 +294,6 @@ export default function Home() {
       const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
       const marker = new window.kakao.maps.Marker({ position: placePosition });
       marker.setMap(mapInstance.current);
-      window.kakao.maps.event.addListener(marker, 'click', () => {
-      if (userLocation) {
-        updateViews(place, userLocation);
-      }
-    });
       return marker;
     });
     markers.current = newMarkers;
