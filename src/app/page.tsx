@@ -524,10 +524,10 @@ export default function Home() {
                     return (
                       <Card 
                         key={place.id}
-                        className={`w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected ? 'border-blue-500 border-2' : ''}`}
+                        className={`w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-gray-100 ${isSelected ? 'border-blue-500 border-2' : ''}`}
                         onClick={() => handleListItemClick(place)}
                       >
-                        <div className="hover:bg-gray-50">
+                        <div>
                           <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
                             <CardTitle className="text-md">{place.place_name}</CardTitle>
                             <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
@@ -545,7 +545,7 @@ export default function Home() {
 
                         {isSelected && (
                           <CardContent 
-                            className="px-4 pb-4 pt-0 text-sm space-y-3 border-t"
+                            className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-white"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center justify-between pt-2">
