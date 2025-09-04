@@ -73,27 +73,6 @@ declare global {
   }
 }
 
-interface KakaoPlaceItem {
-  id: string;
-  place_name: string;
-  category_name: string;
-  road_address_name: string;
-  x: string;
-  y: string;
-  place_url: string;
-  distance: string;
-  googleDetails?: {
-    rating?: number;
-    photos?: string[];
-  }
-}
-interface KakaoSearchResponse {
-  documents: KakaoPlaceItem[];
-}
-interface RouletteOption {
-  option: string;
-  style?: { backgroundColor?: string; textColor?: string; };
-}
 interface GoogleOpeningHours {
   open_now: boolean;
   weekday_text?: string[];
@@ -104,6 +83,25 @@ interface GoogleDetails {
   rating?: number;
   opening_hours?: GoogleOpeningHours;
   phone?: string;
+}
+// [수정] KakaoPlaceItem이 완전한 GoogleDetails를 옵셔널로 포함하도록 변경
+interface KakaoPlaceItem {
+  id: string;
+  place_name: string;
+  category_name: string;
+  road_address_name: string;
+  x: string;
+  y: string;
+  place_url: string;
+  distance: string;
+  googleDetails?: GoogleDetails;
+}
+interface KakaoSearchResponse {
+  documents: KakaoPlaceItem[];
+}
+interface RouletteOption {
+  option: string;
+  style?: { backgroundColor?: string; textColor?: string; };
 }
 interface DirectionPoint {
   lat: number;
@@ -148,11 +146,9 @@ const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null
 };
 
 export default function Home() {
-  // --- 실제 필터 및 데이터 상태 ---
   const [recommendation, setRecommendation] = useState<KakaoPlaceItem | null>(null);
   const [restaurantList, setRestaurantList] = useState<KakaoPlaceItem[]>([]);
-  const [googleDetails, setGoogleDetails] = useState<GoogleDetails | null>(null);
-  const [isDetailsLoading, setIsDetailsLoading] = useState(false);
+  // [삭제] googleDetails, isDetailsLoading 상태 제거
   const [rouletteItems, setRouletteItems] = useState<KakaoPlaceItem[]>([]);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [mustSpin, setMustSpin] = useState(false);
@@ -166,7 +162,6 @@ export default function Home() {
   
   const [displayedSortOrder, setDisplayedSortOrder] = useState<'accuracy' | 'distance' | 'rating'>('accuracy');
   
-  // --- 필터 다이얼로그 전용 임시 상태 ---
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([]);
   const [tempSelectedDistance, setTempSelectedDistance] = useState<string>('800');
@@ -231,37 +226,13 @@ export default function Home() {
     return () => clearTimeout(timerId);
   }, [isRoadviewVisible]);
   
-  useEffect(() => {
-    if (recommendation) {
-      const fetchFullGoogleDetails = async () => {
-        setIsDetailsLoading(true);
-        setGoogleDetails(null);
-        try {
-          const response = await fetch(`/api/details?name=${encodeURIComponent(recommendation.place_name)}&lat=${recommendation.y}&lng=${recommendation.x}`);
-          if (response.ok) {
-            const fullDetails = await response.json();
-            setGoogleDetails(fullDetails);
-          } else {
-            setGoogleDetails({
-              photos: recommendation.googleDetails?.photos || [],
-              rating: recommendation.googleDetails?.rating
-            });
-          }
-        } catch (error) {
-          console.error("Failed to fetch Google details:", error);
-        } finally {
-          setIsDetailsLoading(false);
-        }
-      };
-      fetchFullGoogleDetails();
-    }
-  }, [recommendation]); 
+  // [삭제] /api/details를 호출하던 useEffect 제거
 
   useEffect(() => {
-    if (!isDetailsLoading && mapInstance.current) {
+    if (mapInstance.current) {
       setTimeout(() => { mapInstance.current?.relayout(); }, 100);
     }
-  }, [googleDetails, isDetailsLoading]);
+  }, [recommendation]);
 
   useEffect(() => {
     if (sortOrder === 'accuracy') setResultCount(5);
@@ -355,7 +326,6 @@ export default function Home() {
   
   const clearMapAndResults = () => {
     setRecommendation(null);
-    setGoogleDetails(null);
     setRestaurantList([]);
     setRoadviewVisible(false);
     markers.current.forEach(marker => { marker.setMap(null); });
@@ -521,6 +491,8 @@ export default function Home() {
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
                   {restaurantList.map(place => {
                     const isSelected = recommendation?.id === place.id;
+                    const details = place.googleDetails; // [수정] place에서 바로 details를 가져옴
+
                     return (
                       <Card 
                         key={place.id}
@@ -534,10 +506,10 @@ export default function Home() {
                           </CardHeader>
                           <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600">
                             <span>{place.category_name.split('>').pop()?.trim()}</span>
-                            {place.googleDetails?.rating && (
+                            {details?.rating && (
                               <div className="flex items-center gap-1">
                                 <span className="text-yellow-400">★</span>
-                                <span>{place.googleDetails.rating.toFixed(1)}</span>
+                                <span>{details.rating.toFixed(1)}</span>
                               </div>
                             )}
                           </CardContent>
@@ -553,32 +525,32 @@ export default function Home() {
                               <p className="text-xs text-gray-500">Google Maps 제공</p>
                             </div>
 
-                            {isDetailsLoading && <p>상세 정보를 불러오는 중...</p>}
-                            {!isDetailsLoading && !googleDetails && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
+                            {/* [수정] isDetailsLoading 제거, details 유무로 렌더링 */}
+                            {!details && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
                             
-                            {googleDetails?.rating && (
+                            {details?.rating && (
                               <div className="flex items-center gap-1">
-                                <StarRating rating={googleDetails.rating} />
+                                <StarRating rating={details.rating} />
                               </div>
                             )}
                             
-                            {googleDetails?.opening_hours && (
+                            {details?.opening_hours && (
                               <div className="flex flex-col">
-                                <p><strong>영업:</strong> <span className={googleDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{googleDetails.opening_hours.open_now ? '영업 중' : '영업 종료'}</span></p>
-                                <p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(googleDetails.opening_hours)})</p>
+                                <p><strong>영업:</strong> <span className={details.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{details.opening_hours.open_now ? '영업 중' : '영업 종료'}</span></p>
+                                <p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(details.opening_hours)})</p>
                               </div>
                             )}
 
-                            {googleDetails?.phone && (
-                              <p><strong>전화:</strong> <a href={`tel:${googleDetails.phone}`} className="text-blue-600 hover:underline">{googleDetails.phone}</a></p>
+                            {details?.phone && (
+                              <p><strong>전화:</strong> <a href={`tel:${details.phone}`} className="text-blue-600 hover:underline">{details.phone}</a></p>
                             )}
 
-                            {googleDetails?.photos && googleDetails.photos.length > 0 && (
+                            {details?.photos && details.photos.length > 0 && (
                               <div>
                                 <strong>사진:</strong>
                                 <Carousel className="w-full max-w-xs mx-auto mt-2">
                                   <CarouselContent>
-                                    {googleDetails.photos.map((photoUrl, index) => (
+                                    {details.photos.map((photoUrl, index) => (
                                       <CarouselItem key={index}>
                                         <Dialog>
                                           <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
@@ -596,8 +568,8 @@ export default function Home() {
                               <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="flex-1">
                                 <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold">카카오맵</Button>
                               </a>
-                              {googleDetails?.url && (
-                                <a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                              {details?.url && (
+                                <a href={details.url} target="_blank" rel="noopener noreferrer" className="flex-1">
                                   <Button variant="outline" size="sm" className="w-full">구글맵</Button>
                                 </a>
                               )}
@@ -631,7 +603,6 @@ export default function Home() {
                       const winner = rouletteItems[prizeNumber];
                       setRestaurantList([winner]);
                       displayMarkers([winner]);
-                      // 룰렛 결과가 나오면 자동으로 선택 및 지도 업데이트
                       setRecommendation(winner);
                       updateViews(winner, userLocation);
                     }
