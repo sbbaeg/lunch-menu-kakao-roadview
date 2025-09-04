@@ -232,7 +232,6 @@ export default function Home() {
   }, [isRoadviewVisible]);
   
   useEffect(() => {
-    // recommendation이 null이 아닐 때만 상세 정보 API를 호출
     if (recommendation) {
       const fetchFullGoogleDetails = async () => {
         setIsDetailsLoading(true);
@@ -256,7 +255,7 @@ export default function Home() {
       };
       fetchFullGoogleDetails();
     }
-  }, [recommendation]); // recommendation이 변경될 때마다 실행
+  }, [recommendation]); 
 
   useEffect(() => {
     if (!isDetailsLoading && mapInstance.current) {
@@ -334,8 +333,6 @@ export default function Home() {
           setRestaurantList(finalRestaurants);
           if (finalRestaurants.length > 0) {
             displayMarkers(finalRestaurants);
-            // 검색 후 첫 번째 아이템을 자동으로 선택하지 않도록 변경
-            // updateViews(finalRestaurants[0], currentLocation);
           }
         }
       } catch (error) {
@@ -367,7 +364,6 @@ export default function Home() {
   };
 
   const updateViews = async (place: KakaoPlaceItem, currentLoc: KakaoLatLng) => {
-    // recommendation 상태는 handleListItemClick에서 관리하므로 여기서는 지도 관련 작업만 수행
     const placePosition = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
     if (mapInstance.current) {
       mapInstance.current.setCenter(placePosition);
@@ -521,7 +517,7 @@ export default function Home() {
             
             <div className="w-full max-w-sm space-y-2">
               {restaurantList.length > 0 ? (
-                <div className="space-y-2 max-h-[520px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
                   {restaurantList.map(place => {
                     const isSelected = recommendation?.id === place.id;
@@ -530,16 +526,21 @@ export default function Home() {
                         key={place.id}
                         className={`w-full border shadow-sm transition-all duration-300 ${isSelected ? 'border-blue-500 border-2' : ''}`}
                       >
-                        <CardHeader 
-                          className="px-4 py-3 flex flex-row items-center justify-between cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleListItemClick(place)}
-                        >
-                          <CardTitle className="text-md">{place.place_name}</CardTitle>
-                          <div className="flex items-center space-x-3">
+                        <div className="cursor-pointer hover:bg-gray-50" onClick={() => handleListItemClick(place)}>
+                          <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
+                            <CardTitle className="text-md">{place.place_name}</CardTitle>
                             <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
-                            <span className="transform transition-transform duration-200">{isSelected ? '▲' : '▼'}</span>
-                          </div>
-                        </CardHeader>
+                          </CardHeader>
+                          <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600">
+                            <span>{place.category_name.split('>').pop()?.trim()}</span>
+                            {place.googleDetails?.rating && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-yellow-400">★</span>
+                                <span>{place.googleDetails.rating.toFixed(1)}</span>
+                              </div>
+                            )}
+                          </CardContent>
+                        </div>
 
                         {isSelected && (
                           <CardContent className="px-4 pb-4 pt-0 text-sm space-y-3 border-t">
