@@ -278,7 +278,7 @@ export default function Home() {
             roadviewClient.current = new window.kakao.maps.RoadviewClient();
           }
         }
-      }, 0);
+      }, 100);
     }
   }, [isMapReady]);
   
