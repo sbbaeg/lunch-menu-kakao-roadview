@@ -517,16 +517,17 @@ export default function Home() {
             
             <div className="w-full max-w-sm space-y-2">
               {restaurantList.length > 0 ? (
-                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
                   {restaurantList.map(place => {
                     const isSelected = recommendation?.id === place.id;
                     return (
                       <Card 
                         key={place.id}
-                        className={`w-full border shadow-sm transition-all duration-300 ${isSelected ? 'border-blue-500 border-2' : ''}`}
+                        className={`w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected ? 'border-blue-500 border-2' : ''}`}
+                        onClick={() => handleListItemClick(place)}
                       >
-                        <div className="cursor-pointer hover:bg-gray-50" onClick={() => handleListItemClick(place)}>
+                        <div className="hover:bg-gray-50">
                           <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
                             <CardTitle className="text-md">{place.place_name}</CardTitle>
                             <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
@@ -543,7 +544,10 @@ export default function Home() {
                         </div>
 
                         {isSelected && (
-                          <CardContent className="px-4 pb-4 pt-0 text-sm space-y-3 border-t">
+                          <CardContent 
+                            className="px-4 pb-4 pt-0 text-sm space-y-3 border-t"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="flex items-center justify-between pt-2">
                               <p className="text-xs text-gray-500">{place.category_name}</p>
                               <p className="text-xs text-gray-500">Google Maps 제공</p>
