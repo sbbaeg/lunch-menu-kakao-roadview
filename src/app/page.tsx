@@ -452,6 +452,9 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
+      <div className="absolute top-0 left-0 bg-red-500 text-white p-2 z-50 font-mono text-xs">
+        API Key Loaded: {process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY ? "YES" : "NO (undefined)"}
+      </div>
       <Card className="w-full max-w-6xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row gap-6">
           
