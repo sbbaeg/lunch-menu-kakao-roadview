@@ -28,7 +28,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
+import Image from 'next/image'; // Image 컴포넌트 임포트
 import { HelpCircle } from 'lucide-react';
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
@@ -84,7 +84,6 @@ interface GoogleDetails {
   opening_hours?: GoogleOpeningHours;
   phone?: string;
 }
-// [수정] KakaoPlaceItem이 완전한 GoogleDetails를 옵셔널로 포함하도록 변경
 interface KakaoPlaceItem {
   id: string;
   place_name: string;
@@ -148,7 +147,6 @@ const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null
 export default function Home() {
   const [recommendation, setRecommendation] = useState<KakaoPlaceItem | null>(null);
   const [restaurantList, setRestaurantList] = useState<KakaoPlaceItem[]>([]);
-  // [삭제] googleDetails, isDetailsLoading 상태 제거
   const [rouletteItems, setRouletteItems] = useState<KakaoPlaceItem[]>([]);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [mustSpin, setMustSpin] = useState(false);
@@ -226,8 +224,6 @@ export default function Home() {
     return () => clearTimeout(timerId);
   }, [isRoadviewVisible]);
   
-  // [삭제] /api/details를 호출하던 useEffect 제거
-
   useEffect(() => {
     if (mapInstance.current) {
       setTimeout(() => { mapInstance.current?.relayout(); }, 100);
@@ -491,7 +487,7 @@ export default function Home() {
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
                   {restaurantList.map(place => {
                     const isSelected = recommendation?.id === place.id;
-                    const details = place.googleDetails; // [수정] place에서 바로 details를 가져옴
+                    const details = place.googleDetails;
 
                     return (
                       <Card 
@@ -525,7 +521,6 @@ export default function Home() {
                               <p className="text-xs text-gray-500">Google Maps 제공</p>
                             </div>
 
-                            {/* [수정] isDetailsLoading 제거, details 유무로 렌더링 */}
                             {!details && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
                             
                             {details?.rating && (
@@ -566,11 +561,17 @@ export default function Home() {
 
                             <div className="flex gap-2 pt-2">
                               <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                                <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold">카카오맵</Button>
+                                <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold flex items-center justify-center">
+                                  <Image src="/kakaomap_icon.png" alt="카카오맵 로고" width={16} height={16} className="mr-2" />
+                                  카카오맵
+                                </Button>
                               </a>
                               {details?.url && (
                                 <a href={details.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                                  <Button variant="outline" size="sm" className="w-full">구글맵</Button>
+                                  <Button variant="outline" size="sm" className="w-full font-bold flex items-center justify-center">
+                                    <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
+                                    구글맵
+                                  </Button>
                                 </a>
                               )}
                             </div>
