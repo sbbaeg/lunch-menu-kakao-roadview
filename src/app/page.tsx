@@ -153,8 +153,6 @@ const DetailsContent = ({ place, isLoading, details }: { place: KakaoPlaceItem, 
 };
 
 export default function Home() {
-  console.log("1. Home 컴포넌트 실행 시작");
-
   const [recommendation, setRecommendation] = useState<KakaoPlaceItem | null>(null);
   const [restaurantList, setRestaurantList] = useState<KakaoPlaceItem[]>([]);
   const [googleDetails, setGoogleDetails] = useState<GoogleDetails | null>(null);
@@ -189,21 +187,21 @@ export default function Home() {
   const roadviewClient = useRef<KakaoRoadviewClient | null>(null);
   const markers = useRef<KakaoMarker[]>([]);
 
-  console.log("2. State 및 Ref 초기화 완료");
+  const openFilterDialog = () => {
+    setTempSelectedCategories(selectedCategories);
+    setTempSelectedDistance(selectedDistance);
+    setTempSortOrder(sortOrder);
+    setTempResultCount(resultCount);
+    setTempMinRating(minRating);
+    setIsFilterOpen(true);
+  };
 
   useEffect(() => {
-    console.log("3. 스크립트 로드 useEffect 진입");
     const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
-    if (!KAKAO_JS_KEY) {
-      console.error("오류: KAKAO_JS_KEY를 찾을 수 없습니다!");
-      return;
-    }
+    if (!KAKAO_JS_KEY) return;
     const scriptId = 'kakao-maps-script';
     if (document.getElementById(scriptId)) {
-      if (window.kakao && window.kakao.maps) {
-        console.log("3A. 스크립트 이미 로드됨");
-        setIsMapReady(true);
-      }
+      if (window.kakao && window.kakao.maps) setIsMapReady(true);
       return;
     }
     const script = document.createElement('script');
@@ -212,21 +210,13 @@ export default function Home() {
     script.async = true;
     document.head.appendChild(script);
     script.onload = () => {
-      window.kakao.maps.load(() => {
-        console.log("3B. 카카오맵 스크립트 로드 및 초기화 성공!");
-        setIsMapReady(true);
-      });
-    };
-    script.onerror = () => {
-      console.error("오류: 카카오맵 스크립트를 로드하는 데 실패했습니다.");
+      window.kakao.maps.load(() => setIsMapReady(true));
     };
   }, []);
   
   useEffect(() => {
-    console.log("4. 지도 생성 useEffect 진입 (isMapReady: " + isMapReady + ")");
     if (isMapReady && mapContainer.current && !mapInstance.current) {
       setTimeout(() => {
-        console.log("4A. 지도 생성 setTimeout 실행");
         if (mapContainer.current) {
           const mapOption = { center: new window.kakao.maps.LatLng(36.3504, 127.3845), level: 3 };
           mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
@@ -234,7 +224,6 @@ export default function Home() {
             roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
             roadviewClient.current = new window.kakao.maps.RoadviewClient();
           }
-          console.log("4B. 지도 인스턴스 생성 완료!");
         }
       }, 100);
     }
@@ -307,15 +296,6 @@ export default function Home() {
       return marker;
     });
     markers.current = newMarkers;
-  };
-
-  const openFilterDialog = () => {
-    setTempSelectedCategories(selectedCategories);
-    setTempSelectedDistance(selectedDistance);
-    setTempSortOrder(sortOrder);
-    setTempResultCount(resultCount);
-    setTempMinRating(minRating);
-    setIsFilterOpen(true);
   };
 
   const recommendProcess = (isRoulette: boolean) => {
@@ -430,14 +410,12 @@ export default function Home() {
     return { option: item.place_name, style: { backgroundColor: colors[index % colors.length], textColor: '#333333' } };
   });
 
-  console.log("5. JSX 렌더링 직전");
-
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
-      {(() => { console.log("6. JSX 렌더링 시작"); return null; })()}
       <Card className="w-full max-w-6xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="relative w-full h-80 md:h-auto md:self-stretch rounded-lg overflow-hidden border shadow-sm">
+          
+          <div className="relative w-full md:w-1/2 h-80 md:h-auto md:self-stretch rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className="w-full h-full"></div>
             <div ref={roadviewContainer} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
             {recommendation && (
@@ -467,7 +445,6 @@ export default function Home() {
               <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <DialogTrigger asChild><Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button></DialogTrigger>
                 <DialogContent>
-                  {(() => { console.log("7. 필터 다이얼로그 렌더링"); return null; })()}
                   <DialogHeader><DialogTitle>검색 필터 설정</DialogTitle></DialogHeader>
                   <div className="py-4 space-y-4 max-h-[70vh] overflow-y-auto pr-4">
                     <div>
