@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 // (수정!) Open Graph 메타데이터를 추가합니다.
 export const metadata: Metadata = {
-  title: "오늘 뭐 먹지? - 식사 메뉴 추천",
+  title: "오늘 뭐 먹지? - 식사 메뉴 추천기",
   description: "사용자 위치 기반 식사 메뉴 추천 및 룰렛 앱",
   icons: {
     icon: "/icon.png",
