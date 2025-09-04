@@ -286,15 +286,9 @@ export default function Home() {
 
   const rouletteData: RouletteOption[] = rouletteItems.map((item, index) => {
     const colors = ['#FF6B6B', '#FFD966', '#96F291', '#66D9E8', '#63A4FF', '#f9a8d4', '#d9a8f9', '#f3a683', '#a29bfe', '#e17055', '#00b894', '#74b9ff', '#ff7675', '#fdcb6e', '#55efc4'];
-    return { 
-      option: item.place_name,
-      style: {
-        backgroundColor: colors[index % colors.length],
-        textColor: '#333333'
-      }
-    };
+    return { option: item.place_name, style: { backgroundColor: colors[index % colors.length], textColor: '#333333' } };
   });
-  
+
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
       <Card className="w-full max-w-6xl p-6 md:p-8">
@@ -310,6 +304,7 @@ export default function Home() {
                 roadviewContainerRef={roadviewContainer}
                 roadviewInstanceRef={roadviewInstance}
                 roadviewClientRef={roadviewClient}
+                isMapReady={isMapReady}
               />
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">

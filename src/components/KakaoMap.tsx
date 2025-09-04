@@ -13,32 +13,32 @@ interface KakaoMapProps {
   roadviewContainerRef: React.RefObject<HTMLDivElement | null>;
   roadviewInstanceRef: React.MutableRefObject<KakaoRoadview | null>;
   roadviewClientRef: React.MutableRefObject<KakaoRoadviewClient | null>;
+  isMapReady: boolean; // 부모의 isMapReady 상태를 전달받음
 }
 
-const KakaoMap = ({ places, selectedPlace, userLocation, onMarkerClick, roadviewContainerRef, roadviewInstanceRef, roadviewClientRef }: KakaoMapProps) => {
+const KakaoMap = ({ places, selectedPlace, userLocation, onMarkerClick, roadviewContainerRef, roadviewInstanceRef, roadviewClientRef, isMapReady }: KakaoMapProps) => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<KakaoMap | null>(null);
   const markers = useRef<KakaoMarker[]>([]);
   const polylineInstance = useRef<KakaoPolyline | null>(null);
 
+  // 1. 지도 초기 생성: isMapReady가 true가 될 때만 실행
   useEffect(() => {
-    if (window.kakao && window.kakao.maps && mapContainer.current && !mapInstance.current) {
-      setTimeout(() => {
-        if (mapContainer.current) {
-            const mapOption = {
-                center: new window.kakao.maps.LatLng(36.3504, 127.3845),
-                level: 3,
-            };
-            mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
-            if (roadviewContainerRef.current) {
-                roadviewInstanceRef.current = new window.kakao.maps.Roadview(roadviewContainerRef.current);
-                roadviewClientRef.current = new window.kakao.maps.RoadviewClient();
-            }
-        }
-      }, 100);
-    }
-  }, [roadviewContainerRef, roadviewInstanceRef, roadviewClientRef]);
+    if (isMapReady && window.kakao && window.kakao.maps && mapContainer.current && !mapInstance.current) {
+      const mapOption = {
+          center: new window.kakao.maps.LatLng(36.3504, 127.3845),
+          level: 3,
+      };
+      mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
 
+      if (roadviewContainerRef.current) {
+          roadviewInstanceRef.current = new window.kakao.maps.Roadview(roadviewContainerRef.current);
+          roadviewClientRef.current = new window.kakao.maps.RoadviewClient();
+      }
+    }
+  }, [isMapReady, roadviewContainerRef, roadviewInstanceRef, roadviewClientRef]); // 의존성 배열 수정
+
+  // 2. 장소 목록(places) 변경 시 마커 업데이트
   useEffect(() => {
     if (!mapInstance.current || !window.kakao) return;
     markers.current.forEach(marker => marker.setMap(null));
@@ -62,6 +62,7 @@ const KakaoMap = ({ places, selectedPlace, userLocation, onMarkerClick, roadview
     }
   }, [places, userLocation, onMarkerClick, selectedPlace]);
 
+  // 3. 선택된 장소(selectedPlace) 변경 시 경로 및 로드뷰 업데이트
   useEffect(() => {
     if (!mapInstance.current || !window.kakao) return;
     if (polylineInstance.current) polylineInstance.current.setMap(null);
