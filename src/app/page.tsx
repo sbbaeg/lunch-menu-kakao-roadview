@@ -594,7 +594,7 @@ export default function Home() {
 
                             <div className="flex gap-2 pt-2">
                               <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                                <Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">카카오맵</Button>
+                                <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold">카카오맵</Button>
                               </a>
                               {googleDetails?.url && (
                                 <a href={googleDetails.url} target="_blank" rel="noopener noreferrer" className="flex-1">
