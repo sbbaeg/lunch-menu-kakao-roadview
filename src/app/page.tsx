@@ -40,7 +40,7 @@ import { HelpCircle } from 'lucide-react';
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
 
-// --- 타입 정의 (변경 없음) ---
+// --- 타입 정의 ---
 type KakaoMap = {
   setCenter: (latlng: KakaoLatLng) => void;
   relayout: () => void;
@@ -159,44 +159,26 @@ const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null
   return todaysHours ? todaysHours.substring(todaysHours.indexOf(':') + 2) : "정보 없음";
 };
 
-// [추가] 아코디언 컨텐츠를 위한 별도의 컴포넌트 (가독성을 위해 분리)
+// 아코디언 컨텐츠를 위한 별도의 컴포넌트
 const DetailsContent = ({ place, isLoading, details }: { place: KakaoPlaceItem, isLoading: boolean, details: GoogleDetails | null }) => {
   if (isLoading) {
-    return <div className="p-4 text-center">상세 정보를 불러오는 중...</div>;
+    return <div className="p-4 text-center text-sm text-gray-500">상세 정보를 불러오는 중...</div>;
   }
-
-  // 백엔드에서 미리 받아온 기본 googleDetails 사용
   const finalDetails = details || { photos: place.googleDetails?.photos || [], rating: place.googleDetails?.rating };
-
   return (
-    <div className="text-sm space-y-3 p-2">
+    <div className="text-sm space-y-3 p-2 border-t">
       {finalDetails.rating && (<div className="flex items-center gap-1"><StarRating rating={finalDetails.rating} /></div>)}
       {finalDetails.opening_hours && (<div className="flex flex-col"><p><strong>영업:</strong> <span className={finalDetails.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{finalDetails.opening_hours.open_now ? ' 영업 중' : ' 영업 종료'}</span></p><p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(finalDetails.opening_hours)})</p></div>)}
       {finalDetails.phone && (<p><strong>전화:</strong> <a href={`tel:${finalDetails.phone}`} className="text-blue-600 hover:underline">{finalDetails.phone}</a></p>)}
-      
       <div className="flex gap-2">
-        <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="flex-1">
-          <Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">카카오맵</Button>
-        </a>
-        {finalDetails.url && (<a href={finalDetails.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-          <Button size="sm" variant="outline" className="w-full">구글맵</Button>
-        </a>)}
+        <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="flex-1"><Button size="sm" className="w-full bg-black text-white hover:bg-gray-800">카카오맵</Button></a>
+        {finalDetails.url && (<a href={finalDetails.url} target="_blank" rel="noopener noreferrer" className="flex-1"><Button size="sm" variant="outline" className="w-full">구글맵</Button></a>)}
       </div>
-
       {finalDetails.photos && finalDetails.photos.length > 0 && (
         <div>
           <p className="font-semibold mb-2">사진:</p>
           <Carousel className="w-full max-w-xs mx-auto">
-            <CarouselContent>
-              {finalDetails.photos.map((photoUrl, index) => (
-                <CarouselItem key={index}>
-                  <Dialog>
-                    <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${place.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
-                    <DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${place.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent>
-                  </Dialog>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
+            <CarouselContent>{finalDetails.photos.map((photoUrl, index) => (<CarouselItem key={index}><Dialog><DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${place.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger><DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${place.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent></Dialog></CarouselItem>))}</CarouselContent>
             <CarouselPrevious className="left-2" /><CarouselNext className="right-2" />
           </Carousel>
         </div>
@@ -204,7 +186,6 @@ const DetailsContent = ({ place, isLoading, details }: { place: KakaoPlaceItem, 
     </div>
   );
 };
-
 
 export default function Home() {
   const [recommendation, setRecommendation] = useState<KakaoPlaceItem | null>(null);
@@ -290,17 +271,13 @@ export default function Home() {
     return () => clearTimeout(timerId);
   }, [isRoadviewVisible]);
   
-  // [수정] 아코디언이 열릴 때만 상세정보를 가져오도록 변경
   useEffect(() => {
     if (!openedAccordionItem) {
-      // 닫혔을 때는 이전에 불러온 상세정보를 초기화
       setGoogleDetails(null);
       return;
     };
-    
     const selectedPlace = restaurantList.find(p => p.id === openedAccordionItem);
     if (!selectedPlace) return;
-
     const fetchFullGoogleDetails = async () => {
       setIsDetailsLoading(true);
       setGoogleDetails(null);
@@ -350,7 +327,7 @@ export default function Home() {
       window.kakao.maps.event.addListener(marker, 'click', () => {
         if (userLocation) {
           updateViews(place, userLocation);
-          setOpenedAccordionItem(place.id); // 마커 클릭 시 아코디언도 열기
+          setOpenedAccordionItem(place.id);
         }
       });
       return marker;
@@ -392,6 +369,7 @@ export default function Home() {
           if (finalRestaurants.length > 0) {
             displayMarkers(finalRestaurants);
             updateViews(finalRestaurants[0], currentLocation);
+            setOpenedAccordionItem(finalRestaurants[0].id);
           }
         }
       } catch (error) {
@@ -417,6 +395,7 @@ export default function Home() {
     setGoogleDetails(null);
     setRestaurantList([]);
     setRoadviewVisible(false);
+    setOpenedAccordionItem(null);
     markers.current.forEach(marker => { marker.setMap(null); });
     markers.current = [];
     if (polylineInstance.current) polylineInstance.current.setMap(null);
@@ -454,10 +433,6 @@ export default function Home() {
     return { option: item.place_name, style: { backgroundColor: colors[index % colors.length], textColor: '#333333' } };
   });
   
-  const handleListItemClick = (place: KakaoPlaceItem) => {
-    if (userLocation) { updateViews(place, userLocation); }
-  };
-
   const getSortTitle = (sort: 'accuracy' | 'distance' | 'rating'): string => {
     switch (sort) {
       case 'distance': return '가까운 순 결과';
@@ -478,10 +453,8 @@ export default function Home() {
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
       <Card className="w-full max-w-6xl p-6 md:p-8">
-        {/* [수정] 2단 레이아웃으로 변경 */}
         <div className="flex flex-col md:flex-row gap-6">
           
-          {/* 1. 왼쪽: 지도 영역 */}
           <div className="relative w-full md:w-1/2 h-80 md:h-[calc(100vh-8rem)] rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className="w-full h-full"></div>
             <div ref={roadviewContainer} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
@@ -491,11 +464,7 @@ export default function Home() {
               </Button>
             )}
             <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="absolute bottom-4 right-4 h-8 w-8 rounded-full z-20">
-                  <HelpCircle className="h-5 w-5 text-gray-500" />
-                </Button>
-              </DialogTrigger>
+              <DialogTrigger asChild><Button variant="ghost" size="icon" className="absolute bottom-4 right-4 h-8 w-8 rounded-full z-20"><HelpCircle className="h-5 w-5 text-gray-500" /></Button></DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>API 정보</DialogTitle>
@@ -509,7 +478,6 @@ export default function Home() {
             </Dialog>
           </div>
           
-          {/* 2. 오른쪽: 컨트롤 및 목록 영역 */}
           <div className="w-full md:w-1/2 flex flex-col">
             <div className="w-full flex gap-2 mb-4">
               <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 검색</Button>
@@ -518,15 +486,14 @@ export default function Home() {
                 <DialogTrigger asChild><Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>검색 필터 설정</DialogTitle></DialogHeader>
-                  <div className="py-4 space-y-4">
-                    {/* ... 필터 내용은 변경 없음 ... */}
+                  <div className="py-4 space-y-4 max-h-[70vh] overflow-y-auto pr-4">
+                    {/* ... 필터 내용 ... */}
                   </div>
                   <DialogFooter><Button onClick={handleApplyFilters}>완료</Button></DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
 
-            {/* [수정] 목록을 Accordion으로 변경 */}
             <div className="flex-1 overflow-y-auto pr-2 md:max-h-[calc(100vh-12rem)]">
               {restaurantList.length > 0 ? (
                 <>
@@ -545,21 +512,21 @@ export default function Home() {
                     }}
                   >
                     {restaurantList.map(place => (
-                      <AccordionItem value={place.id} key={place.id}>
-                        <AccordionTrigger>
-                          <div className="flex justify-between items-center w-full pr-4">
-                            <div className="flex flex-col items-start text-left">
-                              <span className="font-semibold">{place.place_name}</span>
-                              <span className="text-xs text-gray-500">{place.category_name.split('>').pop()?.trim()}</span>
+                      <AccordionItem value={place.id} key={place.id} className="border-b">
+                        <AccordionTrigger className="p-4 text-left hover:bg-gray-50 rounded-md data-[state=open]:bg-gray-50">
+                          <div className="w-full">
+                            <div className="flex flex-row items-center justify-between">
+                              <h3 className="text-md font-semibold">{place.place_name}</h3>
+                              <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
                             </div>
-                            <div className="flex items-center">
+                            <div className="flex flex-col items-start text-xs text-gray-700 mt-1">
+                              <p>{place.category_name.split('>').pop()?.trim()}</p>
                               {place.googleDetails?.rating && (
-                                <div className="flex items-center text-xs mr-3">
-                                  <span className="text-yellow-400 mr-1">★</span>
-                                  <span>{place.googleDetails.rating.toFixed(1)}</span>
+                                <div className="flex items-center mt-1">
+                                  <span className="text-yellow-400 text-xs mr-1">★</span>
+                                  <span className="text-xs font-semibold">{place.googleDetails.rating.toFixed(1)}</span>
                                 </div>
                               )}
-                              <span className="text-sm text-gray-600">{place.distance}m</span>
                             </div>
                           </div>
                         </AccordionTrigger>
@@ -581,7 +548,7 @@ export default function Home() {
       </Card>
       
       <Dialog open={isRouletteOpen} onOpenChange={setIsRouletteOpen}>
-        {/* ... 룰렛 다이얼로그 내용은 변경 없음 ... */}
+        {/* ... 룰렛 다이얼로그 ... */}
       </Dialog>
     </main>
   );
