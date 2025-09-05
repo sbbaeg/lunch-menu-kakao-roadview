@@ -512,10 +512,10 @@ export default function Home() {
 
                       return (
                         <Card 
-                          key={place.id}
-                          className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected 
-    ? 'bg-[oklch(0.96_0.005_240)] dark:bg-[oklch(0.27_0.01_240)]' 
-    : 'bg-white dark:bg-[oklch(0.22_0.01_240)] hover:bg-[oklch(0.94_0.005_240)] dark:hover:bg-[oklch(0.27_0.01_240)]'
+  key={place.id}
+  className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected 
+    ? 'bg-[oklch(0.96_0.005_240)] dark:bg-[oklch(0.37_0.01_240)]' /* 다크모드: 펼쳐지기 전(선택된) 10% 더 밝게 */
+    : 'bg-white dark:bg-[oklch(0.22_0.01_240)] hover:bg-[oklch(0.94_0.005_240)] dark:hover:bg-[oklch(0.37_0.01_240)]' /* 다크모드: 호버도 펼쳐지기 전과 동일하게 */
   }`}
   onClick={() => handleListItemClick(place)}
                         >
@@ -540,10 +540,10 @@ export default function Home() {
                             </CardContent>
 
                           {isSelected && (
-                            <CardContent 
-                              className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-white dark:bg-[oklch(0.27_0.01_240)]"
+                           <CardContent 
+  className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-white dark:bg-[oklch(0.57_0.01_240)]" /* 다크모드: 펼쳐진 후 20% 더 밝게 */
   onClick={(e) => e.stopPropagation()}
-                            >
+>
                               <div className="flex items-center justify-between pt-2">
                                 <p className="text-xs text-gray-500">{place.category_name}</p>
                                 <p className="text-xs text-gray-500">Google Maps 제공</p>
