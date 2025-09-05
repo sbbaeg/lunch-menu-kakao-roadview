@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -28,13 +28,13 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import dynamic from 'next/dynamic';
-import Image from 'next/image'; // Image 컴포넌트 임포트
+import Image from 'next/image';
 import { HelpCircle } from 'lucide-react';
-import { ThemeToggle } from '@/components/ui/theme-toggle'; // [추가]
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
 
-// --- 타입 정의 ---
+// --- 타입 정의 (기존과 동일) ---
 type KakaoMap = {
   setCenter: (latlng: KakaoLatLng) => void;
   relayout: () => void;
@@ -146,6 +146,7 @@ const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null
 };
 
 export default function Home() {
+  // --- 상태 및 Ref 정의 (기존과 동일) ---
   const [recommendation, setRecommendation] = useState<KakaoPlaceItem | null>(null);
   const [restaurantList, setRestaurantList] = useState<KakaoPlaceItem[]>([]);
   const [rouletteItems, setRouletteItems] = useState<KakaoPlaceItem[]>([]);
@@ -158,16 +159,13 @@ export default function Home() {
   const [sortOrder, setSortOrder] = useState<'accuracy' | 'distance' | 'rating'>('accuracy');
   const [resultCount, setResultCount] = useState<number>(5);
   const [minRating, setMinRating] = useState<number>(4.0);
-  
   const [displayedSortOrder, setDisplayedSortOrder] = useState<'accuracy' | 'distance' | 'rating'>('accuracy');
-  
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>([]);
   const [tempSelectedDistance, setTempSelectedDistance] = useState<string>('800');
   const [tempSortOrder, setTempSortOrder] = useState<'accuracy' | 'distance' | 'rating'>('accuracy');
   const [tempResultCount, setTempResultCount] = useState<number>(5);
   const [tempMinRating, setTempMinRating] = useState<number>(4.0);
-  
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<KakaoMap | null>(null);
   const polylineInstance = useRef<KakaoPolyline | null>(null);
@@ -178,7 +176,9 @@ export default function Home() {
   const roadviewInstance = useRef<KakaoRoadview | null>(null);
   const roadviewClient = useRef<KakaoRoadviewClient | null>(null);
   const markers = useRef<KakaoMarker[]>([]);
+  // --- 상태 및 Ref 정의 끝 ---
 
+  // --- 함수 정의 (기존과 동일) ---
   const openFilterDialog = () => {
     setTempSelectedCategories(selectedCategories);
     setTempSelectedDistance(selectedDistance);
@@ -187,54 +187,7 @@ export default function Home() {
     setTempMinRating(minRating);
     setIsFilterOpen(true);
   };
-
-  useEffect(() => {
-    const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
-    if (!KAKAO_JS_KEY) return;
-    const scriptId = 'kakao-maps-script';
-    if (document.getElementById(scriptId)) {
-      if (window.kakao && window.kakao.maps) setIsMapReady(true);
-      return;
-    }
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
-    script.async = true;
-    document.head.appendChild(script);
-    script.onload = () => {
-      window.kakao.maps.load(() => setIsMapReady(true));
-    };
-  }, []);
   
-  useEffect(() => {
-    if (isMapReady && mapContainer.current && !mapInstance.current) {
-      const mapOption = { center: new window.kakao.maps.LatLng(36.3504, 127.3845), level: 3 };
-      mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
-      if (roadviewContainer.current) {
-        roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
-        roadviewClient.current = new window.kakao.maps.RoadviewClient();
-      }
-    }
-  }, [isMapReady]);
-  
-  useEffect(() => {
-    const timerId = setTimeout(() => {
-      if (isRoadviewVisible) { roadviewInstance.current?.relayout(); }
-      mapInstance.current?.relayout();
-    }, 10);
-    return () => clearTimeout(timerId);
-  }, [isRoadviewVisible]);
-  
-  useEffect(() => {
-    if (mapInstance.current) {
-      setTimeout(() => { mapInstance.current?.relayout(); }, 100);
-    }
-  }, [recommendation]);
-
-  useEffect(() => {
-    if (sortOrder === 'accuracy') setResultCount(5);
-  }, [sortOrder]);
-
   const getNearbyRestaurants = async (latitude: number, longitude: number): Promise<KakaoPlaceItem[]> => {
     const query = selectedCategories.length > 0 ? selectedCategories.join(',') : '음식점';
     const radius = selectedDistance;
@@ -246,11 +199,11 @@ export default function Home() {
     const data: KakaoSearchResponse = await response.json();
     return data.documents || [];
   };
-  
+
   const handleTempCategoryChange = (category: string) => {
     setTempSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
   };
-  
+
   const handleTempSelectAll = (checked: boolean | 'indeterminate') => {
     setTempSelectedCategories(checked === true ? CATEGORIES : []);
   };
@@ -365,7 +318,6 @@ export default function Home() {
     if (userLocation) {
       const newRecommendation = recommendation?.id === place?.id ? null : place;
       setRecommendation(newRecommendation);
-      
       if (newRecommendation) {
         updateViews(newRecommendation, userLocation);
       }
@@ -388,15 +340,68 @@ export default function Home() {
     setMinRating(tempMinRating);
     setIsFilterOpen(false);
   };
+  // --- 함수 정의 끝 ---
+
+  // --- useEffect Hooks (기존과 동일) ---
+  useEffect(() => {
+    const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
+    if (!KAKAO_JS_KEY) return;
+    const scriptId = 'kakao-maps-script';
+    if (document.getElementById(scriptId)) {
+      if (window.kakao && window.kakao.maps) setIsMapReady(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
+    script.async = true;
+    document.head.appendChild(script);
+    script.onload = () => {
+      window.kakao.maps.load(() => setIsMapReady(true));
+    };
+  }, []);
+  
+  useEffect(() => {
+    if (isMapReady && mapContainer.current && !mapInstance.current) {
+      const mapOption = { center: new window.kakao.maps.LatLng(36.3504, 127.3845), level: 3 };
+      mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
+      if (roadviewContainer.current) {
+        roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
+        roadviewClient.current = new window.kakao.maps.RoadviewClient();
+      }
+    }
+  }, [isMapReady]);
+  
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      if (isRoadviewVisible) { roadviewInstance.current?.relayout(); }
+      mapInstance.current?.relayout();
+    }, 10);
+    return () => clearTimeout(timerId);
+  }, [isRoadviewVisible]);
+  
+  useEffect(() => {
+    if (mapInstance.current) {
+      setTimeout(() => { mapInstance.current?.relayout(); }, 100);
+    }
+  }, [recommendation]);
+
+  useEffect(() => {
+    if (sortOrder === 'accuracy') setResultCount(5);
+  }, [sortOrder]);
+  // --- useEffect Hooks 끝 ---
 
   return (
-    <main className="relative flex flex-col items-center justify-center w-full min-h-screen">
+    <main className="relative flex flex-col items-center justify-center w-full min-h-screen p-2 sm:p-4 md:p-8">
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
       </div>
-      <Card className="w-full max-w-6xl p-6 md:p-8 h-[85vh] max-h-[800px] flex flex-col">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
+
+      <Card className="w-full max-w-6xl p-4 md:p-6 flex flex-col overflow-hidden h-full">
+        <div className="flex flex-col md:flex-row gap-6 flex-grow min-h-0">
+          
+          {/* --- 지도 영역 --- */}
+          <div className="relative w-full h-80 md:h-auto rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-0 invisible' : 'opacity-100 visible'}`}></div>
             <div ref={roadviewContainer} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}></div>
             {recommendation && (
@@ -420,154 +425,149 @@ export default function Home() {
             </Dialog>
           </div>
           
-          <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
+          {/* --- 오른쪽 정보 영역 --- */}
+          <div className="w-full md:w-1/3 flex flex-col space-y-4 min-h-0">
             <div className="w-full max-w-sm flex gap-2">
               <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 검색</Button>
               <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 룰렛</Button>
               <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-  <DialogTrigger asChild>
-    <Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button>
-  </DialogTrigger>
-  {/* [수정 1] flex 컨테이너로 만듭니다. */}
-  <DialogContent className="max-sm:max-h-[90vh] flex flex-col">
-    <DialogHeader>
-      <DialogTitle>검색 필터 설정</DialogTitle>
-    </DialogHeader>
-    {/* [수정 2] 남은 공간을 모두 차지하고 스크롤이 생기도록 합니다. */}
-    <div className="py-4 space-y-4 dark:text-foreground overflow-y-auto pr-4 flex-1">
-      <div>
-        <Label className="text-lg font-semibold">음식 종류</Label>
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          {CATEGORIES.map(category => (
-            <div key={category} className="flex items-center space-x-2">
-              <Checkbox id={`temp-${category}`} checked={tempSelectedCategories.includes(category)} onCheckedChange={() => handleTempCategoryChange(category)} />
-              <Label htmlFor={`temp-${category}`}>{category}</Label>
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
-          <Checkbox id="temp-select-all" checked={tempSelectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleTempSelectAll(checked)} />
-          <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
-        </div>
-      </div>
-      <div className="border-t border-gray-200 dark:border-gray-700"></div>
-      <div>
-        <Label className="text-lg font-semibold">검색 반경</Label>
-        <RadioGroup value={tempSelectedDistance} onValueChange={setTempSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
-          {DISTANCES.map(dist => (
-            <div key={dist.value} className="flex items-center space-x-2">
-              <RadioGroupItem value={dist.value} id={`temp-${dist.value}`} />
-              <Label htmlFor={`temp-${dist.value}`} className="cursor-pointer">
-                <div className="flex flex-col">
-                  <span className="font-semibold">{dist.label}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{`(${dist.value}m ${dist.walkTime})`}</span>
-                </div>
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
-      <div className="border-t border-gray-200 dark:border-gray-700"></div>
-      <div>
-        <Label className="text-lg font-semibold">정렬 방식</Label>
-        <RadioGroup value={tempSortOrder} onValueChange={(value) => setTempSortOrder(value as 'accuracy' | 'distance' | 'rating')} className="flex flex-wrap gap-4 pt-2">
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="accuracy" id="temp-sort-accuracy" />
-            <Label htmlFor="temp-sort-accuracy">랜덤 추천</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="distance" id="temp-sort-distance" />
-            <Label htmlFor="temp-sort-distance">가까운 순</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="rating" id="temp-sort-rating" />
-            <Label htmlFor="temp-sort-rating">별점 순</Label>
-          </div>
-        </RadioGroup>
-      </div>
-      <div className="border-t border-gray-200 dark:border-gray-700"></div>
-      <div>
-        <Label htmlFor="temp-min-rating" className="text-lg font-semibold">최소 별점: {tempMinRating.toFixed(1)}점 이상</Label>
-        <Slider id="temp-min-rating" value={[tempMinRating]} onValueChange={(value) => setTempMinRating(value[0])} min={0} max={5} step={0.1} className="mt-2" />
-      </div>
-      <div className="border-t border-gray-200 dark:border-gray-700"></div>
-      <div>
-        <Label htmlFor="temp-result-count" className="text-lg font-semibold">검색 개수: {tempResultCount}개</Label>
-        <Slider id="temp-result-count" value={[tempResultCount]} onValueChange={(value) => setTempResultCount(value[0])} min={5} max={15} step={1} className="mt-2" />
-      </div>
-    </div>
-    <DialogFooter>
-      <Button onClick={handleApplyFilters}>완료</Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button>
+                </DialogTrigger>
+                <DialogContent className="max-sm:max-h-[90vh] flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle>검색 필터 설정</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4 dark:text-foreground overflow-y-auto pr-4 flex-1">
+                    {/* ... 필터 내부 옵션들 (기존과 동일) ... */}
+                    <div>
+                      <Label className="text-lg font-semibold">음식 종류</Label>
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                        {CATEGORIES.map(category => (
+                          <div key={category} className="flex items-center space-x-2">
+                            <Checkbox id={`temp-${category}`} checked={tempSelectedCategories.includes(category)} onCheckedChange={() => handleTempCategoryChange(category)} />
+                            <Label htmlFor={`temp-${category}`}>{category}</Label>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
+                        <Checkbox id="temp-select-all" checked={tempSelectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleTempSelectAll(checked)} />
+                        <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
+                      </div>
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                    <div>
+                      <Label className="text-lg font-semibold">검색 반경</Label>
+                      <RadioGroup value={tempSelectedDistance} onValueChange={setTempSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                        {DISTANCES.map(dist => (
+                          <div key={dist.value} className="flex items-center space-x-2">
+                            <RadioGroupItem value={dist.value} id={`temp-${dist.value}`} />
+                            <Label htmlFor={`temp-${dist.value}`} className="cursor-pointer">
+                              <div className="flex flex-col">
+                                <span className="font-semibold">{dist.label}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">{`(${dist.value}m ${dist.walkTime})`}</span>
+                              </div>
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                    <div>
+                      <Label className="text-lg font-semibold">정렬 방식</Label>
+                      <RadioGroup value={tempSortOrder} onValueChange={(value) => setTempSortOrder(value as 'accuracy' | 'distance' | 'rating')} className="flex flex-wrap gap-4 pt-2">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="accuracy" id="temp-sort-accuracy" />
+                          <Label htmlFor="temp-sort-accuracy">랜덤 추천</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="distance" id="temp-sort-distance" />
+                          <Label htmlFor="temp-sort-distance">가까운 순</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rating" id="temp-sort-rating" />
+                          <Label htmlFor="temp-sort-rating">별점 순</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                    <div>
+                      <Label htmlFor="temp-min-rating" className="text-lg font-semibold">최소 별점: {tempMinRating.toFixed(1)}점 이상</Label>
+                      <Slider id="temp-min-rating" value={[tempMinRating]} onValueChange={(value) => setTempMinRating(value[0])} min={0} max={5} step={0.1} className="mt-2" />
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                    <div>
+                      <Label htmlFor="temp-result-count" className="text-lg font-semibold">검색 개수: {tempResultCount}개</Label>
+                      <Slider id="temp-result-count" value={[tempResultCount]} onValueChange={(value) => setTempResultCount(value[0])} min={5} max={15} step={1} className="mt-2" />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleApplyFilters}>완료</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
             
-            <div className="w-full max-w-sm space-y-2 flex flex-col h-full">
-  {restaurantList.length > 0 ? (
-    <div className="space-y-2 h-full overflow-y-auto pr-2">
+            <div className="w-full max-w-sm space-y-2 flex-grow overflow-hidden min-h-0">
+              {restaurantList.length > 0 ? (
+                <div className="h-full space-y-2 overflow-y-auto pr-2">
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
-                 {restaurantList.map(place => {
-  const isSelected = recommendation?.id === place.id;
-  const details = place.googleDetails;
+                  {restaurantList.map(place => {
+                    const isSelected = recommendation?.id === place.id;
+                    const details = place.googleDetails;
 
-  return (
-    <Card 
-      key={place.id}
-      className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-accent dark:hover:bg-gray-700 ${isSelected ? 'border-black dark:border-white border-2' : ''}`}
-      onClick={() => handleListItemClick(place)}
-      >
-      <div>
-        <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
-          <CardTitle className="text-md dark:group-hover:text-white">
-            {place.place_name}
-          </CardTitle>
-          <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400 dark:group-hover:text-white">
-            {place.distance}m
-          </span>
-        </CardHeader>
-        <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
-          <span className="dark:group-hover:text-white">
-            {place.category_name.split('>').pop()?.trim()}
-          </span>
-          {details?.rating && (
-            <div className="flex items-center gap-1 dark:group-hover:text-black">
-              <span className="text-yellow-400">★</span>
-              <span>{details.rating.toFixed(1)}</span>
-            </div>
-          )}
-        </CardContent>
-      </div>
+                    return (
+                      <Card 
+                        key={place.id}
+                        className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-accent dark:hover:bg-gray-700 ${isSelected ? 'border-black dark:border-white border-2' : ''}`}
+                        onClick={() => handleListItemClick(place)}
+                      >
+                        <div>
+                          <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
+                            <CardTitle className="text-md dark:group-hover:text-white">
+                              {place.place_name}
+                            </CardTitle>
+                            <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400 dark:group-hover:text-white">
+                              {place.distance}m
+                            </span>
+                          </CardHeader>
+                          <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
+                            <span className="dark:group-hover:text-white">
+                              {place.category_name.split('>').pop()?.trim()}
+                            </span>
+                            {details?.rating && (
+                              <div className="flex items-center gap-1 dark:group-hover:text-white">
+                                <span className="text-yellow-400">★</span>
+                                <span>{details.rating.toFixed(1)}</span>
+                              </div>
+                            )}
+                          </CardContent>
+                        </div>
 
-      {isSelected && (
-        <CardContent 
-          className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-[--card]"
-          onClick={(e) => e.stopPropagation()}
-        >
+                        {isSelected && (
+                          <CardContent 
+                            className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-[--card]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="flex items-center justify-between pt-2">
                               <p className="text-xs text-gray-500">{place.category_name}</p>
                               <p className="text-xs text-gray-500">Google Maps 제공</p>
                             </div>
-
                             {!details && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
-                            
                             {details?.rating && (
                               <div className="flex items-center gap-1">
                                 <StarRating rating={details.rating} />
                               </div>
                             )}
-                            
                             {details?.opening_hours && (
                               <div className="flex flex-col">
                                 <p><strong>영업:</strong> <span className={details.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{details.opening_hours.open_now ? '영업 중' : '영업 종료'}</span></p>
                                 <p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(details.opening_hours)})</p>
                               </div>
                             )}
-
                             {details?.phone && (
                               <p><strong>전화:</strong> <a href={`tel:${details.phone}`} className="text-blue-600 hover:underline">{details.phone}</a></p>
                             )}
-
                             {details?.photos && details.photos.length > 0 && (
                               <div>
                                 <strong>사진:</strong>
@@ -576,8 +576,8 @@ export default function Home() {
                                     {details.photos.map((photoUrl, index) => (
                                       <CarouselItem key={index}>
                                         <Dialog>
-                                          <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
-                                          <DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${recommendation.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent>
+                                          <DialogTrigger asChild><button className="w-full focus:outline-none"><Image src={photoUrl} alt={`${place.place_name} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" /></button></DialogTrigger>
+                                          <DialogContent className="max-w-3xl h-[80vh] p-2"><Image src={photoUrl} alt={`${place.place_name} photo ${index + 1}`} fill style={{ objectFit: 'contain' }} /></DialogContent>
                                         </Dialog>
                                       </CarouselItem>
                                     ))}
@@ -586,7 +586,6 @@ export default function Home() {
                                 </Carousel>
                               </div>
                             )}
-
                             <div className="flex gap-2 pt-2">
                               <a href={place.place_url} target="_blank" rel="noopener noreferrer" className="flex-1">
                                 <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold flex items-center justify-center">
@@ -609,7 +608,11 @@ export default function Home() {
                     )
                   })}
                 </div>
-              ) : ( <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm"><p>음식점을 검색해보세요!</p></Card> )}
+              ) : ( 
+                <Card className="w-full flex items-center justify-center h-full text-gray-500 border shadow-sm min-h-[200px]">
+                  <p>음식점을 검색해보세요!</p>
+                </Card> 
+              )}
             </div>
           </div>
         </div>
