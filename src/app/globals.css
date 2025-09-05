@@ -57,7 +57,7 @@
   --secondary-foreground: oklch(0.2 0.01 240);
   --muted: oklch(0.92 0.01 240);
   --muted-foreground: oklch(0.5 0.01 240);
-  --accent: oklch(0.92 0.01 240);
+  --accent: oklch(0.9 0.01 240); /* [수정] 호버 색상을 더 진하게 */
   --accent-foreground: oklch(0.2 0.01 240);
   --destructive: oklch(0.58 0.24 30);
   --border: oklch(0.88 0.01 240);
@@ -117,7 +117,11 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html, body {
+  html {
+    min-height: 100%; /* 화면 전체를 채우도록 보장 */
+    background-color: oklch(var(--background));
+  }
+  body {
     background-color: oklch(var(--background));
     color: oklch(var(--foreground));
   }
