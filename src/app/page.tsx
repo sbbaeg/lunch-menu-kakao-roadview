@@ -516,7 +516,6 @@ export default function Home() {
                           className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected ? 'bg-[--card-selected]' : 'bg-[--card] hover:bg-accent dark:hover:bg-[--card-hover]'}`}
                           onClick={() => handleListItemClick(place)}
                         >
-                          <div>
                             <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
                               <CardTitle className="text-md">
                                 {place.place_name}
@@ -536,7 +535,6 @@ export default function Home() {
                                 </div>
                               )}
                             </CardContent>
-                          </div>
 
                           {isSelected && (
                             <CardContent 
