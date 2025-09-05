@@ -513,8 +513,8 @@ export default function Home() {
                       return (
                         <Card 
                           key={place.id}
-                          className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected ? 'bg-[--card-selected]' : 'bg-[--card] hover:bg-accent dark:hover:bg-[--card-hover]'}`}
-                          onClick={() => handleListItemClick(place)}
+                          className={`w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected ? 'bg-red-500' : 'bg-blue-500'}`}
+  onClick={() => handleListItemClick(place)}
                         >
                             <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
                               <CardTitle className="text-md">
