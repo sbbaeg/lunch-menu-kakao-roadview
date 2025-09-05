@@ -1,5 +1,6 @@
 'use client';
 
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -390,6 +391,9 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-6xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
