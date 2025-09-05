@@ -28,7 +28,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import dynamic from 'next/dynamic';
-import Image from 'next/image'; // Image 컴포넌트 임포트
+import Image from 'next/image';
 import { HelpCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
@@ -513,24 +513,24 @@ export default function Home() {
                       return (
                         <Card 
                           key={place.id}
-                          className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-accent dark:hover:bg-gray-700 ${isSelected ? 'border-black dark:border-white border-2' : ''}`}
+                          className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-accent dark:hover:bg-[--card-hover] ${isSelected ? 'bg-[--card-selected]' : 'bg-[--card]'}`}
                           onClick={() => handleListItemClick(place)}
                         >
                           <div>
                             <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
-                              <CardTitle className="text-md dark:group-hover:text-white">
+                              <CardTitle className="text-md">
                                 {place.place_name}
                               </CardTitle>
-                              <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400 dark:group-hover:text-white">
+                              <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
                                 {place.distance}m
                               </span>
                             </CardHeader>
                             <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
-                              <span className="dark:group-hover:text-white">
+                              <span>
                                 {place.category_name.split('>').pop()?.trim()}
                               </span>
                               {details?.rating && (
-                                <div className="flex items-center gap-1 dark:group-hover:text-black">
+                                <div className="flex items-center gap-1">
                                   <span className="text-yellow-400">★</span>
                                   <span>{details.rating.toFixed(1)}</span>
                                 </div>
