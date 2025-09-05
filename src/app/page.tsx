@@ -513,7 +513,7 @@ export default function Home() {
                       return (
                         <Card 
                           key={place.id}
-                          className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-accent dark:hover:bg-[--card-hover] ${isSelected ? 'bg-[--card-selected]' : 'bg-[--card]'}`}
+                          className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected ? 'bg-[--card-selected]' : 'bg-[--card] hover:bg-accent dark:hover:bg-[--card-hover]'}`}
                           onClick={() => handleListItemClick(place)}
                         >
                           <div>
