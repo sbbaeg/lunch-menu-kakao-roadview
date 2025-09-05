@@ -428,7 +428,7 @@ export default function Home() {
                 <DialogTrigger asChild><Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>검색 필터 설정</DialogTitle></DialogHeader>
-                  <div className="py-4 space-y-4">
+                  <div className="py-4 space-y-4 dark:text-foreground">
                     <div>
                       <Label className="text-lg font-semibold">음식 종류</Label>
                       <div className="grid grid-cols-2 gap-4 pt-2">
@@ -444,7 +444,7 @@ export default function Home() {
                         <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
                       </div>
                     </div>
-                    <div className="border-t border-gray-200"></div>
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
                     <div>
                       <Label className="text-lg font-semibold">검색 반경</Label>
                       <RadioGroup value={tempSelectedDistance} onValueChange={setTempSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
@@ -452,13 +452,13 @@ export default function Home() {
                           <div key={dist.value} className="flex items-center space-x-2">
                             <RadioGroupItem value={dist.value} id={`temp-${dist.value}`} />
                             <Label htmlFor={`temp-${dist.value}`} className="cursor-pointer">
-                              <div className="flex flex-col"><span className="font-semibold">{dist.label}</span><span className="text-xs text-gray-500">{`(${dist.value}m ${dist.walkTime})`}</span></div>
+                              <div className="flex flex-col"><span className="font-semibold">{dist.label}</span><span className="text-xs text-gray-500 dark:text-gray-400">{`(${dist.value}m ${dist.walkTime})`}</span></div>
                             </Label>
                           </div>
                         ))}
                       </RadioGroup>
                     </div>
-                    <div className="border-t border-gray-200"></div>
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
                     <div>
                       <Label className="text-lg font-semibold">정렬 방식</Label>
                       <RadioGroup value={tempSortOrder} onValueChange={(value) => setTempSortOrder(value as 'accuracy' | 'distance' | 'rating')} className="flex flex-wrap gap-4 pt-2">
@@ -467,12 +467,12 @@ export default function Home() {
                         <div className="flex items-center space-x-2"><RadioGroupItem value="rating" id="temp-sort-rating" /><Label htmlFor="temp-sort-rating">별점 순</Label></div>
                       </RadioGroup>
                     </div>
-                    <div className="border-t border-gray-200"></div>
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
                     <div>
                       <Label htmlFor="temp-min-rating" className="text-lg font-semibold">최소 별점: {tempMinRating.toFixed(1)}점 이상</Label>
                       <Slider id="temp-min-rating" value={[tempMinRating]} onValueChange={(value) => setTempMinRating(value[0])} min={0} max={5} step={0.1} className="mt-2" />
                     </div>
-                    <div className="border-t border-gray-200"></div>
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
                     <div>
                       <Label htmlFor="temp-result-count" className="text-lg font-semibold">검색 개수: {tempResultCount}개</Label>
                       <Slider id="temp-result-count" value={[tempResultCount]} onValueChange={(value) => setTempResultCount(value[0])} min={5} max={15} step={1} className="mt-2" />
