@@ -1,6 +1,5 @@
 'use client';
 
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -31,6 +30,7 @@ import {
 import dynamic from 'next/dynamic';
 import Image from 'next/image'; // Image 컴포넌트 임포트
 import { HelpCircle } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle'; // [추가]
 
 const Wheel = dynamic(() => import('react-custom-roulette').then(mod => mod.Wheel), { ssr: false });
 
