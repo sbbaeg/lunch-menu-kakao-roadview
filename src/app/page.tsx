@@ -541,7 +541,13 @@ export default function Home() {
 
                           {isSelected && (
                            <CardContent 
-  className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-white dark:bg-[oklch(0.57_0.01_240)]" /* 다크모드: 펼쳐진 후 20% 더 밝게 */
+  className="transition-all duration-300 ease-in-out overflow-hidden px-4 pt-0 space-y-3 border-t bg-white dark:bg-[oklch(0.47_0.01_240)]"
+  style={{ 
+    maxHeight: isSelected ? '1000px' : '0',
+    paddingTop: isSelected ? '1rem' : '0', // 1rem은 기존 pb-4와 맞춤
+    paddingBottom: isSelected ? '1rem' : '0',
+    marginTop: isSelected ? '0' : '-1px', // 닫혔을 때 border-t가 겹치지 않게 함
+  }}
   onClick={(e) => e.stopPropagation()}
 >
                               <div className="flex items-center justify-between pt-2">
