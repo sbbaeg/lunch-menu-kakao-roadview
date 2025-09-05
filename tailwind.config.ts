@@ -1,7 +1,8 @@
+// tailwind.config.ts
+
 import type { Config } from "tailwindcss"
 
 const config = {
-  // [수정!] darkMode 값을 배열이 아닌 문자열로 변경합니다.
   darkMode: "class",
   content: [
     './pages/**/*.{ts,tsx}',
