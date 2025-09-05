@@ -513,7 +513,10 @@ export default function Home() {
                       return (
                         <Card 
                           key={place.id}
-                          className={`w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected ? 'bg-red-500' : 'bg-blue-500'}`}
+                          className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer ${isSelected 
+    ? 'bg-[oklch(0.96_0.005_240)] dark:bg-[oklch(0.27_0.01_240)]' 
+    : 'bg-white dark:bg-[oklch(0.22_0.01_240)] hover:bg-[oklch(0.94_0.005_240)] dark:hover:bg-[oklch(0.27_0.01_240)]'
+  }`}
   onClick={() => handleListItemClick(place)}
                         >
                             <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
@@ -538,8 +541,8 @@ export default function Home() {
 
                           {isSelected && (
                             <CardContent 
-                              className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-[--card]"
-                              onClick={(e) => e.stopPropagation()}
+                              className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-white dark:bg-[oklch(0.27_0.01_240)]"
+  onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex items-center justify-between pt-2">
                                 <p className="text-xs text-gray-500">{place.category_name}</p>
