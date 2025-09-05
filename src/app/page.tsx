@@ -425,64 +425,82 @@ export default function Home() {
               <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 검색</Button>
               <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 룰렛</Button>
               <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                <DialogTrigger asChild><Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button></DialogTrigger>
-                <DialogContent className="max-sm:max-h-[90vh]">
-                  <DialogHeader><DialogTitle>검색 필터 설정</DialogTitle></DialogHeader>
-                 <div className="py-4 space-y-4 dark:text-foreground max-sm:overflow-y-auto max-sm:pr-4">
-                    <div>
-                      <Label className="text-lg font-semibold">음식 종류</Label>
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        {CATEGORIES.map(category => (
-                          <div key={category} className="flex items-center space-x-2">
-                            <Checkbox id={`temp-${category}`} checked={tempSelectedCategories.includes(category)} onCheckedChange={() => handleTempCategoryChange(category)} />
-                            <Label htmlFor={`temp-${category}`}>{category}</Label>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
-                        <Checkbox id="temp-select-all" checked={tempSelectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleTempSelectAll(checked)} />
-                        <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
-                      </div>
-                    </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                    <div>
-                      <Label className="text-lg font-semibold">검색 반경</Label>
-                      <RadioGroup value={tempSelectedDistance} onValueChange={setTempSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
-                        {DISTANCES.map(dist => (
-                          <div key={dist.value} className="flex items-center space-x-2">
-                            <RadioGroupItem value={dist.value} id={`temp-${dist.value}`} />
-                            <Label htmlFor={`temp-${dist.value}`} className="cursor-pointer">
-                              <div className="flex flex-col"><span className="font-semibold">{dist.label}</span><span className="text-xs text-gray-500 dark:text-gray-400">{`(${dist.value}m ${dist.walkTime})`}</span></div>
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                    <div>
-                      <Label className="text-lg font-semibold">정렬 방식</Label>
-                      <RadioGroup value={tempSortOrder} onValueChange={(value) => setTempSortOrder(value as 'accuracy' | 'distance' | 'rating')} className="flex flex-wrap gap-4 pt-2">
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="accuracy" id="temp-sort-accuracy" /><Label htmlFor="temp-sort-accuracy">랜덤 추천</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="distance" id="temp-sort-distance" /><Label htmlFor="temp-sort-distance">가까운 순</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="rating" id="temp-sort-rating" /><Label htmlFor="temp-sort-rating">별점 순</Label></div>
-                      </RadioGroup>
-                    </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                    <div>
-                      <Label htmlFor="temp-min-rating" className="text-lg font-semibold">최소 별점: {tempMinRating.toFixed(1)}점 이상</Label>
-                      <Slider id="temp-min-rating" value={[tempMinRating]} onValueChange={(value) => setTempMinRating(value[0])} min={0} max={5} step={0.1} className="mt-2" />
-                    </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                    <div>
-                      <Label htmlFor="temp-result-count" className="text-lg font-semibold">검색 개수: {tempResultCount}개</Label>
-                      <Slider id="temp-result-count" value={[tempResultCount]} onValueChange={(value) => setTempResultCount(value[0])} min={5} max={15} step={1} className="mt-2" />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleApplyFilters}>완료</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+  <DialogTrigger asChild>
+    <Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button>
+  </DialogTrigger>
+  {/* [수정 1] flex 컨테이너로 만듭니다. */}
+  <DialogContent className="max-sm:max-h-[90vh] flex flex-col">
+    <DialogHeader>
+      <DialogTitle>검색 필터 설정</DialogTitle>
+    </DialogHeader>
+    {/* [수정 2] 남은 공간을 모두 차지하고 스크롤이 생기도록 합니다. */}
+    <div className="py-4 space-y-4 dark:text-foreground overflow-y-auto pr-4 flex-1">
+      <div>
+        <Label className="text-lg font-semibold">음식 종류</Label>
+        <div className="grid grid-cols-2 gap-4 pt-2">
+          {CATEGORIES.map(category => (
+            <div key={category} className="flex items-center space-x-2">
+              <Checkbox id={`temp-${category}`} checked={tempSelectedCategories.includes(category)} onCheckedChange={() => handleTempCategoryChange(category)} />
+              <Label htmlFor={`temp-${category}`}>{category}</Label>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
+          <Checkbox id="temp-select-all" checked={tempSelectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleTempSelectAll(checked)} />
+          <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
+        </div>
+      </div>
+      <div className="border-t border-gray-200 dark:border-gray-700"></div>
+      <div>
+        <Label className="text-lg font-semibold">검색 반경</Label>
+        <RadioGroup value={tempSelectedDistance} onValueChange={setTempSelectedDistance} className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+          {DISTANCES.map(dist => (
+            <div key={dist.value} className="flex items-center space-x-2">
+              <RadioGroupItem value={dist.value} id={`temp-${dist.value}`} />
+              <Label htmlFor={`temp-${dist.value}`} className="cursor-pointer">
+                <div className="flex flex-col">
+                  <span className="font-semibold">{dist.label}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{`(${dist.value}m ${dist.walkTime})`}</span>
+                </div>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+      <div className="border-t border-gray-200 dark:border-gray-700"></div>
+      <div>
+        <Label className="text-lg font-semibold">정렬 방식</Label>
+        <RadioGroup value={tempSortOrder} onValueChange={(value) => setTempSortOrder(value as 'accuracy' | 'distance' | 'rating')} className="flex flex-wrap gap-4 pt-2">
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="accuracy" id="temp-sort-accuracy" />
+            <Label htmlFor="temp-sort-accuracy">랜덤 추천</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="distance" id="temp-sort-distance" />
+            <Label htmlFor="temp-sort-distance">가까운 순</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="rating" id="temp-sort-rating" />
+            <Label htmlFor="temp-sort-rating">별점 순</Label>
+          </div>
+        </RadioGroup>
+      </div>
+      <div className="border-t border-gray-200 dark:border-gray-700"></div>
+      <div>
+        <Label htmlFor="temp-min-rating" className="text-lg font-semibold">최소 별점: {tempMinRating.toFixed(1)}점 이상</Label>
+        <Slider id="temp-min-rating" value={[tempMinRating]} onValueChange={(value) => setTempMinRating(value[0])} min={0} max={5} step={0.1} className="mt-2" />
+      </div>
+      <div className="border-t border-gray-200 dark:border-gray-700"></div>
+      <div>
+        <Label htmlFor="temp-result-count" className="text-lg font-semibold">검색 개수: {tempResultCount}개</Label>
+        <Slider id="temp-result-count" value={[tempResultCount]} onValueChange={(value) => setTempResultCount(value[0])} min={5} max={15} step={1} className="mt-2" />
+      </div>
+    </div>
+    <DialogFooter>
+      <Button onClick={handleApplyFilters}>완료</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
             </div>
             
             <div className="w-full max-w-sm space-y-2">
