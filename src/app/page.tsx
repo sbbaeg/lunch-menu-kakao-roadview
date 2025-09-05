@@ -390,11 +390,11 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-col items-center w-full min-h-screen p-4 md:p-8 bg-gray-50">
+    <main className="relative flex flex-col items-center justify-center w-full min-h-screen">
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
       </div>
-      <Card className="w-full max-w-6xl p-6 md:p-8">
+      <Card className="w-full max-w-6xl p-6 md:p-8 h-[85vh] max-h-[800px] flex flex-col">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
             <div ref={mapContainer} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? 'opacity-0 invisible' : 'opacity-100 visible'}`}></div>
@@ -503,9 +503,9 @@ export default function Home() {
 </Dialog>
             </div>
             
-            <div className="w-full max-w-sm space-y-2">
-              {restaurantList.length > 0 ? (
-                <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
+            <div className="w-full max-w-sm space-y-2 flex flex-col h-full">
+  {restaurantList.length > 0 ? (
+    <div className="space-y-2 h-full overflow-y-auto pr-2">
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
                  {restaurantList.map(place => {
   const isSelected = recommendation?.id === place.id;
