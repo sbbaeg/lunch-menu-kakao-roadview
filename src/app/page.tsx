@@ -489,37 +489,43 @@ export default function Home() {
               {restaurantList.length > 0 ? (
                 <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
                   <p className="text-sm font-semibold text-gray-600 pl-1">{getSortTitle(displayedSortOrder)}: {restaurantList.length}개</p>
-                  {restaurantList.map(place => {
-                    const isSelected = recommendation?.id === place.id;
-                    const details = place.googleDetails;
+                 {restaurantList.map(place => {
+  const isSelected = recommendation?.id === place.id;
+  const details = place.googleDetails;
 
-                    return (
-                      <Card 
-                        key={place.id}
-                        className={`w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-gray-100 ${isSelected ? 'border-blue-500 border-2' : ''}`}
-                        onClick={() => handleListItemClick(place)}
-                      >
-                        <div>
-                          <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
-                            <CardTitle className="text-md">{place.place_name}</CardTitle>
-                            <span className="text-xs text-gray-600 whitespace-nowrap">{place.distance}m</span>
-                          </CardHeader>
-                          <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600">
-                            <span>{place.category_name.split('>').pop()?.trim()}</span>
-                            {details?.rating && (
-                              <div className="flex items-center gap-1">
-                                <span className="text-yellow-400">★</span>
-                                <span>{details.rating.toFixed(1)}</span>
-                              </div>
-                            )}
-                          </CardContent>
-                        </div>
+  return (
+    <Card 
+      key={place.id}
+      className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer dark:hover:bg-gray-300 ${isSelected ? 'border-blue-500 border-2' : ''}`}
+      onClick={() => handleListItemClick(place)}
+    >
+      <div>
+        <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-md dark:group-hover:text-black">
+            {place.place_name}
+          </CardTitle>
+          <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400 dark:group-hover:text-black">
+            {place.distance}m
+          </span>
+        </CardHeader>
+        <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
+          <span className="dark:group-hover:text-black">
+            {place.category_name.split('>').pop()?.trim()}
+          </span>
+          {details?.rating && (
+            <div className="flex items-center gap-1 dark:group-hover:text-black">
+              <span className="text-yellow-400">★</span>
+              <span>{details.rating.toFixed(1)}</span>
+            </div>
+          )}
+        </CardContent>
+      </div>
 
-                        {isSelected && (
-                          <CardContent 
-                            className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-white"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+      {isSelected && (
+        <CardContent 
+          className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-white dark:bg-[--card]"
+          onClick={(e) => e.stopPropagation()}
+        >
                             <div className="flex items-center justify-between pt-2">
                               <p className="text-xs text-gray-500">{place.category_name}</p>
                               <p className="text-xs text-gray-500">Google Maps 제공</p>
