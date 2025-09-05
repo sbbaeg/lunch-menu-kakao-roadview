@@ -523,7 +523,7 @@ export default function Home() {
 
       {isSelected && (
         <CardContent 
-          className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-white dark:bg-[--card]"
+          className="px-4 pb-4 pt-0 text-sm space-y-3 border-t bg-[--card]"
           onClick={(e) => e.stopPropagation()}
         >
                             <div className="flex items-center justify-between pt-2">
