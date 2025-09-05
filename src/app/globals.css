@@ -78,7 +78,7 @@
   --sidebar-ring: oklch(0.7 0.01 240);
   
   /* [추가] 라이트 모드 변수 */
-  --card-selected: oklch(0.96 0.005 240);
+  --card-selected: oklch(0.7 0.01 240);
   --card-hover: oklch(0.94 0.005 240);
 }
 
@@ -116,7 +116,7 @@
   --sidebar-ring: oklch(0.56 0.01 240);
 
   /* [추가] 다크 모드 변수 */
-  --card-selected: oklch(0.20 0.01 240);
+  --card-selected: oklch(0.56 0.01 240);
   --card-hover: oklch(0.20 0.01 240);
 }
 
