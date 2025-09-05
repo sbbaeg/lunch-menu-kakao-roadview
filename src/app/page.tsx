@@ -426,9 +426,9 @@ export default function Home() {
               <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="flex-1">음식점 룰렛</Button>
               <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <DialogTrigger asChild><Button variant="outline" size="lg" onClick={openFilterDialog}>필터</Button></DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-sm:max-h-[90vh]">
                   <DialogHeader><DialogTitle>검색 필터 설정</DialogTitle></DialogHeader>
-                  <div className="py-4 space-y-4 dark:text-foreground">
+                 <div className="py-4 space-y-4 dark:text-foreground max-sm:overflow-y-auto max-sm:pr-4">
                     <div>
                       <Label className="text-lg font-semibold">음식 종류</Label>
                       <div className="grid grid-cols-2 gap-4 pt-2">
@@ -496,7 +496,7 @@ export default function Home() {
   return (
     <Card 
       key={place.id}
-      className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-accent dark:hover:bg-gray-700 ${isSelected ? 'border-blue-500 border-2' : ''}`}
+      className={`group w-full border shadow-sm transition-all duration-300 cursor-pointer hover:bg-accent dark:hover:bg-gray-700 ${isSelected ? 'border-black dark:border-white border-2' : ''}`}
       onClick={() => handleListItemClick(place)}
       >
       <div>
