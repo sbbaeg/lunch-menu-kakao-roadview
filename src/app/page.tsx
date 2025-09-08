@@ -396,7 +396,22 @@ export default function Home() {
             }
 
             // 즐겨찾기 목록을 결과로 사용 (API 호출 없음)
-            const results = favorites;
+            const results = favorites.filter(place => {
+            // 1. 카테고리 필터
+            const categoryMatch = selectedCategories.length === 0 || 
+                                  selectedCategories.some(cat => place.category_name.includes(cat));
+
+            // 2. 최소 별점 필터
+            const ratingMatch = (place.googleDetails?.rating || 0) >= minRating;
+
+            return categoryMatch && ratingMatch;
+        });
+
+        if (results.length === 0) {
+            alert("즐겨찾기 중에서 현재 필터 조건에 맞는 음식점이 없습니다.");
+            setLoading(false);
+            return;
+        }
 
             if (isRoulette) {
                 if (results.length < 2) {
