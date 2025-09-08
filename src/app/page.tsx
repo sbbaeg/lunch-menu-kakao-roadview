@@ -234,6 +234,8 @@ export default function Home() {
     const [searchInFavoritesOnly, setSearchInFavoritesOnly] = useState(false);
     const [tempSearchInFavoritesOnly, setTempSearchInFavoritesOnly] = useState(false);
 
+    const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
+
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapInstance = useRef<KakaoMap | null>(null);
     const polylineInstance = useRef<KakaoPolyline | null>(null);
@@ -950,7 +952,15 @@ export default function Home() {
                                         </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
-                            </div>
+                                        <Button
+                                            variant="outline"
+                                            size="lg"
+                                            className="flex-1"
+                                            onClick={() => setIsFavoritesListOpen(true)}
+                                        >
+                                            즐겨찾기 목록
+                                        </Button>
+                                </div>
 
                             <div className="w-full max-w-sm space-y-2">
                                 {restaurantList.length > 0 ? (
@@ -1317,6 +1327,39 @@ export default function Home() {
                         </div>
                     </div>
                 </Card>
+
+                                <Dialog open={isFavoritesListOpen} onOpenChange={setIsFavoritesListOpen}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl">즐겨찾기 목록</DialogTitle>
+                        </DialogHeader>
+                        <div className="max-h-[60vh] overflow-y-auto pr-4 mt-4">
+                            {favorites.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {favorites.map((place) => (
+                                        <li key={place.id} className="flex items-center justify-between p-2 rounded-md border">
+                                            <div>
+                                                <p className="font-semibold">{place.place_name}</p>
+                                                <p className="text-sm text-gray-500">{place.category_name.split('>').pop()?.trim()}</p>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => toggleFavorite(place)}
+                                            >
+                                                삭제
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>즐겨찾기에 등록된 음식점이 없습니다.</p>
+                                </div>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
                 <Dialog open={isRouletteOpen} onOpenChange={setIsRouletteOpen}>
                     <DialogContent className="max-w-md p-6">
