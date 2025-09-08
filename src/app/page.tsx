@@ -251,6 +251,7 @@ export default function Home() {
         setTempSortOrder(sortOrder);
         setTempResultCount(resultCount);
         setTempMinRating(minRating);
+        setTempSearchInFavoritesOnly(searchInFavoritesOnly);
         setIsFilterOpen(true);
     };
 
@@ -608,6 +609,7 @@ export default function Home() {
         setSortOrder(tempSortOrder);
         setResultCount(tempResultCount);
         setMinRating(tempMinRating);
+        setSearchInFavoritesOnly(tempSearchInFavoritesOnly);
         setIsFilterOpen(false);
     };
 
