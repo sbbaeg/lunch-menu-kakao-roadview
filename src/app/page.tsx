@@ -960,44 +960,76 @@ export default function Home() {
                                                                     )}
 
                                                                     {details?.rating && (
-                                                                        <Dialog>
-                                                                            <DialogTrigger asChild>
-                                                                                {/* StarRating을 DialogTrigger로 사용합니다. */}
-                                                                                <div className="inline-block" onClick={(e) => e.stopPropagation()}>
-                                                                                    <StarRating 
-                                                                                        rating={details.rating} 
-                                                                                        reviewCount={details.reviews?.length || 0} // 리뷰 개수 전달
-                                                                                        isTrigger={true} // 리뷰 트리거 모드로 설정
+                                                                        <Accordion type="single" collapsible className="w-full">
+                                                                            <AccordionItem value="reviews" className="border-none">
+                                                                                {/* StarRating 컴포넌트를 Trigger로 사용 */}
+                                                                                <AccordionTrigger className="hover:no-underline py-1">
+                                                                                    <StarRating
+                                                                                        rating={details.rating}
+                                                                                        reviewCount={
+                                                                                            details.reviews?.length || 0
+                                                                                        }
+                                                                                        isTrigger={true}
                                                                                     />
-                                                                                </div>
-                                                                            </DialogTrigger>
-                                                                            <DialogContent className="max-h-[80vh] flex flex-col">
-                                                                                <DialogHeader>
-                                                                                    <DialogTitle>{place.place_name} 리뷰</DialogTitle>
-                                                                                </DialogHeader>
-                                                                                <div className="overflow-y-auto pr-4">
-                                                                                    {details?.reviews && details.reviews.length > 0 ? (
-                                                                                         details.reviews.map((review, index) => (
-                                                                                            <div key={index} className="border-b py-4">
-                                                                                                <div className="flex items-center mb-2">
-                                                                                                    <Image src={review.profile_photo_url} alt={review.author_name} width={40} height={40} className="rounded-full mr-3" />
-                                                                                                    <div>
-                                                                                                        <p className="font-semibold">{review.author_name}</p>
-                                                                                                        <p className="text-xs text-gray-500">{review.relative_time_description}</p>
+                                                                                </AccordionTrigger>
+                                                                                {/* 리뷰 내용이 표시될 부분 */}
+                                                                                <AccordionContent>
+                                                                                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                                                                                        {details?.reviews &&
+                                                                                        details.reviews.length > 0 ? (
+                                                                                            details.reviews.map(
+                                                                                                (review, index) => (
+                                                                                                    <div
+                                                                                                        key={index}
+                                                                                                        className="border-b py-4"
+                                                                                                    >
+                                                                                                        <div className="flex items-center mb-2">
+                                                                                                            <Image
+                                                                                                                src={
+                                                                                                                    review.profile_photo_url
+                                                                                                                }
+                                                                                                                alt={
+                                                                                                                    review.author_name
+                                                                                                                }
+                                                                                                                width={40}
+                                                                                                                height={40}
+                                                                                                                className="rounded-full mr-3"
+                                                                                                            />
+                                                                                                            <div>
+                                                                                                                <p className="font-semibold">
+                                                                                                                    {
+                                                                                                                        review.author_name
+                                                                                                                    }
+                                                                                                                </p>
+                                                                                                                <p className="text-xs text-gray-500">
+                                                                                                                    {
+                                                                                                                        review.relative_time_description
+                                                                                                                    }
+                                                                                                                </p>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div>
+                                                                                                            <StarRating
+                                                                                                                rating={
+                                                                                                                    review.rating
+                                                                                                                }
+                                                                                                            />
+                                                                                                        </div>
+                                                                                                        <p className="mt-2 text-sm">
+                                                                                                            {review.text}
+                                                                                                        </p>
                                                                                                     </div>
-                                                                                                </div>
-                                                                                                <div>
-                                                                                                    <StarRating rating={review.rating} />
-                                                                                                </div>
-                                                                                                <p className="mt-2 text-sm">{review.text}</p>
-                                                                                            </div>
-                                                                                        ))
-                                                                                    ) : (
-                                                                                        <p className="py-4 text-center text-gray-500">표시할 리뷰가 없습니다.</p>
-                                                                                    )}
-                                                                                </div>
-                                                                            </DialogContent>
-                                                                        </Dialog>
+                                                                                                )
+                                                                                            )
+                                                                                        ) : (
+                                                                                            <p className="py-4 text-center text-gray-500">
+                                                                                                표시할 리뷰가 없습니다.
+                                                                                            </p>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </AccordionContent>
+                                                                            </AccordionItem>
+                                                                        </Accordion>
                                                                     )}
 
                                                                     {details?.opening_hours && (
