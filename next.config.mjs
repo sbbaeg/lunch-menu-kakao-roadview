@@ -1,13 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // (추가!) 외부 이미지 URL을 사용하기 위한 설정
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'maps.googleapis.com',
+        hostname: 'maps.googleapis.com', // 기존에 있던 설정
         port: '',
         pathname: '/maps/api/place/photo/**',
+      },
+      { //(리뷰어 프로필 사진용)
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '/a/**',
       },
     ],
   },
