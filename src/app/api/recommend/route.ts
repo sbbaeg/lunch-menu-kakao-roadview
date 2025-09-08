@@ -22,6 +22,14 @@ interface GoogleOpeningHours {
   weekday_text?: string[];
 }
 
+interface Review {
+  author_name: string;
+  profile_photo_url: string;
+  rating: number;
+  relative_time_description: string;
+  text: string;
+}
+
 // 프론트엔드와 공유될 최종 Google 상세 정보 타입
 interface GoogleDetails {
   url?: string;
@@ -29,6 +37,9 @@ interface GoogleDetails {
   rating?: number;
   opening_hours?: GoogleOpeningHours;
   phone?: string;
+  reviews?: Review[]; // [추가]
+  dine_in?: boolean; // [추가]
+  takeout?: boolean; // [추가]
 }
 
 // 구글 상세 정보를 포함한 최종 응답 타입
@@ -43,6 +54,9 @@ interface GooglePlaceDetailsResult {
   photos?: { photo_reference: string }[];
   opening_hours?: GoogleOpeningHours;
   formatted_phone_number?: string;
+  reviews?: Review[]; // [추가]
+  dine_in?: boolean; // [추가]
+  takeout?: boolean; // [추가]
 }
 
 // --- 로직 시작 ---
@@ -66,7 +80,7 @@ async function fetchFullGoogleDetails(place: KakaoPlace): Promise<EnrichedPlace>
     if (!placeId) return place; // 구글에서 장소를 못 찾으면 카카오 정보만 반환
 
     // 2. Place ID로 '모든' 상세 정보 요청
-    const fields = 'url,photos,rating,opening_hours,formatted_phone_number';
+    const fields = 'url,photos,rating,opening_hours,formatted_phone_number,reviews,dine_in,takeout';
     const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}&language=ko`;
     const detailsResponse = await fetch(detailsUrl);
     const detailsData: { result?: GooglePlaceDetailsResult } = await detailsResponse.json();
@@ -86,6 +100,9 @@ async function fetchFullGoogleDetails(place: KakaoPlace): Promise<EnrichedPlace>
         photos,
         opening_hours: result.opening_hours,
         phone: result.formatted_phone_number,
+        reviews: result.reviews,         // [추가]
+        dine_in: result.dine_in,         // [추가]
+        takeout: result.takeout,         // [추가]
       }
     };
   } catch (error) {
