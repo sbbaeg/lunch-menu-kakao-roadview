@@ -869,13 +869,9 @@ export default function Home() {
                                                 const details =
                                                     place.googleDetails;
                                                 return (
-                                                    <AccordionItem
-                                                        value={place.id}
-                                                        key={place.id}
-                                                        className="border-b-0"
-                                                    >
-                                                        <Card className="mb-2 shadow-sm">
-                                                            <AccordionTrigger className="text-left hover:no-underline p-0">
+                                                    <AccordionItem value={place.id} key={place.id} className="border-b group">
+                                                        <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
+                                                            <AccordionTrigger className="text-left hover:no-underline p-0 [&_svg]:hidden">
                                                                 <div className="w-full">
                                                                     <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
                                                                         <CardTitle className="text-md">
