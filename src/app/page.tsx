@@ -707,17 +707,17 @@ export default function Home() {
                                     onClick={() => recommendProcess(false)}
                                     disabled={loading || !isMapReady}
                                     size="lg"
-                                    className="flex-1"
+                                    className="px-6"
                                 >
-                                    음식점 검색
+                                    검색
                                 </Button>
                                 <Button
                                     onClick={() => recommendProcess(true)}
                                     disabled={loading || !isMapReady}
                                     size="lg"
-                                    className="flex-1"
+                                    className="px-6"
                                 >
-                                    음식점 룰렛
+                                    룰렛
                                 </Button>
                                 <Dialog
                                     open={isFilterOpen}
@@ -955,10 +955,10 @@ export default function Home() {
                                         <Button
                                             variant="outline"
                                             size="lg"
-                                            className="flex-1"
+                                            className="px-6"
                                             onClick={() => setIsFavoritesListOpen(true)}
                                         >
-                                            즐겨찾기 목록
+                                            즐겨찾기
                                         </Button>
                                 </div>
 
