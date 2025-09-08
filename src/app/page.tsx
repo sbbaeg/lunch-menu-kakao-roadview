@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/carousel";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { HelpCircle, ChevronDown } from "lucide-react";
+import { HelpCircle, ChevronDown, Heart } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
     Accordion,
@@ -213,6 +214,7 @@ export default function Home() {
     >("accuracy");
     const [resultCount, setResultCount] = useState<number>(5);
     const [minRating, setMinRating] = useState<number>(4.0);
+    const [favorites, setFavorites] = useState<KakaoPlaceItem[]>([]);
 
     const [displayedSortOrder, setDisplayedSortOrder] = useState<
         "accuracy" | "distance" | "rating"
@@ -229,6 +231,8 @@ export default function Home() {
     >("accuracy");
     const [tempResultCount, setTempResultCount] = useState<number>(5);
     const [tempMinRating, setTempMinRating] = useState<number>(4.0);
+    const [searchInFavoritesOnly, setSearchInFavoritesOnly] = useState(false);
+    const [tempSearchInFavoritesOnly, setTempSearchInFavoritesOnly] = useState(false);
 
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapInstance = useRef<KakaoMap | null>(null);
@@ -249,6 +253,14 @@ export default function Home() {
         setTempMinRating(minRating);
         setIsFilterOpen(true);
     };
+
+    // 즐겨찾기 목록이 변경될 때마다 로컬 저장소에 저장     
+    useEffect(() => {
+        // 처음 로드될 때 빈 배열로 덮어쓰는 것을 방지
+        if (favorites.length > 0 || localStorage.getItem('favoriteRestaurants')) {
+            localStorage.setItem('favoriteRestaurants', JSON.stringify(favorites));
+        }
+    }, [favorites]);
 
     useEffect(() => {
         if (selectedItemId && userLocation) {
@@ -376,66 +388,93 @@ export default function Home() {
         setLoading(true);
         setDisplayedSortOrder(sortOrder);
         clearMapAndResults();
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                const currentLocation = new window.kakao.maps.LatLng(
-                    latitude,
-                    longitude
-                );
-                setUserLocation(currentLocation);
-                if (mapInstance.current)
-                    mapInstance.current.setCenter(currentLocation);
-                try {
-                    const restaurants = await getNearbyRestaurants(
+        if (searchInFavoritesOnly) {
+            if (favorites.length === 0) {
+                alert("즐겨찾기에 등록된 음식점이 없습니다.");
+                setLoading(false);
+                return;
+            }
+
+            // 즐겨찾기 목록을 결과로 사용 (API 호출 없음)
+            const results = favorites;
+
+            if (isRoulette) {
+                if (results.length < 2) {
+                    alert(`룰렛을 돌리기에 즐겨찾기 수가 부족합니다. (2개 이상 필요)`);
+                    setLoading(false);
+                    return;
+                }
+                setRouletteItems(results);
+                setIsRouletteOpen(true);
+            } else {
+                setRestaurantList(results);
+                displayMarkers(results);
+            }
+            setLoading(false);
+
+        } else {
+            // '즐겨찾기만 검색' 옵션이 꺼져 있을 때의 기존 로직 (수정 전 코드와 동일)
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    const currentLocation = new window.kakao.maps.LatLng(
                         latitude,
                         longitude
                     );
-                    if (restaurants.length === 0) {
-                        alert("주변에 조건에 맞는 음식점을 찾지 못했어요!");
-                        setLoading(false);
-                        return;
-                    }
-                    if (isRoulette) {
-                        const rouletteCandidates = restaurants.slice(
-                            0,
-                            resultCount
+                    setUserLocation(currentLocation);
+                    if (mapInstance.current)
+                        mapInstance.current.setCenter(currentLocation);
+                    try {
+                        const restaurants = await getNearbyRestaurants(
+                            latitude,
+                            longitude
                         );
-                        if (rouletteCandidates.length < 2) {
-                            alert(
-                                `주변에 추첨할 음식점이 ${resultCount}개 미만입니다.`
-                            );
+                        if (restaurants.length === 0) {
+                            alert("주변에 조건에 맞는 음식점을 찾지 못했어요!");
                             setLoading(false);
                             return;
                         }
-                        setRouletteItems(rouletteCandidates);
-                        setIsRouletteOpen(true);
-                        setMustSpin(false);
-                    } else {
-                        const finalRestaurants =
-                            sortOrder === "distance" || sortOrder === "rating"
-                                ? restaurants
-                                : [...restaurants]
-                                      .sort(() => 0.5 - Math.random())
-                                      .slice(0, resultCount);
-                        setRestaurantList(finalRestaurants);
-                        if (finalRestaurants.length > 0) {
-                            displayMarkers(finalRestaurants);
+                        if (isRoulette) {
+                            const rouletteCandidates = restaurants.slice(
+                                0,
+                                resultCount
+                            );
+                            if (rouletteCandidates.length < 2) {
+                                alert(
+                                    `주변에 추첨할 음식점이 ${resultCount}개 미만입니다.`
+                                );
+                                setLoading(false);
+                                return;
+                            }
+                            setRouletteItems(rouletteCandidates);
+                            setIsRouletteOpen(true);
+                            setMustSpin(false);
+                        } else {
+                            const finalRestaurants =
+                                sortOrder === "distance" || sortOrder === "rating"
+                                    ? restaurants
+                                    : [...restaurants]
+                                        .sort(() => 0.5 - Math.random())
+                                        .slice(0, resultCount);
+                            setRestaurantList(finalRestaurants);
+                            if (finalRestaurants.length > 0) {
+                                displayMarkers(finalRestaurants);
+                            }
                         }
+                    } catch (error) {
+                        console.error("Error:", error);
+                        alert("음식점을 불러오는 데 실패했습니다.");
+                    } finally {
+                        setLoading(false);
                     }
-                } catch (error) {
-                    console.error("Error:", error);
-                    alert("음식점을 불러오는 데 실패했습니다.");
-                } finally {
+                },
+                (error) => {
+                    console.error("Geolocation error:", error);
+                    alert("위치 정보를 가져오는 데 실패했습니다.");
                     setLoading(false);
                 }
-            },
-            (error) => {
-                console.error("Geolocation error:", error);
-                alert("위치 정보를 가져오는 데 실패했습니다.");
-                setLoading(false);
-            }
-        );
+            );
+        }
     };
 
     const handleSpinClick = () => {
@@ -557,6 +596,18 @@ export default function Home() {
         setIsFilterOpen(false);
     };
 
+    const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
+
+    const toggleFavorite = (place: KakaoPlaceItem) => {
+        setFavorites((prev) => {
+            if (isFavorite(place.id)) {
+                return prev.filter((fav) => fav.id !== place.id);
+            } else {
+                return [...prev, place];
+            }
+        });
+    };
+
     return (
         <main className="w-full min-h-screen">
             <Card className="w-full min-h-screen rounded-none border-none flex flex-col items-center p-4 md:p-8">
@@ -669,6 +720,22 @@ export default function Home() {
                                             </DialogTitle>
                                         </DialogHeader>
                                         <div className="py-4 space-y-4 dark:text-foreground overflow-y-auto pr-4 flex-1">
+                                            <div>
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="temp-favorites-only"
+                                                        checked={tempSearchInFavoritesOnly}
+                                                        onCheckedChange={(checked) => setTempSearchInFavoritesOnly(Boolean(checked))}
+                                                    />
+                                                    <Label
+                                                        htmlFor="temp-favorites-only"
+                                                        className="font-semibold text-lg cursor-pointer"
+                                                    >
+                                                        즐겨찾기에서만 검색
+                                                    </Label>
+                                                </div>
+                                            </div>
+                                            <div className="border-t border-gray-200 dark:border-gray-700"></div>
                                             <div>
                                                 <Label className="text-lg font-semibold">
                                                     음식 종류
@@ -942,11 +1009,14 @@ export default function Home() {
                                                                                 place.category_name
                                                                             }
                                                                         </p>
-                                                                        <p className="text-xs text-gray-500">
-                                                                            Google
-                                                                            Maps
-                                                                            제공
-                                                                        </p>
+                                                                       <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8"
+                                                                            onClick={() => toggleFavorite(place)}
+                                                                        >
+                                                                            <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                                                        </Button>
                                                                     </div>
 
                                                                     {!details && (
