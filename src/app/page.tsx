@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/carousel";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, ChevronDown } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
     Accordion,
@@ -94,13 +94,26 @@ interface GoogleOpeningHours {
     open_now: boolean;
     weekday_text?: string[];
 }
+
+interface Review {
+  author_name: string;
+  profile_photo_url: string;
+  rating: number;
+  relative_time_description: string;
+  text: string;
+}
+
 interface GoogleDetails {
     url?: string;
     photos: string[];
     rating?: number;
     opening_hours?: GoogleOpeningHours;
     phone?: string;
+    reviews?: Review[]; // [추가]
+    dine_in?: boolean; // [추가]
+    takeout?: boolean; // [추가]
 }
+
 interface KakaoPlaceItem {
     id: string;
     place_name: string;
@@ -145,24 +158,28 @@ const DISTANCES = [
     { value: "2000", label: "조금 멀어요", walkTime: "약 25분" },
 ];
 
-const StarRating = ({ rating }: { rating: number }) => {
+
+const StarRating = ({ rating, reviewCount, isTrigger = false }: { rating: number, reviewCount?: number, isTrigger?: boolean }) => {
     const fullStars = Math.floor(rating);
     const halfStar = rating % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
     return (
-        <div className="flex items-center">
+        <div className={`flex items-center ${isTrigger ? 'cursor-pointer' : ''}`}>
             {[...Array(fullStars)].map((_, i) => (
-                <span key={`full-${i}`} className="text-yellow-400 text-lg">
-                    ★
-                </span>
+                <span key={`full-${i}`} className="text-yellow-400 text-lg">★</span>
             ))}
             {halfStar && <span className="text-yellow-400 text-lg">☆</span>}
             {[...Array(emptyStars)].map((_, i) => (
-                <span key={`empty-${i}`} className="text-gray-300 text-lg">
-                    ☆
-                </span>
+                <span key={`empty-${i}`} className="text-gray-300 text-lg">☆</span>
             ))}
             <span className="ml-2 text-sm font-bold">{rating.toFixed(1)}</span>
+
+            {isTrigger && reviewCount !== undefined && (
+                <div className="ml-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                    <span>리뷰 ({reviewCount}개)</span>
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                </div>
+            )}
         </div>
     );
 };
@@ -943,13 +960,44 @@ export default function Home() {
                                                                     )}
 
                                                                     {details?.rating && (
-                                                                        <div className="flex items-center gap-1">
-                                                                            <StarRating
-                                                                                rating={
-                                                                                    details.rating
-                                                                                }
-                                                                            />
-                                                                        </div>
+                                                                        <Dialog>
+                                                                            <DialogTrigger asChild>
+                                                                                {/* StarRating을 DialogTrigger로 사용합니다. */}
+                                                                                <div className="inline-block" onClick={(e) => e.stopPropagation()}>
+                                                                                    <StarRating 
+                                                                                        rating={details.rating} 
+                                                                                        reviewCount={details.reviews?.length || 0} // 리뷰 개수 전달
+                                                                                        isTrigger={true} // 리뷰 트리거 모드로 설정
+                                                                                    />
+                                                                                </div>
+                                                                            </DialogTrigger>
+                                                                            <DialogContent className="max-h-[80vh] flex flex-col">
+                                                                                <DialogHeader>
+                                                                                    <DialogTitle>{place.place_name} 리뷰</DialogTitle>
+                                                                                </DialogHeader>
+                                                                                <div className="overflow-y-auto pr-4">
+                                                                                    {details?.reviews && details.reviews.length > 0 ? (
+                                                                                         details.reviews.map((review, index) => (
+                                                                                            <div key={index} className="border-b py-4">
+                                                                                                <div className="flex items-center mb-2">
+                                                                                                    <Image src={review.profile_photo_url} alt={review.author_name} width={40} height={40} className="rounded-full mr-3" />
+                                                                                                    <div>
+                                                                                                        <p className="font-semibold">{review.author_name}</p>
+                                                                                                        <p className="text-xs text-gray-500">{review.relative_time_description}</p>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <StarRating rating={review.rating} />
+                                                                                                </div>
+                                                                                                <p className="mt-2 text-sm">{review.text}</p>
+                                                                                            </div>
+                                                                                        ))
+                                                                                    ) : (
+                                                                                        <p className="py-4 text-center text-gray-500">표시할 리뷰가 없습니다.</p>
+                                                                                    )}
+                                                                                </div>
+                                                                            </DialogContent>
+                                                                        </Dialog>
                                                                     )}
 
                                                                     {details?.opening_hours && (
