@@ -42,7 +42,7 @@ const Wheel = dynamic(
 
 
 
-
+// eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace kakao.maps {
     class LatLng {
         constructor(lat: number, lng: number);
@@ -86,12 +86,12 @@ declare namespace kakao.maps {
             callback: (panoId: number | null) => void
         ): void;
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace event {
-        function addListener(target: any, type: string, handler: () => void): void;
-        function removeListener(target: any, type: string, handler: () => void): void;
+        function addListener(target: kakao.maps.Map | kakao.maps.Marker, type: string, handler: () => void): void;
+        function removeListener(target: kakao.maps.Map | kakao.maps.Marker, type: string, handler: () => void): void;
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace services {
         interface PlacesSearchResultItem {
             y: string;
