@@ -388,7 +388,28 @@ export default function Home() {
 
     useEffect(() => {
         if (sortOrder === "accuracy") setResultCount(5);
-    }, [sortOrder]);
+        }, [sortOrder]);
+
+        useEffect(() => {
+        if (!isMapReady || !mapInstance.current) return;
+
+        const showButton = () => {
+            // GPS 기반 첫 검색 시에는 버튼이 나타나지 않도록 함
+            if (userLocation) {
+                setShowSearchAreaButton(true);
+            }
+        };
+
+        // 'idle' 이벤트는 지도의 드래그, 줌 등 모든 움직임이 끝났을 때 발생
+        window.kakao.maps.event.addListener(mapInstance.current, 'idle', showButton);
+
+        // 컴포넌트가 언마운트될 때 이벤트 리스너를 제거
+        return () => {
+            if (mapInstance.current) {
+                window.kakao.maps.event.removeListener(mapInstance.current, 'idle', showButton);
+            }
+        };
+    }, [isMapReady, userLocation]); // userLocation이 설정된 후에 리스너가 동작하도록 의존성 추가
 
     const getNearbyRestaurants = async (
         latitude: number,
@@ -709,6 +730,40 @@ export default function Home() {
         });
     };
 
+    const handleSearchInArea = async () => {
+    if (!mapInstance.current) return;
+
+    setShowSearchAreaButton(false); // 버튼을 누르면 다시 숨김
+    setLoading(true);
+    clearMapAndResults();
+
+    const center = mapInstance.current.getCenter();
+    const lat = center.getLat();
+    const lng = center.getLng();
+
+    try {
+        const restaurants = await getNearbyRestaurants(lat, lng);
+        if (restaurants.length === 0) {
+            alert("주변에 조건에 맞는 음식점을 찾지 못했어요!");
+        } else {
+            // 'accuracy'(랜덤) 정렬일 경우 결과를 섞어줌
+            const finalRestaurants =
+                sortOrder === "distance" || sortOrder === "rating"
+                    ? restaurants
+                    : [...restaurants]
+                            .sort(() => 0.5 - Math.random())
+                            .slice(0, resultCount);
+            setRestaurantList(finalRestaurants);
+            displayMarkers(finalRestaurants);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("음식점을 불러오는 데 실패했습니다.");
+    } finally {
+        setLoading(false);
+    }
+};
+
     return (
         <main className="w-full min-h-screen">
             <Card className="w-full min-h-screen rounded-none border-none flex flex-col items-center p-4 md:p-8">
@@ -737,6 +792,7 @@ export default function Home() {
                             <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 shadow-md">
                                 <Button
                                     size="lg"
+                                    onClick={handleSearchInArea} // onClick 이벤트 핸들러 추가
                                 >
                                     이 지역에서 재검색
                                 </Button>
