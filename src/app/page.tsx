@@ -13,6 +13,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
@@ -39,54 +40,106 @@ const Wheel = dynamic(
     { ssr: false }
 );
 
-// --- 타입 정의 ---
-type KakaoMap = {
-    setCenter: (latlng: KakaoLatLng) => void;
-    relayout: () => void;
-};
-type KakaoRoadview = {
-    setPanoId: (panoId: number, position: KakaoLatLng) => void;
-    relayout: () => void;
-};
-type KakaoRoadviewClient = {
-    getNearestPanoId: (
-        position: KakaoLatLng,
-        radius: number,
-        callback: (panoId: number | null) => void
-    ) => void;
-};
-type KakaoMarker = {
-    setMap: (map: KakaoMap | null) => void;
-    setRoadview: (roadview: KakaoRoadview | null) => void;
-};
-type KakaoPolyline = {
-    setMap: (map: KakaoMap | null) => void;
-};
-type KakaoLatLng = {
-    getLat: () => number;
-    getLng: () => number;
-};
+
+
+
+declare namespace kakao.maps {
+    class LatLng {
+        constructor(lat: number, lng: number);
+        getLat(): number;
+        getLng(): number;
+    }
+
+    class Map {
+        constructor(container: HTMLElement, options: { center: LatLng; level: number });
+        setCenter(latlng: LatLng): void;
+        relayout(): void;
+        getCenter(): LatLng;
+    }
+
+    class Marker {
+        constructor(options: { position: LatLng });
+        setMap(map: Map | null): void;
+    }
+
+    class Polyline {
+        constructor(options: {
+            path: LatLng[];
+            strokeColor: string;
+            strokeWeight: number;
+            strokeOpacity: number;
+        });
+        setMap(map: Map | null): void;
+    }
+    
+    class Roadview {
+        constructor(container: HTMLElement);
+        setPanoId(panoId: number, position: LatLng): void;
+        relayout(): void;
+    }
+
+    class RoadviewClient {
+        constructor();
+        getNearestPanoId(
+            position: LatLng,
+            radius: number,
+            callback: (panoId: number | null) => void
+        ): void;
+    }
+
+    namespace event {
+        function addListener(target: any, type: string, handler: () => void): void;
+        function removeListener(target: any, type: string, handler: () => void): void;
+    }
+
+    namespace services {
+        interface PlacesSearchResultItem {
+            y: string;
+            x: string;
+            place_name: string;
+            road_address_name: string;
+        }
+
+        type PlacesSearchResult = PlacesSearchResultItem[];
+
+        interface Pagination {
+            totalCount: number;
+            hasNextPage: boolean;
+            hasPrevPage: boolean;
+            current: number;
+            nextPage(): void;
+            prevPage(): void;
+            gotoPage(page: number): void;
+        }
+
+        class Places {
+            constructor();
+            keywordSearch(
+                keyword: string,
+                callback: (
+                    data: PlacesSearchResult,
+                    status: Status,
+                    pagination: Pagination
+                ) => void
+            ): void;
+        }
+
+        enum Status {
+            OK = 'OK',
+            ZERO_RESULT = 'ZERO_RESULT',
+            ERROR = 'ERROR',
+        }
+    }
+}
 
 declare global {
     interface Window {
         kakao: {
             maps: {
                 load: (callback: () => void) => void;
-                Map: new (
-                    container: HTMLElement,
-                    options: { center: KakaoLatLng; level: number }
-                ) => KakaoMap;
-                LatLng: new (lat: number, lng: number) => KakaoLatLng;
-                Marker: new (options: { position: KakaoLatLng }) => KakaoMarker;
-                Polyline: new (options: {
-                    path: KakaoLatLng[];
-                    strokeColor: string;
-                    strokeWeight: number;
-                    strokeOpacity: number;
-                }) => KakaoPolyline;
-                Roadview: new (container: HTMLElement) => KakaoRoadview;
-                RoadviewClient: new () => KakaoRoadviewClient;
-            };
+                services: typeof kakao.maps.services;
+                event: typeof kakao.maps.event;
+            } & typeof kakao.maps;
         };
     }
 }
@@ -206,7 +259,7 @@ export default function Home() {
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [mustSpin, setMustSpin] = useState(false);
     const [prizeNumber, setPrizeNumber] = useState(0);
-    const [userLocation, setUserLocation] = useState<KakaoLatLng | null>(null);
+    const [userLocation, setUserLocation] = useState<kakao.maps.LatLng | null>(null);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedDistance, setSelectedDistance] = useState<string>("800");
     const [sortOrder, setSortOrder] = useState<
@@ -236,17 +289,19 @@ export default function Home() {
 
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
 
+    const [searchAddress, setSearchAddress] = useState("");
+    const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
+
     const mapContainer = useRef<HTMLDivElement | null>(null);
-    const mapInstance = useRef<KakaoMap | null>(null);
-    const polylineInstance = useRef<KakaoPolyline | null>(null);
+    const mapInstance = useRef<kakao.maps.Map | null>(null); // 변경
+    const polylineInstance = useRef<kakao.maps.Polyline | null>(null); // 변경
     const [loading, setLoading] = useState(false);
     const [isMapReady, setIsMapReady] = useState(false);
     const [isRoadviewVisible, setRoadviewVisible] = useState(false);
     const roadviewContainer = useRef<HTMLDivElement | null>(null);
-    const roadviewInstance = useRef<KakaoRoadview | null>(null);
-    const roadviewClient = useRef<KakaoRoadviewClient | null>(null);
-    const markers = useRef<KakaoMarker[]>([]);
-
+    const roadviewInstance = useRef<kakao.maps.Roadview | null>(null); // 변경
+    const roadviewClient = useRef<kakao.maps.RoadviewClient | null>(null); // 변경
+    const markers = useRef<kakao.maps.Marker[]>([]); // 변경
     const openFilterDialog = () => {
         setTempSelectedCategories(selectedCategories);
         setTempSelectedDistance(selectedDistance);
@@ -286,7 +341,7 @@ export default function Home() {
         }
         const script = document.createElement("script");
         script.id = scriptId;
-        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services`;
         script.async = true;
         document.head.appendChild(script);
         script.onload = () => {
@@ -515,7 +570,7 @@ export default function Home() {
 
     const updateViews = async (
         place: KakaoPlaceItem,
-        currentLoc: KakaoLatLng
+        currentLoc: kakao.maps.LatLng
     ) => {
         const placePosition = new window.kakao.maps.LatLng(
             Number(place.y),
@@ -626,6 +681,33 @@ export default function Home() {
             }
         });
     };
+    
+    const handleAddressSearch = () => {
+        if (!searchAddress.trim()) {
+            alert("검색어를 입력해주세요.");
+            return;
+        }
+
+        if (!window.kakao || !window.kakao.maps.services) {
+            alert("지도 서비스가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.");
+            return;
+        }
+
+        const ps = new window.kakao.maps.services.Places();
+        
+        ps.keywordSearch(searchAddress, (data, status) => {
+            if (status === window.kakao.maps.services.Status.OK) {
+                const firstResult = data[0];
+                const moveLatLon = new window.kakao.maps.LatLng(Number(firstResult.y), Number(firstResult.x));
+                
+                mapInstance.current?.setCenter(moveLatLon);
+            } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
+                alert("검색 결과가 존재하지 않습니다.");
+            } else {
+                alert("검색 중 오류가 발생했습니다.");
+            }
+        });
+    };
 
     return (
         <main className="w-full min-h-screen">
@@ -635,6 +717,31 @@ export default function Home() {
                 </div>
                 <Card className="w-full max-w-6xl p-6 md:p-8">
                     <div className="flex flex-col md:flex-row gap-6">
+                        <div className="absolute top-4 left-4 right-4 z-10 flex gap-2 shadow-md">
+                            <Input
+                                type="text"
+                                placeholder="주소나 장소 이름으로 검색"
+                                value={searchAddress}
+                                onChange={(e) => setSearchAddress(e.target.value)}
+                                className="bg-background/90 text-lg h-12"
+                            />
+                            <Button
+                                size="lg"
+                                className="h-12"
+                                onClick={handleAddressSearch}
+                            >
+                                이동
+                            </Button>
+                        </div>
+                        {showSearchAreaButton && (
+                            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 shadow-md">
+                                <Button
+                                    size="lg"
+                                >
+                                    이 지역에서 재검색
+                                </Button>
+                            </div>
+                        )}
                         <div className="relative w-full h-80 md:h-auto md:min-h-[600px] md:flex-grow rounded-lg overflow-hidden border shadow-sm">
                             <div
                                 ref={mapContainer}
