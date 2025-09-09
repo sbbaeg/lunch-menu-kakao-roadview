@@ -1180,7 +1180,12 @@ export default function Home() {
                                                                 toggleFavorite(place);
                                                             }}
                                                         >
-                                                            <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500 h-4 w-4" : "text-gray-400 h-4 w-4"} />
+                                                            <Heart 
+                                                                className={`h-4 w-4 ${isFavorite(place.id) 
+                                                                    ? 'text-red-500 fill-red-500' // 채워진 빨간 하트
+                                                                    : 'text-gray-500 fill-none'   // 비어있는 회색 테두리 하트
+                                                                }`}
+                                                            />
                                                         </Button>
                                                         <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
                                                             {
