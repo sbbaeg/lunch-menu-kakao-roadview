@@ -804,6 +804,7 @@ export default function Home() {
                     <Button
                         size="lg"
                         onClick={handleSearchInArea}
+                        className="bg-white text-black rounded-full hover:bg-gray-200 shadow-lg"
                     >
                         이 지역에서 재검색
                     </Button>
