@@ -1171,13 +1171,12 @@ export default function Home() {
                                                         }
                                                     </CardTitle>
                                                     <div className="flex flex-col items-end gap-1">
-                                                        <Button
-                                                            size="icon"
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation(); // 아코디언이 열리거나 닫히는 것을 방지
                                                                 toggleFavorite(place);
                                                             }}
-                                                            className="rounded-full h-8 w-8 hover:bg-accent"
+                                                            className="rounded-full h-8 w-8 hover:bg-accent flex items-center justify-center"
                                                         >
                                                             <Heart 
                                                                 className={`h-4 w-4 ${isFavorite(place.id) 
@@ -1185,7 +1184,7 @@ export default function Home() {
                                                                     : 'text-gray-500 fill-none'   // 비어있는 회색 테두리 하트
                                                                 }`}
                                                             />
-                                                        </Button>
+                                                        </button>
                                                         <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
                                                             {
                                                                 place.distance
