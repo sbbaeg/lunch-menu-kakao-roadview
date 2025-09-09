@@ -1178,12 +1178,7 @@ export default function Home() {
                                                             }}
                                                             className="rounded-full h-8 w-8 hover:bg-accent flex items-center justify-center"
                                                         >
-                                                            <Heart 
-                                                                className={`h-4 w-4 ${isFavorite(place.id) 
-                                                                    ? 'text-red-500 fill-red-500' // 채워진 빨간 하트
-                                                                    : 'text-gray-500 fill-none'   // 비어있는 회색 테두리 하트
-                                                                }`}
-                                                            />
+                                                            <Heart className="h-5 w-5 stroke-red-500" />
                                                         </button>
                                                         <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
                                                             {
