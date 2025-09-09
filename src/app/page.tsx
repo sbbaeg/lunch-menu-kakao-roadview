@@ -702,7 +702,7 @@ export default function Home() {
                         </div>
 
                         <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
-                            <div className="w-full max-w-sm flex gap-2">
+                            <div className="w-full max-w-sm flex gap-2 justify-center">
                                 <Button
                                     onClick={() => recommendProcess(false)}
                                     disabled={loading || !isMapReady}
