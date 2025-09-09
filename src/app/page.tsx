@@ -955,7 +955,7 @@ export default function Home() {
                                         <Button
                                             variant="outline"
                                             size="lg"
-                                            className="px-6"
+                                            className="px-4"
                                             onClick={() => setIsFavoritesListOpen(true)}
                                         >
                                             즐겨찾기
