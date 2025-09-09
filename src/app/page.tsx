@@ -1172,13 +1172,12 @@ export default function Home() {
                                                     </CardTitle>
                                                     <div className="flex flex-col items-end gap-1">
                                                         <Button
-                                                            variant="ghost"
                                                             size="icon"
-                                                            className="h-6 w-6"
                                                             onClick={(e) => {
                                                                 e.stopPropagation(); // 아코디언이 열리거나 닫히는 것을 방지
                                                                 toggleFavorite(place);
                                                             }}
+                                                            className="rounded-full h-8 w-8 hover:bg-accent"
                                                         >
                                                             <Heart 
                                                                 className={`h-4 w-4 ${isFavorite(place.id) 
