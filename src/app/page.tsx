@@ -1170,25 +1170,12 @@ export default function Home() {
                                                             place.place_name
                                                         }
                                                     </CardTitle>
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-6 w-6"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation(); // 아코디언이 열리거나 닫히는 것을 방지
-                                                                toggleFavorite(place);
-                                                            }}
-                                                        >
-                                                            <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500 h-4 w-4" : "text-gray-400 h-4 w-4"} />
-                                                        </Button>
-                                                        <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
-                                                            {
-                                                                place.distance
-                                                            }
-                                                            m
-                                                        </span>
-                                                    </div>
+                                                    <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
+                                                        {
+                                                            place.distance
+                                                        }
+                                                        m
+                                                    </span>
                                                 </CardHeader>
                                                 <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
                                                     <span>
@@ -1229,6 +1216,14 @@ export default function Home() {
                                                             place.category_name
                                                         }
                                                     </p>
+                                                   <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() => toggleFavorite(place)}
+                                                    >
+                                                        <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                                    </Button>
                                                 </div>
 
                                                 {!details && (
