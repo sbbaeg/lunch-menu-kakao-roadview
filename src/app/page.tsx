@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession, signIn, signOut } from "next-auth/react";
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -251,6 +252,7 @@ const getTodaysOpeningHours = (
 };
 
 export default function Home() {
+    const { data: session, status } = useSession();
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
         undefined
     );
@@ -767,11 +769,18 @@ export default function Home() {
     return (
         <main className="w-full min-h-screen">
             <Card className="w-full min-h-screen rounded-none border-none flex flex-col items-center p-4 md:p-8">
-                <div className="absolute top-4 right-4 z-50">
+                <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+                    {status === 'loading' && <div className="w-24 h-10 bg-muted rounded-md animate-pulse" />}
+                    {status === 'unauthenticated' && <Button onClick={() => signIn()}>로그인</Button>}
+                    {status === 'authenticated' && (
+                        <>
+                            <span className="text-sm font-medium">{session.user?.name}님</span>
+                            <Button variant="outline" onClick={() => signOut()}>로그아웃</Button>
+                        </>
+                    )}
                     <ThemeToggle />
                 </div>
                 <Card className="w-full max-w-6xl p-6 md:p-8">
-                    {/* ▼▼▼ 663번째 줄부터 이 블록 전체를 복사해서 교체하세요 ▼▼▼ */}
 <div className="flex flex-col md:flex-row gap-6">
     {/* 왼쪽 지도 패널 */}
     <div className="w-full h-[720px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
