@@ -2,21 +2,22 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider"; // [추가]
+import { ThemeProvider } from "@/components/theme-provider";
+import Providers from './providers'; // <--- 1. 이 줄을 추가합니다.
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
+}); 
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
+}); 
 
 
 export const metadata: Metadata = {
-  title: "오늘 뭐 먹지? - 식사 메뉴 추천기",
+  title: "오늘 뭐 먹지? - 식사 메뉴 추천",
   description: "사용자 위치 기반 식사 메뉴 추천 및 룰렛 앱",
   icons: {
     icon: "/icon.png",
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://lunch-menu-kakao.vercel.app",
   },
-};
+}; 
 
 export default function RootLayout({
   children,
@@ -53,7 +54,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          {/* 2. 기존 {children}을 <Providers>로 감싸줍니다. */}
+          <Providers>{children}</Providers>
         </ThemeProvider>
       </body>
     </html>
