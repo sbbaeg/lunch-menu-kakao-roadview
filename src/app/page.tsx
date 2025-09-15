@@ -413,6 +413,19 @@ export default function Home() {
         };
     }, [isMapReady, userLocation]); // userLocation이 설정된 후에 리스너가 동작하도록 의존성 추가
 
+    useEffect(() => {
+        // 카카오톡 인앱 브라우저인지 확인
+        if (/KAKAOTALK/i.test(navigator.userAgent)) {
+        // 현재 URL을 외부 브라우저로 열기 위한 카카오톡 링크로 변환
+        const kakaoOpenUrl = `kakaotalk://web/openExternal?url=${encodeURIComponent(window.location.href)}`;
+        
+        // 사용자에게 안내 후 외부 브라우저로 전환
+        if (confirm("원활한 로그인을 위해 외부 브라우저로 이동합니다.")) {
+            window.location.href = kakaoOpenUrl;
+        }
+        }
+    }, []); 
+
     const getNearbyRestaurants = async (
         latitude: number,
         longitude: number
