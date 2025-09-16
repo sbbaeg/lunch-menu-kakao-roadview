@@ -40,6 +40,61 @@ const handler = NextAuth({
     strategy: "database",
   },
   callbacks: {
+    // 이메일이 동일한 다른 소셜 계정을 자동으로 연결해주는 콜백
+    async signIn({ user, account }) {
+      // --- 감시 카메라: signIn 콜백 시작 지점 ---
+      console.log("🕵️ [SignIn Callback] 시작", { user, account });
+
+      // 소셜 로그인(google, kakao 등)이며 이메일이 있는 경우에만 로직 실행
+      if (account && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        });
+
+        // --- 감시 카메라: 기존 사용자 검색 결과 ---
+        console.log("🕵️ [SignIn Callback] 기존 사용자 검색 결과:", existingUser);
+
+        // 1. DB에 해당 이메일을 가진 사용자가 이미 존재하는 경우
+        if (existingUser) {
+          const linkedAccount = await prisma.account.findFirst({
+            where: {
+              provider: account.provider,
+              userId: existingUser.id,
+            },
+          });
+
+          // 2. 그런데 현재 사용하려는 소셜 계정은 아직 연결되지 않은 경우
+          if (!linkedAccount) {
+            // --- 감시 카메라: 새 계정을 기존 사용자에 연결 ---
+            console.log(`🕵️ [SignIn Callback] 새 계정(${account.provider})을 기존 사용자(${existingUser.email})에게 연결합니다.`);
+            
+            // 3. 새 소셜 계정(account)을 기존 사용자(existingUser)에게 연결
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                refresh_token: account.refresh_token,
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: account.session_state,
+                refresh_token_expires_in: account.refresh_token_expires_in as number | undefined,
+              },
+            });
+          }
+        }
+      }
+
+      // --- 감시 카메라: signIn 콜백 종료 직전 ---
+      console.log("🕵️ [SignIn Callback] 로그인 최종 승인 직전");
+      return true; // 모든 확인 절차 후, 로그인을 최종 승인
+    },
+    
+    // 세션에 사용자 ID를 포함시키는 콜백
     async session({ session, user }) {
       console.log("🔑 [Auth] 세션이 생성되었습니다. User ID:", user.id);
       if (session.user) {
