@@ -785,36 +785,61 @@ export default function Home() {
                 <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
                     {status === 'loading' && <div className="w-24 h-10 bg-muted rounded-md animate-pulse" />}
                     {status === 'unauthenticated' && (
-                        <>
-                            {/* 1. 기본 자동 로그인 버튼 */}
-                            <Button onClick={() => signIn()}>로그인</Button>
-
-                            {/* 2. 다른 계정 선택을 위한 팝업 버튼 */}
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline">다른 계정</Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[425px]">
-                                    <DialogHeader>
-                                        <DialogTitle>다른 계정으로 로그인</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="grid gap-4 py-4">
-                                        <Button 
-                                            onClick={() => signIn('google', { prompt: 'select_account' })}
-                                            className="w-full"
-                                        >
-                                            Google로 로그인
-                                        </Button>
-                                        <Button 
-                                            onClick={() => signIn('kakao', { prompt: 'select_account' })}
-                                            className="w-full"
-                                        >
-                                            Kakao로 로그인
-                                        </Button>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        </>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button>로그인</Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>로그인</DialogTitle>
+                                    <p className="text-sm text-muted-foreground pt-1">
+                                        이전에 사용한 계정으로 빠르게 로그인하세요.
+                                    </p>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    {/* 1. 빠른 자동 로그인을 위한 버튼 */}
+                                    <Button 
+                                        onClick={() => signIn('google')}
+                                        className="w-full"
+                                    >
+                                        Google로 빠른 로그인
+                                    </Button>
+                                    <Button 
+                                        onClick={() => signIn('kakao')}
+                                        className="w-full"
+                                    >
+                                        Kakao로 빠른 로그인
+                                    </Button>
+                                </div>
+                                <div className="relative my-2">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-background px-2 text-muted-foreground">
+                                    또는
+                                    </span>
+                                </div>
+                                </div>
+                                <div className="grid gap-4">
+                                    {/* 2. 다른 계정 선택을 위한 버튼 */}
+                                    <Button 
+                                        variant="secondary"
+                                        onClick={() => signIn('google', undefined, { prompt: 'select_account' })}
+                                        className="w-full"
+                                    >
+                                        다른 Google 계정 사용
+                                    </Button>
+                                    <Button 
+                                        variant="secondary"
+                                        onClick={() => signIn('kakao', undefined, { prompt: 'select_account' })}
+                                        className="w-full"
+                                    >
+                                        다른 Kakao 계정 사용
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     )}
                     
                     {status === 'authenticated' && (
