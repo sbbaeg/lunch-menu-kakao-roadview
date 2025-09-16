@@ -784,7 +784,39 @@ export default function Home() {
             <Card className="w-full min-h-screen rounded-none border-none flex flex-col items-center p-4 md:p-8">
                 <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
                     {status === 'loading' && <div className="w-24 h-10 bg-muted rounded-md animate-pulse" />}
-                    {status === 'unauthenticated' && <Button onClick={() => signIn()}>로그인</Button>}
+                    {status === 'unauthenticated' && (
+                        <>
+                            {/* 1. 기본 자동 로그인 버튼 */}
+                            <Button onClick={() => signIn()}>로그인</Button>
+
+                            {/* 2. 다른 계정 선택을 위한 팝업 버튼 */}
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline">다른 계정</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle>다른 계정으로 로그인</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <Button 
+                                            onClick={() => signIn('google', { prompt: 'select_account' })}
+                                            className="w-full"
+                                        >
+                                            Google로 로그인
+                                        </Button>
+                                        <Button 
+                                            onClick={() => signIn('kakao', { prompt: 'select_account' })}
+                                            className="w-full"
+                                        >
+                                            Kakao로 로그인
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </>
+                    )}
+                    
                     {status === 'authenticated' && (
                         <>
                             <span className="text-sm font-medium">{session.user?.name}님</span>
