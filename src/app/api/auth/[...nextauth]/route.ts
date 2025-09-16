@@ -21,7 +21,7 @@ const handler = NextAuth({
       profile(profile) {
         // --- 감시 카메라 1: 카카오에서 어떤 정보를 주는지 확인 ---
         console.log("👀 [Auth] 카카오 프로필 정보:", profile);
-        
+
         const userProfile = {
           id: profile.id.toString(),
           name: profile.kakao_account?.profile?.nickname,
@@ -31,7 +31,7 @@ const handler = NextAuth({
 
         // --- 감시 카메라 2: DB에 저장할 최종 정보 확인 ---
         console.log("📦 [Auth] DB에 저장될 최종 사용자 정보:", userProfile);
-        
+
         return userProfile;
       },
     }),
