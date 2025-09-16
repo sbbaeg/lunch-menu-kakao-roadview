@@ -18,13 +18,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "오늘 뭐 먹지? - 식사 메뉴 추천",
-  description: "사용자 위치 기반 식사 메뉴 추천 및 룰렛 앱",
+  description: "사용자 위치 기반 음식점 추천 및 랜덤 추첨앱",
   icons: {
     icon: "/icon.png",
   },
   openGraph: {
-    title: "오늘 뭐 먹지? - 식사 메뉴 추천기",
-    description: "내 주변 맛집, 룰렛으로 결정하세요!",
+    title: "오늘 뭐 먹지? - 식사 메뉴 추천",
+    description: "내 주변 맛집, 검색과 룰렛으로 결정하세요!",
     images: [
       {
         url: "https://lunch-menu-kakao.vercel.app/icon.png",
