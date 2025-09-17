@@ -1642,7 +1642,10 @@ export default function Home() {
                                         <li key={place.id} className="flex items-center justify-between p-2 rounded-md border">
                                             <div>
                                                 <p className="font-semibold">{place.place_name}</p>
-                                                <p className="text-sm text-gray-500">{place.category_name.split('>').pop()?.trim()}</p>
+                                                {/* ✅ place.category_name이 있을 때만 split을 실행하도록 수정 */}
+                                                <p className="text-sm text-gray-500">
+                                                    {place.category_name?.split('>').pop()?.trim() || '카테고리 정보 없음'}
+                                                </p>
                                             </div>
                                             <Button
                                                 variant="ghost"
