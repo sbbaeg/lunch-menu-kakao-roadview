@@ -91,9 +91,17 @@ export async function POST(request: Request) {
         const place: RestaurantData = await request.json();
         const userId = session.user.id;
 
+        // ✅ upsert 로직을 강화하여 모든 필드를 저장하고 업데이트하도록 수정
         const restaurant = await prisma.restaurant.upsert({
             where: { kakaoPlaceId: place.id },
-            update: { placeName: place.place_name },
+            // 이미 존재하는 음식점이라도 정보가 바뀔 수 있으니 모든 정보를 업데이트
+            update: {
+                placeName: place.place_name,
+                address: place.road_address_name,
+                latitude: parseFloat(place.y),
+                longitude: parseFloat(place.x),
+            },
+            // 새로 생성할 때도 모든 정보를 빠짐없이 저장
             create: {
                 kakaoPlaceId: place.id,
                 placeName: place.place_name,
@@ -123,6 +131,6 @@ export async function POST(request: Request) {
 
     } catch (error) {
         console.error('즐겨찾기 처리 오류:', error);
-        return NextResponse.json({ error: '요청을 처리하는 중 오류가 발생했습니다.' }, { status: 500 });
+        return NextResponse.json({ error: '요청을 처리하는 중 오류가 발생했습니다.', status: 500 });
     }
 }
