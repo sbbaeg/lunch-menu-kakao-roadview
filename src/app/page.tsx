@@ -730,6 +730,9 @@ export default function Home() {
     const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
 
     const toggleFavorite = async (place: KakaoPlaceItem) => {
+        console.log("--- toggleFavorite 함수 실행 ---");
+        console.log("현재 로그인 상태 (status):", status);
+        console.log("현재 세션 정보 (session):", session);
         // 먼저 화면을 즉시 업데이트
         const isCurrentlyFavorite = isFavorite(place.id);
         const newFavorites = isCurrentlyFavorite
