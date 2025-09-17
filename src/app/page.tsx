@@ -316,11 +316,32 @@ export default function Home() {
 
     // 즐겨찾기 목록이 변경될 때마다 로컬 저장소에 저장     
     useEffect(() => {
-        // 처음 로드될 때 빈 배열로 덮어쓰는 것을 방지
-        if (favorites.length > 0 || localStorage.getItem('favoriteRestaurants')) {
-            localStorage.setItem('favoriteRestaurants', JSON.stringify(favorites));
-        }
-    }, [favorites]);
+        const loadFavorites = async () => {
+            // 로그인 상태일 때: 서버 API를 호출하여 DB에서 가져오기
+            if (status === 'authenticated') {
+                try {
+                    const response = await fetch('/api/favorites');
+                    if (response.ok) {
+                        const dbFavorites = await response.json();
+                        setFavorites(dbFavorites);
+                    }
+                } catch (error) {
+                    console.error('즐겨찾기 로딩 중 오류:', error);
+                }
+            } 
+            // 게스트 상태일 때: localStorage에서 가져오기
+            else if (status === 'unauthenticated') {
+                const localFavorites = localStorage.getItem('favoriteRestaurants');
+                if (localFavorites) {
+                    setFavorites(JSON.parse(localFavorites));
+                } else {
+                    setFavorites([]);
+                }
+            }
+        };
+
+        loadFavorites();
+    }, [status]);
 
     useEffect(() => {
         if (selectedItemId && userLocation) {
@@ -708,14 +729,35 @@ export default function Home() {
 
     const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
 
-    const toggleFavorite = (place: KakaoPlaceItem) => {
-        setFavorites((prev) => {
-            if (isFavorite(place.id)) {
-                return prev.filter((fav) => fav.id !== place.id);
-            } else {
-                return [...prev, place];
+    const toggleFavorite = async (place: KakaoPlaceItem) => {
+        // 먼저 화면을 즉시 업데이트
+        const isCurrentlyFavorite = isFavorite(place.id);
+        const newFavorites = isCurrentlyFavorite
+            ? favorites.filter((fav) => fav.id !== place.id)
+            : [...favorites, place];
+        setFavorites(newFavorites);
+
+        // 로그인 상태이면 API를 호출하여 DB에 저장
+        if (status === 'authenticated') {
+            try {
+                const response = await fetch('/api/favorites', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(place),
+                });
+                if (!response.ok) {
+                    setFavorites(favorites); // 실패 시 화면 원상 복구
+                    alert('즐겨찾기 처리에 실패했습니다.');
+                }
+            } catch (error) {
+                setFavorites(favorites); // 실패 시 화면 원상 복구
+                alert('즐겨찾기 처리에 실패했습니다.');
             }
-        });
+        } 
+        // 게스트 상태이면 localStorage에 저장
+        else {
+            localStorage.setItem('favoriteRestaurants', JSON.stringify(newFavorites));
+        }
     };
     
     const handleAddressSearch = () => {
