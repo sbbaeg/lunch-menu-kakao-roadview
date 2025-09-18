@@ -100,6 +100,7 @@ export async function POST(request: Request) {
                 address: place.road_address_name,
                 latitude: parseFloat(place.y),
                 longitude: parseFloat(place.x),
+                categoryName: place.category_name,
             },
             // 새로 생성할 때도 모든 정보를 빠짐없이 저장
             create: {
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
                 address: place.road_address_name,
                 latitude: parseFloat(place.y),
                 longitude: parseFloat(place.x),
+                categoryName: place.category_name,
             },
         });
         
