@@ -95,13 +95,7 @@ export async function POST(request: Request) {
         const restaurant = await prisma.restaurant.upsert({
             where: { kakaoPlaceId: place.id },
             // 이미 존재하는 음식점이라도 정보가 바뀔 수 있으니 모든 정보를 업데이트
-            update: {
-                placeName: place.place_name,
-                address: place.road_address_name,
-                latitude: parseFloat(place.y),
-                longitude: parseFloat(place.x),
-                categoryName: place.category_name,
-            },
+            update: {},
             // 새로 생성할 때도 모든 정보를 빠짐없이 저장
             create: {
                 kakaoPlaceId: place.id,
