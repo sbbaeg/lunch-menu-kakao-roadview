@@ -88,37 +88,48 @@ export async function POST(request: Request) {
     }
 
     try {
-        const place: RestaurantData = await request.json();
+        const place = await request.json();
         const userId = session.user.id;
 
-        // ✅ upsert 로직을 강화하여 모든 필드를 저장하고 업데이트하도록 수정
-        const restaurant = await prisma.restaurant.upsert({
+        // 1. kakaoPlaceId로 우리 DB에 해당 음식점이 있는지 먼저 확인합니다.
+        let restaurant = await prisma.restaurant.findUnique({
             where: { kakaoPlaceId: place.id },
-            // 이미 존재하는 음식점이라도 정보가 바뀔 수 있으니 모든 정보를 업데이트
-            update: {},
-            // 새로 생성할 때도 모든 정보를 빠짐없이 저장
-            create: {
-                kakaoPlaceId: place.id,
-                placeName: place.place_name,
-                address: place.road_address_name,
-                latitude: parseFloat(place.y),
-                longitude: parseFloat(place.x),
-                categoryName: place.category_name,
-            },
         });
+
+        // 2. DB에 음식점이 없는 경우 (새로 즐겨찾기 추가 시)
+        if (!restaurant) {
+            // 프론트에서 받은 정보가 완전한지 확인하고, 없다면 생성합니다.
+            if (!place.place_name || !place.category_name) {
+                 return NextResponse.json({ error: '음식점 정보가 불완전하여 추가할 수 없습니다.' }, { status: 400 });
+            }
+            restaurant = await prisma.restaurant.create({
+                data: {
+                    kakaoPlaceId: place.id,
+                    placeName: place.place_name,
+                    address: place.road_address_name,
+                    latitude: parseFloat(place.y),
+                    longitude: parseFloat(place.x),
+                    categoryName: place.category_name,
+                },
+            });
+        }
         
         const restaurantId = restaurant.id;
 
+        // 3. 이 음식점이 현재 유저의 즐겨찾기에 등록되어 있는지 확인합니다.
         const existingFavorite = await prisma.favorite.findUnique({
             where: { userId_restaurantId: { userId, restaurantId } },
         });
 
+        // 4. 즐겨찾기에 이미 있다면 -> 삭제 로직 실행
         if (existingFavorite) {
             await prisma.favorite.delete({
                 where: { userId_restaurantId: { userId, restaurantId } },
             });
             return NextResponse.json({ message: '즐겨찾기에서 삭제되었습니다.', action: 'deleted' });
-        } else {
+        } 
+        // 5. 즐겨찾기에 없다면 -> 추가 로직 실행
+        else {
             await prisma.favorite.create({
                 data: { userId, restaurantId },
             });
@@ -127,6 +138,6 @@ export async function POST(request: Request) {
 
     } catch (error) {
         console.error('즐겨찾기 처리 오류:', error);
-        return NextResponse.json({ error: '요청을 처리하는 중 오류가 발생했습니다.', status: 500 });
+        return NextResponse.json({ error: '요청을 처리하는 중 오류가 발생했습니다.' }, { status: 500 });
     }
 }
