@@ -1,47 +1,21 @@
-// src/app/api/favorites/route.ts (최종 수정본)
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client'; // PrismaClient만 import 합니다.
+// ✅ Prisma 유틸리티 타입을 사용하기 위해 Prisma, Favorite을 추가로 import 합니다.
+import { PrismaClient, Prisma, Favorite } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
+// ✅ 프로젝트 공용 타입을 import 합니다.
+import { Restaurant } from '@/lib/types';
 
+// 💡 PrismaClient는 lib/prisma.ts 같은 별도 파일에서 싱글톤으로 관리하는 것을 추천합니다.
 const prisma = new PrismaClient();
 
-// --- 타입 정의 시작 ---
-
-// 클라이언트에서 받을 음식점 데이터의 형태
-interface RestaurantData {
-    id: string; // kakaoPlaceId
-    place_name: string;
-    category_name: string;
-    road_address_name: string;
-    x: string;
-    y: string;
-}
-
-// ✅ 직접 타입을 선언하여 Prisma/TypeScript 연동 문제를 원천 차단합니다.
-// schema.prisma의 Restaurant 모델과 일치하는 타입
-interface RestaurantModel {
-    id: number;
-    kakaoPlaceId: string;
-    placeName: string;
-    address: string | null;
-    latitude: number | null;
-    longitude: number | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-// ✅ findMany + include의 결과물에 대한 타입
-interface FavoriteWithRestaurant {
-    userId: string;
-    restaurantId: number;
-    createdAt: Date;
-    restaurant: RestaurantModel;
-}
-
-// --- 타입 정의 끝 ---
-
+// ✅ 'Favorite'에 'Restaurant' 정보가 포함된 새로운 타입을 정의합니다.
+// 'include'를 사용한 findMany 결과의 정확한 타입을 TypeScript에 알려줍니다.
+type FavoriteWithRestaurant = Prisma.FavoriteGetPayload<{
+  include: {
+    restaurant: true;
+  };
+}>;
 
 /**
  * GET: 현재 로그인한 사용자의 모든 즐겨찾기 목록을 반환합니다.
@@ -54,6 +28,7 @@ export async function GET() {
     }
 
     try {
+        // ✅ findMany의 결과 타입을 위에서 만든 타입으로 명시해줍니다.
         const favorites: FavoriteWithRestaurant[] = await prisma.favorite.findMany({
             where: {
                 userId: session.user.id,
@@ -63,9 +38,16 @@ export async function GET() {
             },
         });
         
-        const favoriteRestaurants = favorites.map(fav => ({
-            ...fav.restaurant,
+        // ✅ 프론트엔드의 Restaurant 타입 형식에 맞춰 데이터를 변환합니다.
+        const favoriteRestaurants: Restaurant[] = favorites.map(fav => ({
             id: fav.restaurant.kakaoPlaceId,
+            placeName: fav.restaurant.placeName,
+            categoryName: fav.restaurant.categoryName || '',
+            address: fav.restaurant.address || '',
+            x: String(fav.restaurant.longitude),
+            y: String(fav.restaurant.latitude),
+            placeUrl: `http://place.map.kakao.com/${fav.restaurant.kakaoPlaceId}`,
+            distance: '', // DB에는 distance 정보가 없으므로 빈 값으로 처리
         }));
         
         return NextResponse.json(favoriteRestaurants);
@@ -88,50 +70,42 @@ export async function POST(request: Request) {
     }
 
     try {
-        const place = await request.json();
-        console.log("📦 [백엔드] 클라이언트로부터 이 데이터를 받았습니다:", place);
+        // ✅ 프론트에서 오는 데이터는 이제 통일된 Restaurant 타입입니다.
+        const place: Restaurant = await request.json(); 
         const userId = session.user.id;
 
-        // 1. kakaoPlaceId로 우리 DB에 해당 음식점이 있는지 먼저 확인합니다.
         let restaurant = await prisma.restaurant.findUnique({
             where: { kakaoPlaceId: place.id },
         });
 
-        // 2. DB에 음식점이 없는 경우 (새로 즐겨찾기 추가 시)
         if (!restaurant) {
-            // 프론트에서 받은 정보가 완전한지 확인하고, 없다면 생성합니다.
-            if (!place.place_name || !place.category_name) {
-                 return NextResponse.json({ error: '음식점 정보가 불완전하여 추가할 수 없습니다.' }, { status: 400 });
+            if (!place.placeName) {
+                return NextResponse.json({ error: '음식점 이름 정보가 없어 추가할 수 없습니다.' }, { status: 400 });
             }
+            // ✅ 프론트에서 받은 camelCase 데이터를 DB의 camelCase 필드에 그대로 저장합니다.
             restaurant = await prisma.restaurant.create({
                 data: {
                     kakaoPlaceId: place.id,
-                    placeName: place.place_name,
-                    address: place.road_address_name,
-                    latitude: parseFloat(place.y),
-                    longitude: parseFloat(place.x),
-                    categoryName: place.category_name,
+                    placeName:    place.placeName,
+                    address:      place.address,
+                    latitude:     parseFloat(place.y),
+                    longitude:    parseFloat(place.x),
+                    categoryName: place.categoryName,
                 },
             });
-            console.log("✅ [DB 저장 결과] DB에 저장된 데이터:", restaurant);
         }
         
         const restaurantId = restaurant.id;
-
-        // 3. 이 음식점이 현재 유저의 즐겨찾기에 등록되어 있는지 확인합니다.
         const existingFavorite = await prisma.favorite.findUnique({
             where: { userId_restaurantId: { userId, restaurantId } },
         });
 
-        // 4. 즐겨찾기에 이미 있다면 -> 삭제 로직 실행
         if (existingFavorite) {
             await prisma.favorite.delete({
                 where: { userId_restaurantId: { userId, restaurantId } },
             });
             return NextResponse.json({ message: '즐겨찾기에서 삭제되었습니다.', action: 'deleted' });
-        } 
-        // 5. 즐겨찾기에 없다면 -> 추가 로직 실행
-        else {
+        } else {
             await prisma.favorite.create({
                 data: { userId, restaurantId },
             });

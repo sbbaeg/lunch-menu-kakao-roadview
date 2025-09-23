@@ -1,5 +1,7 @@
 "use client";
 
+import { Restaurant, KakaoPlaceItem, GoogleDetails, Review, GoogleOpeningHours } from '@/lib/types'; 
+
 import { useSession, signIn, signOut } from "next-auth/react";
 
 import { useState, useEffect, useRef } from "react";
@@ -113,6 +115,18 @@ declare namespace kakao.maps {
             gotoPage(page: number): void;
         }
 
+        interface Restaurant {
+            id: string; // kakaoPlaceId
+            placeName: string;
+            categoryName: string;
+            address: string;
+            x: string;
+            y: string;
+            distance: string;
+            placeUrl: string;
+            googleDetails?: GoogleDetails;
+        }
+
         class Places {
             constructor();
             keywordSearch(
@@ -145,41 +159,6 @@ declare global {
     }
 }
 
-interface GoogleOpeningHours {
-    open_now: boolean;
-    weekday_text?: string[];
-}
-
-interface Review {
-  author_name: string;
-  profile_photo_url: string;
-  rating: number;
-  relative_time_description: string;
-  text: string;
-}
-
-interface GoogleDetails {
-    url?: string;
-    photos: string[];
-    rating?: number;
-    opening_hours?: GoogleOpeningHours;
-    phone?: string;
-    reviews?: Review[]; // [추가]
-    dine_in?: boolean; // [추가]
-    takeout?: boolean; // [추가]
-}
-
-interface KakaoPlaceItem {
-    id: string;
-    place_name: string;
-    category_name: string;
-    road_address_name: string;
-    x: string;
-    y: string;
-    place_url: string;
-    distance: string;
-    googleDetails?: GoogleDetails;
-}
 interface KakaoSearchResponse {
     documents: KakaoPlaceItem[];
 }
@@ -256,8 +235,8 @@ export default function Home() {
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
         undefined
     );
-    const [restaurantList, setRestaurantList] = useState<KakaoPlaceItem[]>([]);
-    const [rouletteItems, setRouletteItems] = useState<KakaoPlaceItem[]>([]);
+    const [restaurantList, setRestaurantList] = useState<Restaurant[]>([]);
+    const [rouletteItems, setRouletteItems] = useState<Restaurant[]>([]);
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [mustSpin, setMustSpin] = useState(false);
     const [prizeNumber, setPrizeNumber] = useState(0);
@@ -269,7 +248,7 @@ export default function Home() {
     >("accuracy");
     const [resultCount, setResultCount] = useState<number>(5);
     const [minRating, setMinRating] = useState<number>(4.0);
-    const [favorites, setFavorites] = useState<KakaoPlaceItem[]>([]);
+    const [favorites, setFavorites] = useState<Restaurant[]>([]);
 
     const [displayedSortOrder, setDisplayedSortOrder] = useState<
         "accuracy" | "distance" | "rating"
@@ -450,7 +429,7 @@ export default function Home() {
     const getNearbyRestaurants = async (
         latitude: number,
         longitude: number
-    ): Promise<KakaoPlaceItem[]> => {
+    ): Promise<Restaurant[]> => { // ✅ 반환 타입을 Restaurant[]으로 변경
         const query =
             selectedCategories.length > 0
                 ? selectedCategories.join(",")
@@ -465,10 +444,23 @@ export default function Home() {
             )}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}`
         );
         if (!response.ok) throw new Error("API call failed");
+        
+        // ✅ snake_case로 받은 데이터를 camelCase로 번역하는 로직 추가
         const data: KakaoSearchResponse = await response.json();
-        return data.documents || [];
+        const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
+            id: place.id,
+            placeName: place.place_name,
+            categoryName: place.category_name,
+            address: place.road_address_name,
+            x: place.x,
+            y: place.y,
+            placeUrl: place.place_url,
+            distance: place.distance,
+            googleDetails: place.googleDetails,
+        }));
+        
+        return formattedRestaurants;
     };
-
     const handleTempCategoryChange = (category: string) => {
         setTempSelectedCategories((prev) =>
             prev.includes(category)
@@ -481,7 +473,7 @@ export default function Home() {
         setTempSelectedCategories(checked === true ? CATEGORIES : []);
     };
 
-    const displayMarkers = (places: KakaoPlaceItem[]) => {
+    const displayMarkers = (places: Restaurant[]) => {
         if (!mapInstance.current) return;
         markers.current.forEach((marker) => marker.setMap(null));
         markers.current = [];
@@ -514,7 +506,7 @@ export default function Home() {
             const results = favorites.filter(place => {
             // 1. 카테고리 필터
             const categoryMatch = selectedCategories.length === 0 || 
-                                  selectedCategories.some(cat => place.category_name.includes(cat));
+                                  selectedCategories.some(cat => place.categoryName.includes(cat));
 
             // 2. 최소 별점 필터
             const ratingMatch = (place.googleDetails?.rating || 0) >= minRating;
@@ -626,7 +618,7 @@ export default function Home() {
     };
 
     const updateViews = async (
-        place: KakaoPlaceItem,
+        place: Restaurant,
         currentLoc: kakao.maps.LatLng
     ) => {
         const placePosition = new window.kakao.maps.LatLng(
@@ -697,7 +689,7 @@ export default function Home() {
             "#55efc4",
         ];
         return {
-            option: item.place_name,
+            option: item.placeName,
             style: {
                 backgroundColor: colors[index % colors.length],
                 textColor: "#333333",
@@ -729,7 +721,7 @@ export default function Home() {
 
     const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
 
-    const toggleFavorite = async (place: KakaoPlaceItem) => {
+    const toggleFavorite = async (place: Restaurant) => {
         console.log("--- toggleFavorite 함수 실행 ---");
         console.log("현재 로그인 상태 (status):", status);
         console.log("현재 세션 정보 (session):", session);
@@ -1292,7 +1284,7 @@ export default function Home() {
                                                 <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
                                                     <CardTitle className="text-md">
                                                         {
-                                                            place.place_name
+                                                            place.placeName
                                                         }
                                                     </CardTitle>
                                                     <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
@@ -1304,7 +1296,7 @@ export default function Home() {
                                                 </CardHeader>
                                                 <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
                                                     <span>
-                                                        {place.category_name
+                                                        {place.categoryName
                                                             .split(
                                                                 ">"
                                                             )
@@ -1338,7 +1330,7 @@ export default function Home() {
                                                 <div className="flex items-center justify-between pt-2">
                                                     <p className="text-xs text-gray-500">
                                                         {
-                                                            place.category_name
+                                                            place.categoryName
                                                         }
                                                     </p>
                                                    <Button
@@ -1512,7 +1504,7 @@ export default function Home() {
                                                                                                     photoUrl
                                                                                                 }
                                                                                                 alt={`${
-                                                                                                    place.place_name
+                                                                                                    place.placeName
                                                                                                 } photo ${
                                                                                                     index +
                                                                                                     1
@@ -1533,7 +1525,7 @@ export default function Home() {
                                                                                                 photoUrl
                                                                                             }
                                                                                             alt={`${
-                                                                                                place.place_name
+                                                                                                place.placeName
                                                                                             } photo ${
                                                                                                 index +
                                                                                                 1
@@ -1559,7 +1551,7 @@ export default function Home() {
                                                 <div className="flex gap-2 pt-2">
                                                     <a
                                                         href={
-                                                            place.place_url
+                                                            place.placeUrl
                                                         }
                                                         target="_blank"
                                                         rel="noopener noreferrer"
@@ -1642,10 +1634,10 @@ export default function Home() {
                                     {favorites.map((place) => (
                                         <li key={place.id} className="flex items-center justify-between p-2 rounded-md border">
                                             <div>
-                                                <p className="font-semibold">{place.place_name}</p>
+                                                <p className="font-semibold">{place.placeName}</p>
                                                 {/* ✅ place.category_name이 있을 때만 split을 실행하도록 수정 */}
                                                 <p className="text-sm text-gray-500">
-                                                    {place.category_name?.split('>').pop()?.trim() || '카테고리 정보 없음'}
+                                                    {place.categoryName?.split('>').pop()?.trim() || '카테고리 정보 없음'}
                                                 </p>
                                             </div>
                                             <Button
