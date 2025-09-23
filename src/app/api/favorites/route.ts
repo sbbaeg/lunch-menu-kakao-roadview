@@ -113,6 +113,7 @@ export async function POST(request: Request) {
                     categoryName: place.category_name,
                 },
             });
+            console.log("✅ [DB 저장 결과] DB에 저장된 데이터:", restaurant);
         }
         
         const restaurantId = restaurant.id;
