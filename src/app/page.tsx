@@ -733,6 +733,7 @@ export default function Home() {
         console.log("--- toggleFavorite 함수 실행 ---");
         console.log("현재 로그인 상태 (status):", status);
         console.log("현재 세션 정보 (session):", session);
+        console.log("🚀 [프론트엔드] 서버로 이 데이터를 보냅니다:", place);
         // 먼저 화면을 즉시 업데이트
         const isCurrentlyFavorite = isFavorite(place.id);
         const newFavorites = isCurrentlyFavorite

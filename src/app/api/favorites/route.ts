@@ -89,6 +89,7 @@ export async function POST(request: Request) {
 
     try {
         const place = await request.json();
+        console.log("📦 [백엔드] 클라이언트로부터 이 데이터를 받았습니다:", place);
         const userId = session.user.id;
 
         // 1. kakaoPlaceId로 우리 DB에 해당 음식점이 있는지 먼저 확인합니다.
