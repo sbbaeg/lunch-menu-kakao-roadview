@@ -1,6 +1,52 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+// 이 파일에 모든 타입을 모아서 관리합니다.
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export interface GoogleOpeningHours {
+  open_now: boolean;
+  weekday_text?: string[];
+}
+
+export interface Review {
+  author_name: string;
+  profile_photo_url: string;
+  rating: number;
+  relative_time_description: string;
+  text: string;
+}
+
+export interface GoogleDetails {
+  url?: string;
+  photos: string[];
+  rating?: number;
+  opening_hours?: GoogleOpeningHours;
+  phone?: string;
+  reviews?: Review[];
+  dine_in?: boolean;
+  takeout?: boolean;
+}
+
+// 카카오 API 원본 데이터 타입
+export interface KakaoPlaceItem {
+  id: string;
+  place_name: string;
+  category_name: string;
+  road_address_name: string;
+  address_name: string;
+  x: string;
+  y: string;
+  place_url: string;
+  distance: string;
+  googleDetails?: GoogleDetails;
+}
+
+// 우리 앱 내부에서 사용할 표준 데이터 타입
+export interface Restaurant {
+  id: string; // kakaoPlaceId
+  placeName: string;
+  categoryName: string;
+  address: string;
+  x: string;
+  y: string;
+  distance: string;
+  placeUrl: string;
+  googleDetails?: GoogleDetails;
 }
