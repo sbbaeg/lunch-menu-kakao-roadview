@@ -262,6 +262,10 @@ export default function Home() {
 
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
 
+    useEffect(() => {
+        console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
+    }, [favorites]);
+
     const [searchAddress, setSearchAddress] = useState("");
     const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
 
@@ -294,6 +298,9 @@ export default function Home() {
                     const response = await fetch('/api/favorites');
                     if (response.ok) {
                         const dbFavorites = await response.json();
+
+                        console.log("CCTV 1: 서버 응답 (raw)", dbFavorites);
+
                         setFavorites(dbFavorites);
                     }
                 } catch (error) {
@@ -714,10 +721,6 @@ export default function Home() {
     const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
 
     const toggleFavorite = async (place: Restaurant) => {
-        console.log("--- toggleFavorite 함수 실행 ---");
-        console.log("현재 로그인 상태 (status):", status);
-        console.log("현재 세션 정보 (session):", session);
-        console.log("🚀 [프론트엔드] 서버로 이 데이터를 보냅니다:", place);
         // 먼저 화면을 즉시 업데이트
         const isCurrentlyFavorite = isFavorite(place.id);
         const newFavorites = isCurrentlyFavorite
@@ -1623,24 +1626,28 @@ export default function Home() {
                         <div className="max-h-[60vh] overflow-y-auto pr-4 mt-4">
                             {favorites.length > 0 ? (
                                 <ul className="space-y-3">
-                                    {favorites.map((place) => (
-                                        <li key={place.id} className="flex items-center justify-between p-2 rounded-md border">
-                                            <div>
-                                                <p className="font-semibold">{place.placeName}</p>
-                                                {/* ✅ place.category_name이 있을 때만 split을 실행하도록 수정 */}
-                                                <p className="text-sm text-gray-500">
-                                                    {place.categoryName?.split('>').pop()?.trim() || '카테고리 정보 없음'}
-                                                </p>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => toggleFavorite(place)}
-                                            >
-                                                삭제
-                                            </Button>
-                                        </li>
-                                    ))}
+                                    {favorites.map((place) => {
+                                        // ✅ CCTV 3: 화면에 그려지기 직전의 개별 데이터 감시
+                                        console.log("CCTV 3: 렌더링되는 개별 place 데이터", place);
+
+                                        return (
+                                            <li key={place.id} className="flex items-center justify-between p-2 rounded-md border">
+                                                <div>
+                                                    <p className="font-semibold">{place.placeName}</p>
+                                                    <p className="text-sm text-gray-500">
+                                                        {place.categoryName?.split('>').pop()?.trim() || '카테고리 정보 없음'}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => toggleFavorite(place)}
+                                                >
+                                                    삭제
+                                                </Button>
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
                             ) : (
                                 <div className="text-center py-8 text-gray-500">
