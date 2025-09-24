@@ -1,4 +1,4 @@
-// 이 파일에 모든 타입을 모아서 관리합니다.
+// lib/types.ts
 
 export interface GoogleOpeningHours {
   open_now: boolean;
@@ -38,7 +38,7 @@ export interface KakaoPlaceItem {
   googleDetails?: GoogleDetails;
 }
 
-// 우리 앱 내부에서 사용할 표준 데이터 타입
+// 우리 앱 내부에서 사용할 표준 데이터 타입 (camelCase)
 export interface Restaurant {
   id: string; // kakaoPlaceId
   placeName: string;
