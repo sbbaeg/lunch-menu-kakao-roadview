@@ -38,12 +38,8 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const Wheel = dynamic(
-    () => import("react-custom-roulette").then((mod) => mod.Wheel),
-    { ssr: false }
-);
 
-
+// page.tsx 파일 상단, import 구문 바로 아래
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace kakao.maps {
@@ -115,18 +111,6 @@ declare namespace kakao.maps {
             gotoPage(page: number): void;
         }
 
-        interface Restaurant {
-            id: string; // kakaoPlaceId
-            placeName: string;
-            categoryName: string;
-            address: string;
-            x: string;
-            y: string;
-            distance: string;
-            placeUrl: string;
-            googleDetails?: GoogleDetails;
-        }
-
         class Places {
             constructor();
             keywordSearch(
@@ -159,6 +143,7 @@ declare global {
     }
 }
 
+// page.tsx 컴포넌트 내부에서만 사용하는 타입들
 interface KakaoSearchResponse {
     documents: KakaoPlaceItem[];
 }
@@ -170,6 +155,13 @@ interface DirectionPoint {
     lat: number;
     lng: number;
 }
+
+
+const Wheel = dynamic(
+    () => import("react-custom-roulette").then((mod) => mod.Wheel),
+    { ssr: false }
+);
+
 // --- 타입 정의 끝 ---
 
 const CATEGORIES = [
