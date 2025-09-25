@@ -1,6 +1,6 @@
 // src/lib/googleMaps.ts
 
-import { KakaoPlaceItem } from './types';
+import { KakaoPlaceItem, Review, GoogleOpeningHours } from './types';
 
 // Google API 응답 결과에 대한 타입 정의
 interface GooglePhoto {
@@ -11,9 +11,9 @@ interface GooglePlaceDetailsResult {
   url?: string;
   rating?: number;
   photos?: GooglePhoto[];
-  opening_hours?: any;
+  opening_hours?: GoogleOpeningHours;
   formatted_phone_number?: string;
-  reviews?: any[];
+  reviews?: Review[];
   dine_in?: boolean;
   takeout?: boolean;
 }
