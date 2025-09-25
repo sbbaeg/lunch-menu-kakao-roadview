@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient, Prisma } from '@prisma/client'; 
 import { authOptions } from '@/lib/auth';
-import { Restaurant } from '@/lib/types'; // ✅ 공용 Restaurant 타입을 import
+import { Restaurant, KakaoPlaceItem } from '@/lib/types'; 
+import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 
 const prisma = new PrismaClient();
 
@@ -22,19 +23,40 @@ export async function GET() {
             where: { userId: session.user.id },
             include: { restaurant: true },
         });
-        
-        const favoriteRestaurants: Restaurant[] = favorites.map(fav => ({
+
+        // ✅ 3. DB 데이터를 Google 정보 조회에 필요한 형태로 1차 변환합니다.
+        const basicFavorites: KakaoPlaceItem[] = favorites.map(fav => ({
             id: fav.restaurant.kakaoPlaceId,
-            placeName: fav.restaurant.placeName,
-            categoryName: fav.restaurant.categoryName || '',
-            address: fav.restaurant.address || '',
+            place_name: fav.restaurant.placeName,
+            category_name: fav.restaurant.categoryName || '',
+            road_address_name: fav.restaurant.address || '',
+            address_name: fav.restaurant.address || '',
             x: String(fav.restaurant.longitude),
             y: String(fav.restaurant.latitude),
-            placeUrl: `http://place.map.kakao.com/${fav.restaurant.kakaoPlaceId}`,
+            place_url: `https://place.map.kakao.com/${fav.restaurant.kakaoPlaceId}`,
             distance: '',
         }));
-        
+
+        // ✅ 4. 각 항목에 대해 Google 상세 정보를 병렬로 조회합니다.
+        const enrichedFavorites = await Promise.all(
+            basicFavorites.map(place => fetchFullGoogleDetails(place))
+        );
+
+        // ✅ 5. 최종적으로 프론트엔드가 사용할 형태로 데이터를 가공합니다.
+        const favoriteRestaurants: Restaurant[] = enrichedFavorites.map(place => ({
+            id: place.id,
+            placeName: place.place_name,
+            categoryName: place.category_name,
+            address: place.road_address_name,
+            x: place.x,
+            y: place.y,
+            placeUrl: place.place_url,
+            distance: place.distance,
+            googleDetails: place.googleDetails, // ⭐ googleDetails가 추가된 것이 핵심입니다.
+        }));
+
         return NextResponse.json(favoriteRestaurants);
+
     } catch (error) {
         console.error('즐겨찾기 조회 오류:', error);
         return NextResponse.json({ error: '데이터를 조회하는 중 오류가 발생했습니다.' }, { status: 500 });
