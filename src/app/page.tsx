@@ -1618,37 +1618,80 @@ export default function Home() {
 </div>
                 </Card>
 
-                                <Dialog open={isFavoritesListOpen} onOpenChange={setIsFavoritesListOpen}>
-                    <DialogContent className="max-w-md">
+                <Dialog open={isFavoritesListOpen} onOpenChange={setIsFavoritesListOpen}>
+                    {/* ✅ DialogContent의 크기를 조금 더 키워서 상세 정보가 잘 보이게 합니다. */}
+                    <DialogContent className="max-w-lg">
                         <DialogHeader>
                             <DialogTitle className="text-xl">즐겨찾기 목록</DialogTitle>
                         </DialogHeader>
-                        <div className="max-h-[60vh] overflow-y-auto pr-4 mt-4">
+                        <div className="max-h-[70vh] overflow-y-auto pr-4 mt-4">
                             {favorites.length > 0 ? (
-                                <ul className="space-y-3">
+                                // ✅ 검색 결과 목록에서 사용하던 Accordion 코드를 그대로 가져옵니다.
+                                //    데이터 소스만 restaurantList에서 favorites로 변경합니다.
+                                <Accordion
+                                    type="single"
+                                    collapsible
+                                    className="w-full"
+                                    value={selectedItemId}
+                                    onValueChange={setSelectedItemId}
+                                >
                                     {favorites.map((place) => {
-                                        // ✅ CCTV 3: 화면에 그려지기 직전의 개별 데이터 감시
-                                        console.log("CCTV 3: 렌더링되는 개별 place 데이터", place);
-
+                                        const details = place.googleDetails;
                                         return (
-                                            <li key={place.id} className="flex items-center justify-between p-2 rounded-md border">
-                                                <div>
-                                                    <p className="font-semibold">{place.placeName}</p>
-                                                    <p className="text-sm text-gray-500">
-                                                        {place.categoryName?.split('>').pop()?.trim() || '카테고리 정보 없음'}
-                                                    </p>
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => toggleFavorite(place)}
-                                                >
-                                                    삭제
-                                                </Button>
-                                            </li>
+                                            <AccordionItem value={place.id} key={place.id} className="border-b group">
+                                                <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
+                                                    <AccordionTrigger className="text-left hover:no-underline p-0 [&_svg]:hidden">
+                                                        <div className="w-full">
+                                                            <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
+                                                                <CardTitle className="text-md">
+                                                                    {place.placeName}
+                                                                </CardTitle>
+                                                                {/* 즐겨찾기 목록에서는 거리 정보가 없으므로 표시하지 않거나, 다른 정보를 표시할 수 있습니다. */}
+                                                            </CardHeader>
+                                                            <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
+                                                                <span>
+                                                                    {place.categoryName
+                                                                        .split(">")
+                                                                        .pop()
+                                                                        ?.trim()}
+                                                                </span>
+                                                                {details?.rating && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span className="text-yellow-400">★</span>
+                                                                        <span>{details.rating.toFixed(1)}</span>
+                                                                    </div>
+                                                                )}
+                                                            </CardContent>
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent>
+                                                        {/* 상세 정보 표시는 검색 결과 아코디언의 AccordionContent 내부 로직과
+                                                        완벽히 동일하므로, 해당 코드를 여기에 그대로 복사-붙여넣기 하면 됩니다.
+                                                        (StarRating, 영업 정보, 사진, 카카오/구글맵 링크 버튼 등)
+                                                        */}
+                                                        <div className="px-4 pb-4 text-sm space-y-3 border-t">
+                                                        {/* ... (생략) restaurantList 아코디언의 상세 정보 내용을 여기에 붙여넣으세요 ... */}
+                                                        <div className="flex items-center justify-between pt-2">
+                                                                <p className="text-xs text-gray-500">
+                                                                    {place.categoryName}
+                                                                </p>
+                                                            <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8"
+                                                                    onClick={() => toggleFavorite(place)}
+                                                                >
+                                                                    <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                                                </Button>
+                                                            </div>
+                                                        {/* ... (이하 모든 상세 정보 코드) ... */}
+                                                        </div>
+                                                    </AccordionContent>
+                                                </Card>
+                                            </AccordionItem>
                                         );
                                     })}
-                                </ul>
+                                </Accordion>
                             ) : (
                                 <div className="text-center py-8 text-gray-500">
                                     <p>즐겨찾기에 등록된 음식점이 없습니다.</p>
