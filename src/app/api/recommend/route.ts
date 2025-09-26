@@ -40,8 +40,8 @@ export async function GET(request: Request) {
             blacklistIds = blacklistEntries.map(entry => entry.restaurant.kakaoPlaceId);
         }
 
-        let finalResults: KakaoPlaceItem[] = [];
-        let fetchedResults = new Set<string>(); // 중복 체크용
+        const finalResults: KakaoPlaceItem[] = []; 
+        const fetchedResults = new Set<string>();
         let excludedCount = 0;
         const categories = query.split(',');
 
