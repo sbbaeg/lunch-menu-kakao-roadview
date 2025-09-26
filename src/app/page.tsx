@@ -39,6 +39,17 @@ import {
 } from "@/components/ui/accordion";
 
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+
 // page.tsx 파일 상단, import 구문 바로 아래
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -271,6 +282,8 @@ export default function Home() {
     const [blacklist, setBlacklist] = useState<Restaurant[]>([]); // 관리 목록을 담을 상태
     const [isBlacklistOpen, setIsBlacklistOpen] = useState(false); // 관리 팝업을 여닫을 상태
     const [excludedCount, setExcludedCount] = useState<number>(0); // 제외된 개수를 담을 상태
+    const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
+
 
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
@@ -525,113 +538,110 @@ export default function Home() {
     };
 
     const recommendProcess = (isRoulette: boolean) => {
-        setLoading(true);
-        setDisplayedSortOrder(sortOrder);
-        setExcludedCount(0);
-        clearMapAndResults();
-        if (searchInFavoritesOnly) {
-            if (favorites.length === 0) {
-                alert("즐겨찾기에 등록된 음식점이 없습니다.");
-                setLoading(false);
-                return;
-            }
+    setLoading(true);
+    setDisplayedSortOrder(sortOrder);
+    setExcludedCount(0);
+    clearMapAndResults();
 
-            // 즐겨찾기 목록을 결과로 사용 (API 호출 없음)
-            const results = favorites.filter(place => {
-            // 1. 카테고리 필터
-            const categoryMatch = selectedCategories.length === 0 || 
-                                  selectedCategories.some(cat => place.categoryName.includes(cat));
+    // ✅ results 변수를 함수 최상단에 선언합니다.
+    let results: Restaurant[] = [];
 
-            // 2. 최소 별점 필터
-            const ratingMatch = (place.googleDetails?.rating || 0) >= minRating;
-
-            return categoryMatch && ratingMatch;
-        });
-
-        if (results.length === 0) {
-            alert("즐겨찾기 중에서 현재 필터 조건에 맞는 음식점이 없습니다.");
+    if (searchInFavoritesOnly) {
+        if (favorites.length === 0) {
+            setAlertInfo({ title: "알림", message: "즐겨찾기에 등록된 음식점이 없습니다." });
             setLoading(false);
             return;
         }
 
-            if (isRoulette) {
-                if (results.length < 2) {
-                    alert(`룰렛을 돌리기에 즐겨찾기 수가 부족합니다. (2개 이상 필요)`);
-                    setLoading(false);
-                    return;
-                }
-                setRouletteItems(results);
-                setIsRouletteOpen(true);
-            } else {
-                setRestaurantList(results);
-                displayMarkers(results);
-            }
-            setLoading(false);
+        // ✅ let/const 키워드를 삭제하고, 이미 선언된 results에 값을 할당합니다.
+        results = favorites.filter(place => {
+            const categoryMatch = selectedCategories.length === 0 || 
+                                  selectedCategories.some(cat => place.categoryName.includes(cat));
+            const ratingMatch = (place.googleDetails?.rating || 0) >= minRating;
+            return categoryMatch && ratingMatch;
+        });
 
+        if (results.length === 0) {
+            setAlertInfo({ title: "알림", message: "즐겨찾기 중에서 현재 필터 조건에 맞는 음식점이 없습니다." });
+            setLoading(false);
+            return;
+        }
+
+        // ✅ 정렬 및 개수 제한 로직을 이 안으로 이동시킵니다.
+        let sortedResults: Restaurant[] = [];
+        if (sortOrder === 'rating') {
+            sortedResults = [...results].sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
         } else {
-            // '즐겨찾기만 검색' 옵션이 꺼져 있을 때의 기존 로직 (수정 전 코드와 동일)
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const { latitude, longitude } = position.coords;
-                    const currentLocation = new window.kakao.maps.LatLng(
-                        latitude,
-                        longitude
-                    );
-                    setUserLocation(currentLocation);
-                    if (mapInstance.current)
-                        mapInstance.current.setCenter(currentLocation);
-                    try {
-                        const restaurants = await getNearbyRestaurants(
-                            latitude,
-                            longitude
-                        );
-                        if (restaurants.length === 0) {
-                            alert("주변에 조건에 맞는 음식점을 찾지 못했어요!");
-                            setLoading(false);
-                            return;
-                        }
-                        if (isRoulette) {
-                            const rouletteCandidates = restaurants.slice(
-                                0,
-                                resultCount
-                            );
-                            if (rouletteCandidates.length < 2) {
-                                alert(
-                                    `주변에 추첨할 음식점이 ${resultCount}개 미만입니다.`
-                                );
-                                setLoading(false);
-                                return;
-                            }
-                            setRouletteItems(rouletteCandidates);
-                            setIsRouletteOpen(true);
-                            setMustSpin(false);
-                        } else {
-                            const finalRestaurants =
-                                sortOrder === "distance" || sortOrder === "rating"
-                                    ? restaurants
-                                    : [...restaurants]
-                                        .sort(() => 0.5 - Math.random())
-                                        .slice(0, resultCount);
-                            setRestaurantList(finalRestaurants);
-                            if (finalRestaurants.length > 0) {
-                                displayMarkers(finalRestaurants);
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Error:", error);
-                        alert("음식점을 불러오는 데 실패했습니다.");
-                    } finally {
-                        setLoading(false);
+            sortedResults = [...results].sort(() => 0.5 - Math.random());
+        }
+        
+        // isRoulette이 아닐 경우에만 개수 제한을 적용합니다.
+        if (!isRoulette) {
+            results = sortedResults.slice(0, resultCount);
+        } else {
+            results = sortedResults;
+        }
+
+    }
+
+    if (isRoulette) {
+        if (searchInFavoritesOnly && results.length < 2) {
+             setAlertInfo({ title: "알림", message: "룰렛을 돌리기에 즐겨찾기 수가 부족합니다. (2개 이상 필요)" });
+             setLoading(false);
+             return;
+        }
+        
+        // 일반 검색의 경우, results가 비어있으므로 restaurantList에서 가져옵니다.
+        const rouletteCandidates = searchInFavoritesOnly ? results : restaurantList.slice(0, resultCount);
+
+        if (rouletteCandidates.length < 2) {
+            setAlertInfo({ title: "알림", message: `주변에 추첨할 음식점이 ${resultCount}개 미만입니다.` });
+            setLoading(false);
+            return;
+        }
+        setRouletteItems(rouletteCandidates);
+        setIsRouletteOpen(true);
+        setLoading(false); // 로딩 종료
+    } else if (searchInFavoritesOnly) {
+        // '즐겨찾기에서만 검색'이고 룰렛이 아닌 경우
+        setRestaurantList(results);
+        displayMarkers(results);
+        setLoading(false); // 로딩 종료
+    } else {
+        // '일반 검색'이고 룰렛이 아닌 경우 (기존 로직)
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                const currentLocation = new window.kakao.maps.LatLng(latitude, longitude);
+                setUserLocation(currentLocation);
+                if (mapInstance.current) mapInstance.current.setCenter(currentLocation);
+                
+                try {
+                    const restaurants = await getNearbyRestaurants(latitude, longitude);
+                    if (restaurants.length === 0) {
+                        setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
+                    } else {
+                        const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
+                            ? restaurants
+                            : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
+                        setRestaurantList(finalRestaurants);
+                        displayMarkers(finalRestaurants);
                     }
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                    alert("위치 정보를 가져오는 데 실패했습니다.");
+                } catch (error) {
+                    console.error("Error:", error);
+                    setAlertInfo({ title: "오류", message: "음식점을 불러오는 데 실패했습니다." });
+                } finally {
                     setLoading(false);
                 }
-            );
-        }
-    };
+            },
+            (error) => {
+                console.error("Geolocation error:", error);
+                setAlertInfo({ title: "오류", message: "위치 정보를 가져오는 데 실패했습니다." });
+                setLoading(false);
+            }
+        );
+    }
+};
 
     const handleSpinClick = () => {
         if (mustSpin) return;
@@ -2035,6 +2045,19 @@ export default function Home() {
                         </div>
                     </DialogContent>
                 </Dialog>
+                <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
+                        </AlertDialogHeader>
+                        <AlertDialogDescription>
+                            {alertInfo?.message}
+                        </AlertDialogDescription>
+                        <AlertDialogFooter>
+                            <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </Card>
         </main>
     );
