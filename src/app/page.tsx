@@ -1619,15 +1619,12 @@ export default function Home() {
                 </Card>
 
                 <Dialog open={isFavoritesListOpen} onOpenChange={setIsFavoritesListOpen}>
-                    {/* ✅ DialogContent의 크기를 조금 더 키워서 상세 정보가 잘 보이게 합니다. */}
                     <DialogContent className="max-w-lg">
                         <DialogHeader>
                             <DialogTitle className="text-xl">즐겨찾기 목록</DialogTitle>
                         </DialogHeader>
                         <div className="max-h-[70vh] overflow-y-auto pr-4 mt-4">
                             {favorites.length > 0 ? (
-                                // ✅ 검색 결과 목록에서 사용하던 Accordion 코드를 그대로 가져옵니다.
-                                //    데이터 소스만 restaurantList에서 favorites로 변경합니다.
                                 <Accordion
                                     type="single"
                                     collapsible
@@ -1646,7 +1643,6 @@ export default function Home() {
                                                                 <CardTitle className="text-md">
                                                                     {place.placeName}
                                                                 </CardTitle>
-                                                                {/* 즐겨찾기 목록에서는 거리 정보가 없으므로 표시하지 않거나, 다른 정보를 표시할 수 있습니다. */}
                                                             </CardHeader>
                                                             <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
                                                                 <span>
@@ -1664,18 +1660,17 @@ export default function Home() {
                                                             </CardContent>
                                                         </div>
                                                     </AccordionTrigger>
+                                                    {/* ▼▼▼▼▼▼▼▼▼▼ 바로 이 AccordionContent 내부를 채워넣어야 합니다 ▼▼▼▼▼▼▼▼▼▼ */}
                                                     <AccordionContent>
-                                                        {/* 상세 정보 표시는 검색 결과 아코디언의 AccordionContent 내부 로직과
-                                                        완벽히 동일하므로, 해당 코드를 여기에 그대로 복사-붙여넣기 하면 됩니다.
-                                                        (StarRating, 영업 정보, 사진, 카카오/구글맵 링크 버튼 등)
-                                                        */}
-                                                        <div className="px-4 pb-4 text-sm space-y-3 border-t">
-                                                        {/* ... (생략) restaurantList 아코디언의 상세 정보 내용을 여기에 붙여넣으세요 ... */}
-                                                        <div className="flex items-center justify-between pt-2">
+                                                        <div
+                                                            className="px-4 pb-4 text-sm space-y-3 border-t"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <div className="flex items-center justify-between pt-2">
                                                                 <p className="text-xs text-gray-500">
                                                                     {place.categoryName}
                                                                 </p>
-                                                            <Button
+                                                                <Button
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     className="h-8 w-8"
@@ -1684,9 +1679,115 @@ export default function Home() {
                                                                     <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
                                                                 </Button>
                                                             </div>
-                                                        {/* ... (이하 모든 상세 정보 코드) ... */}
+
+                                                            {!details && (
+                                                                <p className="text-gray-500">
+                                                                    Google에서 추가 정보를 찾지 못했습니다.
+                                                                </p>
+                                                            )}
+
+                                                            {details?.rating && (
+                                                                <Accordion type="single" collapsible className="w-full">
+                                                                    <AccordionItem value="reviews" className="border-none">
+                                                                        <AccordionTrigger className="hover:no-underline py-1">
+                                                                            <StarRating
+                                                                                rating={details.rating}
+                                                                                reviewCount={details.reviews?.length || 0}
+                                                                                isTrigger={true}
+                                                                            />
+                                                                        </AccordionTrigger>
+                                                                        <AccordionContent>
+                                                                            <div className="max-h-[300px] overflow-y-auto pr-2">
+                                                                                {details?.reviews && details.reviews.length > 0 ? (
+                                                                                    details.reviews.map((review, index) => (
+                                                                                        <div key={index} className="border-b py-4">
+                                                                                            <div className="flex items-center mb-2">
+                                                                                                <Image
+                                                                                                    src={review.profile_photo_url}
+                                                                                                    alt={review.author_name}
+                                                                                                    width={40}
+                                                                                                    height={40}
+                                                                                                    className="rounded-full mr-3"
+                                                                                                />
+                                                                                                <div>
+                                                                                                    <p className="font-semibold">{review.author_name}</p>
+                                                                                                    <p className="text-xs text-gray-500">{review.relative_time_description}</p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div><StarRating rating={review.rating} /></div>
+                                                                                            <p className="mt-2 text-sm">{review.text}</p>
+                                                                                        </div>
+                                                                                    ))
+                                                                                ) : (
+                                                                                    <p className="py-4 text-center text-gray-500">표시할 리뷰가 없습니다.</p>
+                                                                                )}
+                                                                            </div>
+                                                                        </AccordionContent>
+                                                                    </AccordionItem>
+                                                                </Accordion>
+                                                            )}
+
+                                                            {details?.opening_hours && (
+                                                                <div className="flex flex-col">
+                                                                    <p>
+                                                                        <strong>영업:</strong>{" "}
+                                                                        <span className={details.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                                                                            {details.opening_hours.open_now ? "영업 중" : "영업 종료"}
+                                                                        </span>
+                                                                    </p>
+                                                                    <p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(details.opening_hours)})</p>
+                                                                </div>
+                                                            )}
+
+                                                            {details?.phone && (
+                                                                <p><strong>전화:</strong> <a href={`tel:${details.phone}`} className="text-blue-600 hover:underline">{details.phone}</a></p>
+                                                            )}
+
+                                                            {details?.photos && details.photos.length > 0 && (
+                                                                <div>
+                                                                    <strong>사진:</strong>
+                                                                    <Carousel className="w-full max-w-xs mx-auto mt-2">
+                                                                        <CarouselContent>
+                                                                            {details.photos.map((photoUrl, index) => (
+                                                                                <CarouselItem key={index}>
+                                                                                    <Dialog>
+                                                                                        <DialogTrigger asChild>
+                                                                                            <button className="w-full focus:outline-none">
+                                                                                                <Image src={photoUrl} alt={`${place.placeName} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" />
+                                                                                            </button>
+                                                                                        </DialogTrigger>
+                                                                                        <DialogContent className="max-w-3xl h-[80vh] p-2">
+                                                                                            <Image src={photoUrl} alt={`${place.placeName} photo ${index + 1}`} fill style={{ objectFit: "contain" }} />
+                                                                                        </DialogContent>
+                                                                                    </Dialog>
+                                                                                </CarouselItem>
+                                                                            ))}
+                                                                        </CarouselContent>
+                                                                        <CarouselPrevious className="left-2" />
+                                                                        <CarouselNext className="right-2" />
+                                                                    </Carousel>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="flex gap-2 pt-2">
+                                                                <a href={place.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                                                                    <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold flex items-center justify-center">
+                                                                        <Image src="/kakaomap_icon.png" alt="카카오맵 로고" width={16} height={16} className="mr-2" />
+                                                                        카카오맵
+                                                                    </Button>
+                                                                </a>
+                                                                {details?.url && (
+                                                                    <a href={details.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                                                                        <Button variant="outline" size="sm" className="w-full font-bold flex items-center justify-center">
+                                                                            <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
+                                                                            구글맵
+                                                                        </Button>
+                                                                    </a>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </AccordionContent>
+                                                    {/* ▲▲▲▲▲▲▲▲▲▲ 이 AccordionContent 내부를 채워넣어야 합니다 ▲▲▲▲▲▲▲▲▲▲ */}
                                                 </Card>
                                             </AccordionItem>
                                         );
