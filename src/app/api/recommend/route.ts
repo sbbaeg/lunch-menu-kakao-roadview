@@ -1,4 +1,4 @@
-// /api/recommend/route.ts (수정 후 최종 코드)
+// app/api/recommend/route.ts (GET 함수 전체 교체)
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
@@ -6,6 +6,8 @@ import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 import { KakaoPlaceItem } from '@/lib/types';
+
+export const dynamic = 'force-dynamic'; // 캐싱 방지
 
 const prisma = new PrismaClient();
 
@@ -20,18 +22,15 @@ export async function GET(request: Request) {
     const minRating = Number(searchParams.get('minRating') || '0');
     const openNow = searchParams.get('openNow') === 'true';
     const includeUnknown = searchParams.get('includeUnknown') === 'true';
-
     const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
 
     if (!lat || !lng) {
         return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
     }
 
-    // ✅ 1. 현재 사용자 세션을 가져옵니다.
     const session = await getServerSession(authOptions);
 
     try {
-        // ✅ 2. 로그인 상태이면, 사용자의 블랙리스트 ID 목록을 DB에서 조회합니다.
         let blacklistIds: string[] = [];
         if (session?.user?.id) {
             const blacklistEntries = await prisma.blacklist.findMany({
@@ -41,40 +40,44 @@ export async function GET(request: Request) {
             blacklistIds = blacklistEntries.map(entry => entry.restaurant.kakaoPlaceId);
         }
 
-        // 3. 카카오 API에 넉넉하게(최대 45개) 검색을 요청합니다.
-        let allResults: KakaoPlaceItem[] = [];
+        let finalResults: KakaoPlaceItem[] = [];
+        let fetchedResults = new Set<string>(); // 중복 체크용
+        let excludedCount = 0;
         const categories = query.split(',');
+
+        // ✅ 요청한 개수(size)를 채울 때까지 카카오 API 페이지를 넘기며 검색
         for (const category of categories) {
-            // 한 페이지에 최대 15개씩, 총 3페이지를 호출하여 최대 45개를 가져옵니다.
             for (let page = 1; page <= 3; page++) {
+                if (finalResults.length >= size) break;
+
                 const response = await fetch(
                     `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(category.trim())}&y=${lat}&x=${lng}&radius=${radius}&sort=${kakaoSort}&size=15&page=${page}`,
                     { headers: { Authorization: `KakaoAK ${process.env.KAKAO_REST_API_KEY}` } }
                 );
                 const data: { documents?: KakaoPlaceItem[] } = await response.json();
-                if (data.documents) {
-                    allResults = [...allResults, ...data.documents];
+                
+                if (!data.documents) continue;
+
+                for (const place of data.documents) {
+                    if (finalResults.length >= size) break;
+                    if (fetchedResults.has(place.id)) continue;
+
+                    fetchedResults.add(place.id);
+
+                    if (blacklistIds.includes(place.id)) {
+                        excludedCount++;
+                    } else {
+                        finalResults.push(place);
+                    }
                 }
             }
+            if (finalResults.length >= size) break;
         }
-        
-        const uniqueResults = allResults.filter(
-            (place, index, self) => index === self.findIndex((p) => p.id === place.id)
-        );
 
-        // ✅ 4. 카카오 검색 결과에서 블랙리스트에 포함된 항목을 필터링합니다.
-        const originalCount = uniqueResults.length;
-        const nonBlacklistedResults = uniqueResults.filter(place => !blacklistIds.includes(place.id));
-        const excludedCount = originalCount - nonBlacklistedResults.length;
-        
-        // 5. 요청한 개수(size)만큼 잘라냅니다.
-        const slicedResults = nonBlacklistedResults.slice(0, size);
-
-        // 6. 최종 결과에 대해서만 Google 상세 정보를 조회합니다.
-        const enrichedResultsPromises = slicedResults.map(place => fetchFullGoogleDetails(place));
+        // 최종 결과에 대해서만 Google 상세 정보 조회 및 추가 필터링
+        const enrichedResultsPromises = finalResults.map(place => fetchFullGoogleDetails(place));
         const enrichedResults = await Promise.all(enrichedResultsPromises);
 
-        // 7. '영업 중' 및 '별점' 필터를 적용합니다.
         const filteredByRating = enrichedResults.filter(place => (place.googleDetails?.rating || 0) >= minRating);
         const filteredByOpenStatus = openNow
             ? filteredByRating.filter(place => {
@@ -83,16 +86,15 @@ export async function GET(request: Request) {
             })
             : filteredByRating;
 
-        // 8. 최종 정렬
-        let finalResults: KakaoPlaceItem[] = [];
+        let sortedResults: KakaoPlaceItem[] = [];
         if (sort === 'rating') {
-            finalResults = filteredByOpenStatus.sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
+            sortedResults = filteredByOpenStatus.sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
         } else {
-            finalResults = filteredByOpenStatus.sort((a, b) => Number(a.distance) - Number(b.distance));
+            sortedResults = filteredByOpenStatus; // 카카오 API에서 이미 distance 또는 accuracy로 정렬됨
         }
 
         return NextResponse.json({
-            documents: finalResults,
+            documents: sortedResults,
             excludedCount: excludedCount
         });
 
