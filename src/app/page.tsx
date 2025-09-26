@@ -260,6 +260,12 @@ export default function Home() {
     const [searchInFavoritesOnly, setSearchInFavoritesOnly] = useState(false);
     const [tempSearchInFavoritesOnly, setTempSearchInFavoritesOnly] = useState(false);
 
+    const [openNowOnly, setOpenNowOnly] = useState(false);
+    const [includeUnknownHours, setIncludeUnknownHours] = useState(true); // 정보 없는 가게 포함 여부 (기본값 true)
+    const [tempOpenNowOnly, setTempOpenNowOnly] = useState(false);
+    const [tempIncludeUnknownHours, setTempIncludeUnknownHours] = useState(true);
+
+
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
 
     useEffect(() => {
@@ -286,6 +292,8 @@ export default function Home() {
         setTempResultCount(resultCount);
         setTempMinRating(minRating);
         setTempSearchInFavoritesOnly(searchInFavoritesOnly);
+        setTempOpenNowOnly(openNowOnly);
+        setTempIncludeUnknownHours(includeUnknownHours);
         setIsFilterOpen(true);
     };
 
@@ -440,7 +448,7 @@ export default function Home() {
         const response = await fetch(
             `/api/recommend?lat=${latitude}&lng=${longitude}&query=${encodeURIComponent(
                 query
-            )}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}`
+            )}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`
         );
         if (!response.ok) throw new Error("API call failed");
         
@@ -715,6 +723,8 @@ export default function Home() {
         setResultCount(tempResultCount);
         setMinRating(tempMinRating);
         setSearchInFavoritesOnly(tempSearchInFavoritesOnly);
+        setOpenNowOnly(tempOpenNowOnly);
+        setIncludeUnknownHours(tempIncludeUnknownHours);
         setIsFilterOpen(false);
     };
 
@@ -1043,6 +1053,35 @@ export default function Home() {
                                     className="font-semibold text-lg cursor-pointer"
                                 >
                                     즐겨찾기에서만 검색
+                                </Label>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="temp-open-now"
+                                    checked={tempOpenNowOnly}
+                                    onCheckedChange={(checked) => setTempOpenNowOnly(Boolean(checked))}
+                                />
+                                <Label
+                                    htmlFor="temp-open-now"
+                                    className="font-semibold text-lg cursor-pointer"
+                                >
+                                    영업 중인 가게만 보기
+                                </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 pl-6">
+                                <Checkbox
+                                    id="temp-include-unknown"
+                                    checked={tempIncludeUnknownHours}
+                                    onCheckedChange={(checked) => setTempIncludeUnknownHours(Boolean(checked))}
+                                    disabled={!tempOpenNowOnly} // '영업 중' 필터가 꺼져있으면 비활성화
+                                />
+                                <Label
+                                    htmlFor="temp-include-unknown"
+                                    className={tempOpenNowOnly ? "cursor-pointer" : "text-gray-400 dark:text-gray-500"}
+                                >
+                                    영업 정보 없는 가게 포함
                                 </Label>
                             </div>
                         </div>

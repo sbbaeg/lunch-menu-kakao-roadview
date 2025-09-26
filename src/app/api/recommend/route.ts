@@ -18,6 +18,9 @@ export async function GET(request: Request) {
   const size = searchParams.get('size') || '5';
   const minRating = Number(searchParams.get('minRating') || '0');
 
+  const openNow = searchParams.get('openNow') === 'true';
+  const includeUnknown = searchParams.get('includeUnknown') === 'true';
+
   const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
 
   if (!lat || !lng) {
@@ -57,13 +60,20 @@ export async function GET(request: Request) {
       (place.googleDetails?.rating || 0) >= minRating
     );
 
+    const filteredByOpenStatus = openNow
+      ? filteredByRating.filter(place => {
+          const hours = place.googleDetails?.opening_hours;
+          // 영업 중이거나, 정보 없는 가게를 포함하는 옵션이 켜져 있으면서 정보가 없는 경우
+          return hours?.open_now === true || (includeUnknown && hours === undefined);
+        })
+      : filteredByRating;
+
     // ✅ 5. 변수 타입을 'KakaoPlaceItem[]'으로 명시합니다.
     let sortedResults: KakaoPlaceItem[] = [];
     if (sort === 'rating') {
-      sortedResults = filteredByRating.sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
+      sortedResults = filteredByOpenStatus.sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
     } else {
-      // KakaoPlaceItem 타입에는 distance가 string이므로 숫자로 변환하여 정렬합니다.
-      sortedResults = filteredByRating.sort((a, b) => Number(a.distance) - Number(b.distance));
+      sortedResults = filteredByOpenStatus.sort((a, b) => Number(a.distance) - Number(b.distance));
     }
     
     const finalResults = sortedResults.slice(0, Number(size));
