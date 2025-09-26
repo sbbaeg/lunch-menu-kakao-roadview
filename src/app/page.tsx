@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/carousel";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { HelpCircle, ChevronDown, Heart } from "lucide-react";
+import { HelpCircle, ChevronDown, Heart, EyeOff } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
     Accordion,
@@ -268,9 +268,35 @@ export default function Home() {
 
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
 
+    const [blacklist, setBlacklist] = useState<Restaurant[]>([]); // 관리 목록을 담을 상태
+    const [isBlacklistOpen, setIsBlacklistOpen] = useState(false); // 관리 팝업을 여닫을 상태
+    const [excludedCount, setExcludedCount] = useState<number>(0); // 제외된 개수를 담을 상태
+
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
     }, [favorites]);
+
+    // ✅ 로그인 상태가 변경될 때 블랙리스트를 불러오는 useEffect를 추가합니다.
+    useEffect(() => {
+        const loadBlacklist = async () => {
+            if (status === 'authenticated') {
+                try {
+                    const response = await fetch('/api/blacklist');
+                    if (response.ok) {
+                        const data = await response.json();
+                        setBlacklist(data);
+                    }
+                } catch (error) {
+                    console.error('블랙리스트 로딩 중 오류:', error);
+                }
+            } else {
+                // 로그아웃 시 블랙리스트 비우기
+                setBlacklist([]);
+            }
+        };
+
+        loadBlacklist();
+    }, [status]);
 
     const [searchAddress, setSearchAddress] = useState("");
     const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
@@ -450,10 +476,8 @@ export default function Home() {
                 query
             )}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`
         );
-        if (!response.ok) throw new Error("API call failed");
-        
-        // ✅ snake_case로 받은 데이터를 camelCase로 번역하는 로직 추가
-        const data: KakaoSearchResponse = await response.json();
+        const data: { documents?: KakaoPlaceItem[], excludedCount?: number } = await response.json();
+
         const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
             id: place.id,
             placeName: place.place_name,
@@ -465,7 +489,9 @@ export default function Home() {
             distance: place.distance,
             googleDetails: place.googleDetails,
         }));
-        
+
+        setExcludedCount(data.excludedCount || 0);
+                
         return formattedRestaurants;
     };
     const handleTempCategoryChange = (category: string) => {
@@ -501,6 +527,7 @@ export default function Home() {
     const recommendProcess = (isRoulette: boolean) => {
         setLoading(true);
         setDisplayedSortOrder(sortOrder);
+        setExcludedCount(0);
         clearMapAndResults();
         if (searchInFavoritesOnly) {
             if (favorites.length === 0) {
@@ -728,6 +755,17 @@ export default function Home() {
         setIsFilterOpen(false);
     };
 
+    const handleBlacklistClick = () => {
+        if (status === 'authenticated') {
+            // 로그인 상태이면 -> 블랙리스트 팝업 열기
+            setIsBlacklistOpen(true);
+        } else {
+            // 비로그인 상태이면 -> 로그인 안내창 띄우기
+            alert('로그인이 필요한 기능입니다.');
+            // (추가 개선) alert 대신, 로그인 Dialog를 열어주는 것이 더 좋은 사용자 경험을 제공합니다.
+        }
+    };
+
     const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
 
     const toggleFavorite = async (place: Restaurant) => {
@@ -758,6 +796,41 @@ export default function Home() {
         // 게스트 상태이면 localStorage에 저장
         else {
             localStorage.setItem('favoriteRestaurants', JSON.stringify(newFavorites));
+        }
+    };
+
+    const isBlacklisted = (placeId: string) => blacklist.some((item) => item.id === placeId);
+
+    const toggleBlacklist = async (place: Restaurant) => {
+        if (status !== 'authenticated') {
+            alert('로그인이 필요한 기능입니다.');
+            return;
+        }
+
+        // 낙관적 업데이트: API 응답을 기다리지 않고 UI를 먼저 변경
+        const isCurrentlyBlacklisted = isBlacklisted(place.id);
+        const newBlacklist = isCurrentlyBlacklisted
+            ? blacklist.filter((item) => item.id !== place.id)
+            : [...blacklist, place];
+        setBlacklist(newBlacklist);
+
+        // API 호출
+        try {
+            const response = await fetch('/api/blacklist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(place),
+            });
+
+            if (!response.ok) {
+                // 실패 시 UI를 원래대로 복구
+                setBlacklist(blacklist); 
+                alert('블랙리스트 처리에 실패했습니다.');
+            }
+        } catch (error) {
+            // 실패 시 UI를 원래대로 복구
+            setBlacklist(blacklist);
+            alert('블랙리스트 처리에 실패했습니다.');
         }
     };
     
@@ -1291,11 +1364,24 @@ export default function Home() {
                     >
                         즐겨찾기
                     </Button>
+                    <Button
+                        variant="outline"
+                        size="lg"
+                        className="px-4"
+                        onClick={handleBlacklistClick}
+                    >
+                        블랙리스트
+                    </Button>
             </div>
 
         <div className="w-full max-w-sm space-y-2">
             {restaurantList.length > 0 ? (
                 <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
+                    {excludedCount > 0 && (
+                        <div className="p-3 mb-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
+                            <p>블랙리스트에 포함된 {excludedCount}개의 장소가 결과에서 제외되었습니다.</p>
+                        </div>
+                    )}
                     <p className="text-sm font-semibold text-gray-600 pl-1">
                         {getSortTitle(displayedSortOrder)}:{" "}
                         {restaurantList.length}개
@@ -1364,18 +1450,32 @@ export default function Home() {
                                             >
                                                 <div className="flex items-center justify-between pt-2">
                                                     <p className="text-xs text-gray-500">
-                                                        {
-                                                            place.categoryName
-                                                        }
+                                                        {place.categoryName?.split('>').pop()?.trim()}
                                                     </p>
-                                                   <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                        onClick={() => toggleFavorite(place)}
-                                                    >
-                                                        <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
-                                                    </Button>
+                                                    <div className="flex items-center">
+                                                        {/* ✅ 블랙리스트 버튼은 로그인 상태일 때만 렌더링합니다. */}
+                                                        {status === 'authenticated' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                onClick={() => toggleBlacklist(place)}
+                                                                title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
+                                                            >
+                                                                <EyeOff className={isBlacklisted(place.id) ? "fill-slate-500 text-slate-500" : "text-gray-400"} />
+                                                            </Button>
+                                                        )}
+                                                        {/* ✅ 즐겨찾기 버튼은 항상 보이도록 유지합니다. */}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                            onClick={() => toggleFavorite(place)}
+                                                            title={isFavorite(place.id) ? "즐겨찾기에서 제거" : "즐겨찾기에 추가"}
+                                                        >
+                                                            <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                                        </Button>
+                                                    </div>
                                                 </div>
 
                                                 {!details && (
@@ -1700,7 +1800,6 @@ export default function Home() {
                                                             </CardContent>
                                                         </div>
                                                     </AccordionTrigger>
-                                                    {/* ▼▼▼▼▼▼▼▼▼▼ 바로 이 AccordionContent 내부를 채워넣어야 합니다 ▼▼▼▼▼▼▼▼▼▼ */}
                                                     <AccordionContent>
                                                         <div
                                                             className="px-4 pb-4 text-sm space-y-3 border-t"
@@ -1708,16 +1807,32 @@ export default function Home() {
                                                         >
                                                             <div className="flex items-center justify-between pt-2">
                                                                 <p className="text-xs text-gray-500">
-                                                                    {place.categoryName}
+                                                                    {place.categoryName?.split('>').pop()?.trim()}
                                                                 </p>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8"
-                                                                    onClick={() => toggleFavorite(place)}
-                                                                >
-                                                                    <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
-                                                                </Button>
+                                                                <div className="flex items-center">
+                                                                    {/* 블랙리스트 버튼은 로그인 상태일 때만 렌더링 */}
+                                                                    {status === 'authenticated' && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8"
+                                                                            onClick={() => toggleBlacklist(place)}
+                                                                            title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
+                                                                        >
+                                                                            <EyeOff className={isBlacklisted(place.id) ? "fill-slate-500 text-slate-500" : "text-gray-400"} />
+                                                                        </Button>
+                                                                    )}
+                                                                    {/* 즐겨찾기 버튼은 항상 보이도록 유지 */}
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8"
+                                                                        onClick={() => toggleFavorite(place)}
+                                                                        title={isFavorite(place.id) ? "즐겨찾기에서 제거" : "즐겨찾기에 추가"}
+                                                                    >
+                                                                        <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                                                    </Button>
+                                                                </div>
                                                             </div>
 
                                                             {!details && (
@@ -1836,6 +1951,42 @@ export default function Home() {
                             ) : (
                                 <div className="text-center py-8 text-gray-500">
                                     <p>즐겨찾기에 등록된 음식점이 없습니다.</p>
+                                </div>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isBlacklistOpen} onOpenChange={setIsBlacklistOpen}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl">블랙리스트 관리</DialogTitle>
+                        </DialogHeader>
+                        <div className="max-h-[60vh] overflow-y-auto pr-4 mt-4">
+                            {blacklist.length > 0 ? (
+                                // ✅ ul 내부를 실제 데이터로 채우고 [삭제] 버튼을 추가합니다.
+                                <ul className="space-y-3">
+                                    {blacklist.map((place) => (
+                                        <li key={place.id} className="flex items-center justify-between p-2 rounded-md border">
+                                            <div>
+                                                <p className="font-semibold">{place.placeName}</p>
+                                                <p className="text-sm text-gray-500">
+                                                    {place.categoryName?.split('>').pop()?.trim()}
+                                                </p>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => toggleBlacklist(place)}
+                                            >
+                                                삭제
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>블랙리스트에 등록된 음식점이 없습니다.</p>
                                 </div>
                             )}
                         </div>
