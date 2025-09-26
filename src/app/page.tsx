@@ -1330,8 +1330,9 @@ export default function Home() {
                                                 </CardHeader>
                                                 <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
                                                     <span>
+                                                        {/* ✅ categoryName 뒤에 ?. 를 추가하여 안정성을 높입니다. */}
                                                         {place.categoryName
-                                                            .split(
+                                                            ?.split(
                                                                 ">"
                                                             )
                                                             .pop()
