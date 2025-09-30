@@ -1411,7 +1411,7 @@ export default function Home() {
 
         <div className="w-full space-y-2">
             {restaurantList.length > 0 ? (
-                <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
+                <div className="thin-scrollbar space-y-2 max-h-[800px] overflow-y-auto pr-2">
                     {excludedCount > 0 && (
                         <div className="p-3 mb-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
                             <p>블랙리스트에 포함된 {excludedCount}개의 장소가 결과에서 제외되었습니다.</p>
