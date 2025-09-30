@@ -948,7 +948,28 @@ export default function Home() {
                                             </DialogTrigger>
                                             {/* 이전에 만들어둔 로그인 DialogContent를 여기에 붙여넣으면 됩니다. */}
                                             <DialogContent>
-                                                {/* ... (기존 로그인 Dialog 내용) ... */}
+                                                <DialogHeader>
+                                                    <DialogTitle className="text-center text-2xl font-bold">
+                                                        로그인
+                                                    </DialogTitle>
+                                                </DialogHeader>
+                                                <div className="flex flex-col gap-4 py-4">
+                                                    <Button
+                                                        onClick={() => signIn('google')}
+                                                        variant="outline"
+                                                        className="w-full h-12 text-lg"
+                                                    >
+                                                        <Image src="/google_icon.png" alt="Google" width={24} height={24} className="mr-3" />
+                                                        Google 계정으로 로그인
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => signIn('kakao')}
+                                                        className="w-full h-12 text-lg bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
+                                                    >
+                                                        <Image src="/kakao_icon.png" alt="Kakao" width={24} height={24} className="mr-3" />
+                                                        카카오 계정으로 로그인
+                                                    </Button>
+                                                </div>
                                             </DialogContent>
                                         </Dialog>
                                     </div>
@@ -1107,7 +1128,7 @@ export default function Home() {
 
     {/* 오른쪽 제어 패널 */}
     <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
-        <div className="w-full max-w-sm flex gap-2 justify-center">
+        <div className="w-full flex gap-2 justify-center">
             <Button
                 onClick={() => recommendProcess(false)}
                 disabled={loading || !isMapReady}
@@ -1388,7 +1409,7 @@ export default function Home() {
             </Dialog>
         </div>
 
-        <div className="w-full max-w-sm space-y-2">
+        <div className="w-full space-y-2">
             {restaurantList.length > 0 ? (
                 <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
                     {excludedCount > 0 && (
