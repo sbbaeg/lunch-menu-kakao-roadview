@@ -33,11 +33,6 @@ export const authOptions: NextAuthOptions = {
     strategy: "database",
   },
   callbacks: {
-    // 여기에 signIn, session 콜백을 그대로 둡니다.
-    async signIn({ user, account }) {
-      // ... signIn 콜백 로직 ...
-      return true;
-    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
