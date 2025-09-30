@@ -952,22 +952,53 @@ export default function Home() {
                                                     <DialogTitle className="text-center text-2xl font-bold">
                                                         로그인
                                                     </DialogTitle>
+                                                    <p className="text-sm text-muted-foreground pt-1 text-center">
+                                                        이전에 사용한 계정으로 빠르게 로그인하세요.
+                                                    </p>
                                                 </DialogHeader>
-                                                <div className="flex flex-col gap-4 py-4">
+                                                <div className="grid gap-4 py-4">
+                                                    {/* 1. 빠른 자동 로그인을 위한 버튼 */}
                                                     <Button
                                                         onClick={() => signIn('google')}
                                                         variant="outline"
                                                         className="w-full h-12 text-lg"
                                                     >
                                                         <Image src="/google_icon.png" alt="Google" width={24} height={24} className="mr-3" />
-                                                        Google 계정으로 로그인
+                                                        Google로 빠른 로그인
                                                     </Button>
                                                     <Button
                                                         onClick={() => signIn('kakao')}
                                                         className="w-full h-12 text-lg bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
                                                     >
                                                         <Image src="/kakao_icon.png" alt="Kakao" width={24} height={24} className="mr-3" />
-                                                        카카오 계정으로 로그인
+                                                        Kakao로 빠른 로그인
+                                                    </Button>
+                                                </div>
+                                                <div className="relative my-2">
+                                                    <div className="absolute inset-0 flex items-center">
+                                                        <span className="w-full border-t" />
+                                                    </div>
+                                                    <div className="relative flex justify-center text-xs uppercase">
+                                                        <span className="bg-background px-2 text-muted-foreground">
+                                                            또는
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4">
+                                                    {/* 2. 다른 계정 선택을 위한 버튼 */}
+                                                    <Button
+                                                        variant="secondary"
+                                                        onClick={() => signIn('google', undefined, { prompt: 'select_account' })}
+                                                        className="w-full h-12 text-lg"
+                                                    >
+                                                        다른 Google 계정 사용
+                                                    </Button>
+                                                    <Button
+                                                        variant="secondary"
+                                                        onClick={() => signIn('kakao', undefined, { prompt: 'select_account' })}
+                                                        className="w-full h-12 text-lg"
+                                                    >
+                                                        다른 Kakao 계정 사용
                                                     </Button>
                                                 </div>
                                             </DialogContent>
@@ -1127,7 +1158,7 @@ export default function Home() {
     </div>
 
     {/* 오른쪽 제어 패널 */}
-    <div className="w-full md:w-1/3 flex flex-col items-center md:justify-start space-y-4">
+    <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4">
         <div className="w-full flex gap-2 justify-center">
             <Button
                 onClick={() => recommendProcess(false)}
