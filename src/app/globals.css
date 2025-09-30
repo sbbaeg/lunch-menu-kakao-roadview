@@ -135,3 +135,20 @@
     color: var(--foreground);
   }
 }
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px; /* 스크롤바의 너비 */
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border)); /* 스크롤바 막대 색상 */
+  border-radius: 3px; /* 스크롤바 막대 모서리 둥글게 */
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--ring)); /* 마우스 올렸을 때 막대 색상 */
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* 스크롤바 배경 투명하게 */
+}
