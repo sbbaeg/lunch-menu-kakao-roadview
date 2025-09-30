@@ -1,6 +1,6 @@
 "use client";
 
-import { Restaurant, KakaoPlaceItem, GoogleDetails, Review, GoogleOpeningHours } from '@/lib/types'; 
+import { Restaurant, KakaoPlaceItem, GoogleOpeningHours } from '@/lib/types'; 
 
 import { useSession, signIn, signOut } from "next-auth/react";
 
@@ -161,9 +161,6 @@ declare global {
 }
 
 // page.tsx 컴포넌트 내부에서만 사용하는 타입들
-interface KakaoSearchResponse {
-    documents: KakaoPlaceItem[];
-}
 interface RouletteOption {
     option: string;
     style?: { backgroundColor?: string; textColor?: string };
