@@ -1407,7 +1407,7 @@ export default function Home() {
                             const details =
                                 place.googleDetails;
                             return (
-                                <AccordionItem value={place.id} key={place.id} className="border-b group">
+                                <AccordionItem value={place.id} key={place.id} className="border-none group">
                                     <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
                                         <AccordionTrigger className="text-left hover:no-underline p-0 [&_svg]:hidden">
                                             <div className="w-full">
@@ -1785,7 +1785,7 @@ export default function Home() {
                                     {favorites.map((place) => {
                                         const details = place.googleDetails;
                                         return (
-                                            <AccordionItem value={place.id} key={place.id} className="border-b group">
+                                            <AccordionItem value={place.id} key={place.id} className="border-none group">
                                                 <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
                                                     <AccordionTrigger className="text-left hover:no-underline p-0 [&_svg]:hidden">
                                                         <div className="w-full">
