@@ -9,8 +9,18 @@ import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 
 const prisma = new PrismaClient();
 
-type FavoriteWithRestaurant = Prisma.FavoriteGetPayload<{
-  include: { restaurant: true; };
+type FavoriteWithTags = Prisma.FavoriteGetPayload<{
+    include: { 
+        restaurant: {
+            include: {
+                taggedBy: {
+                    include: {
+                        tag: true
+                    }
+                }
+            }
+        } 
+    }
 }>;
 
 export async function GET() {
@@ -19,9 +29,19 @@ export async function GET() {
         return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
     }
     try {
-        const favorites: FavoriteWithRestaurant[] = await prisma.favorite.findMany({
+        const favorites: FavoriteWithTags[] = await prisma.favorite.findMany({
             where: { userId: session.user.id },
-            include: { restaurant: true },
+            include: { 
+                restaurant: {
+                    include: {
+                        taggedBy: {
+                            include: {
+                                tag: true
+                            }
+                        }
+                    }
+                } 
+            },
         });
 
         // ✅ 3. DB 데이터를 Google 정보 조회에 필요한 형태로 1차 변환합니다.
@@ -43,17 +63,23 @@ export async function GET() {
         );
 
         // ✅ 5. 최종적으로 프론트엔드가 사용할 형태로 데이터를 가공합니다.
-        const favoriteRestaurants: Restaurant[] = enrichedFavorites.map(place => ({
-            id: place.id,
-            placeName: place.place_name,
-            categoryName: place.category_name,
-            address: place.road_address_name,
-            x: place.x,
-            y: place.y,
-            placeUrl: place.place_url,
-            distance: place.distance,
-            googleDetails: place.googleDetails, // ⭐ googleDetails가 추가된 것이 핵심입니다.
-        }));
+        const favoriteRestaurants: Restaurant[] = enrichedFavorites.map((place, index) => {
+    // 🔽 원본 favorites 배열에서 현재 순서(index)에 맞는 항목을 찾습니다.
+            const originalFavorite = favorites[index];
+            return {
+                id: place.id,
+                placeName: place.place_name,
+                categoryName: place.category_name,
+                address: place.road_address_name,
+                x: place.x,
+                y: place.y,
+                placeUrl: place.place_url,
+                distance: place.distance,
+                googleDetails: place.googleDetails,
+                // 🔽 위에서 찾은 항목에서 태그 정보를 가져와 추가합니다.
+                tags: originalFavorite.restaurant.taggedBy.map(t => t.tag)
+            };
+        });
 
         return NextResponse.json(favoriteRestaurants);
 

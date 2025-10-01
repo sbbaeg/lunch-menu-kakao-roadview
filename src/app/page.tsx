@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/carousel";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { HelpCircle, ChevronDown, Heart, EyeOff } from "lucide-react";
+import { HelpCircle, ChevronDown, Heart, EyeOff, Menu, Tags } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
     Accordion,
@@ -52,8 +52,9 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Menu } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+
+import { Badge } from "@/components/ui/badge";
 
 
 // page.tsx 파일 상단, import 구문 바로 아래
@@ -279,6 +280,9 @@ export default function Home() {
     const [tempOpenNowOnly, setTempOpenNowOnly] = useState(false);
     const [tempIncludeUnknownHours, setTempIncludeUnknownHours] = useState(true);
 
+    const [selectedTags, setSelectedTags] = useState<number[]>([]); // 실제 적용될 태그 ID 목록
+    const [tempSelectedTags, setTempSelectedTags] = useState<number[]>([]); // 필터창에서 임시로 선택할 목록
+
 
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
 
@@ -287,6 +291,9 @@ export default function Home() {
     const [excludedCount, setExcludedCount] = useState<number>(0); // 제외된 개수를 담을 상태
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
 
+    const [taggingRestaurant, setTaggingRestaurant] = useState<Restaurant | null>(null); // 현재 태그를 편집할 음식점 정보
+    const [userTags, setUserTags] = useState<{ id: number; name: string; }[]>([]); // 사용자가 만든 모든 태그 목록  
+    const [newTagName, setNewTagName] = useState("");
 
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
@@ -336,6 +343,7 @@ export default function Home() {
         setTempSearchInFavoritesOnly(searchInFavoritesOnly);
         setTempOpenNowOnly(openNowOnly);
         setTempIncludeUnknownHours(includeUnknownHours);
+        setTempSelectedTags(selectedTags);
         setIsFilterOpen(true);
     };
 
@@ -487,11 +495,17 @@ export default function Home() {
         const sort = sortOrder;
         const size = resultCount;
 
-        const response = await fetch(
-            `/api/recommend?lat=${latitude}&lng=${longitude}&query=${encodeURIComponent(
-                query
-            )}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`
-        );
+        let apiUrl = `/api/recommend?lat=${latitude}&lng=${longitude}&query=${encodeURIComponent(
+            query
+        )}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`;
+
+        // ✅ 선택된 태그가 있을 경우에만, tags 파라미터를 URL에 추가합니다.
+        if (selectedTags.length > 0) {
+            apiUrl += `&tags=${selectedTags.join(',')}`;
+        }
+
+        const response = await fetch(apiUrl); // ✅ 수정된 apiUrl을 사용합니다.
+        
         const data: { documents?: KakaoPlaceItem[], excludedCount?: number } = await response.json();
 
         const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
@@ -756,6 +770,12 @@ export default function Home() {
         }
     };
 
+    const handleTempTagChange = (tagId: number) => {
+        setTempSelectedTags(prev =>
+            prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+        );
+    };
+
     const handleApplyFilters = () => {
         setSelectedCategories(tempSelectedCategories);
         setSelectedDistance(tempSelectedDistance);
@@ -765,6 +785,7 @@ export default function Home() {
         setSearchInFavoritesOnly(tempSearchInFavoritesOnly);
         setOpenNowOnly(tempOpenNowOnly);
         setIncludeUnknownHours(tempIncludeUnknownHours);
+        setSelectedTags(tempSelectedTags);
         setIsFilterOpen(false);
     };
 
@@ -774,7 +795,7 @@ export default function Home() {
             setIsBlacklistOpen(true);
         } else {
             // 비로그인 상태이면 -> 로그인 안내창 띄우기
-            alert('로그인이 필요한 기능입니다.');
+            setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
             // (추가 개선) alert 대신, 로그인 Dialog를 열어주는 것이 더 좋은 사용자 경험을 제공합니다.
         }
     };
@@ -799,11 +820,11 @@ export default function Home() {
                 });
                 if (!response.ok) {
                     setFavorites(favorites); // 실패 시 화면 원상 복구
-                    alert('즐겨찾기 처리에 실패했습니다.');
+                    setAlertInfo({ title: "오류", message: "즐겨찾기 처리에 실패했습니다." });
                 }
             } catch (error) {
                 setFavorites(favorites); // 실패 시 화면 원상 복구
-                alert('즐겨찾기 처리에 실패했습니다.');
+                setAlertInfo({ title: "오류", message: "즐겨찾기 처리에 실패했습니다." });
             }
         } 
         // 게스트 상태이면 localStorage에 저장
@@ -816,7 +837,7 @@ export default function Home() {
 
     const toggleBlacklist = async (place: Restaurant) => {
         if (status !== 'authenticated') {
-            alert('로그인이 필요한 기능입니다.');
+            setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
             return;
         }
 
@@ -838,23 +859,101 @@ export default function Home() {
             if (!response.ok) {
                 // 실패 시 UI를 원래대로 복구
                 setBlacklist(blacklist); 
-                alert('블랙리스트 처리에 실패했습니다.');
+                setAlertInfo({ title: "오류", message: "블랙리스트 처리에 실패했습니다." });
             }
         } catch (error) {
             // 실패 시 UI를 원래대로 복구
             setBlacklist(blacklist);
-            alert('블랙리스트 처리에 실패했습니다.');
+            setAlertInfo({ title: "오류", message: "블랙리스트 처리에 실패했습니다." });
         }
+    };
+
+    const handleCreateTag = async () => {
+        if (!newTagName.trim() || !taggingRestaurant) return;
+
+        // 1. 새로운 태그 생성 API 호출
+        const createResponse = await fetch('/api/tags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newTagName }),
+        });
+
+        if (!createResponse.ok) {
+            setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
+            return;
+        }
+
+        const newTag = await createResponse.json();
+        setUserTags(prevTags => [...prevTags, newTag]); // 전체 태그 목록에 새 태그 추가
+        setNewTagName(""); // 입력창 비우기
+
+        // 2. 생성된 태그를 현재 음식점에 바로 연결
+        const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tagId: newTag.id }),
+        });
+        
+        if (linkResponse.ok) {
+            // 3. 동기화 함수 호출
+            const updatedRestaurant = {
+                ...taggingRestaurant,
+                tags: [...(taggingRestaurant.tags || []), newTag],
+            };
+            handleTagsChange(updatedRestaurant);
+            setTaggingRestaurant(updatedRestaurant); // 팝업창 내부 데이터도 갱신
+        } else {
+            setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
+        }
+    };
+
+    const handleToggleTagLink = async (tag: { id: number; name: string; }) => {
+        if (!taggingRestaurant) return;
+
+        const response = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tagId: tag.id }),
+        });
+
+        if (response.ok) {
+            const isCurrentlyTagged = taggingRestaurant.tags?.some(t => t.id === tag.id);
+            const newTags = isCurrentlyTagged
+                ? taggingRestaurant.tags?.filter(t => t.id !== tag.id)
+                : [...(taggingRestaurant.tags || []), tag];
+            
+            const updatedRestaurant = { ...taggingRestaurant, tags: newTags };
+            handleTagsChange(updatedRestaurant);
+            setTaggingRestaurant(updatedRestaurant);
+        } else {
+            setAlertInfo({ title: "오류", message: "태그 변경에 실패했습니다." });
+        }
+    };
+
+    const handleTagsChange = (updatedRestaurant: Restaurant) => {
+        // 1. restaurantList 상태 업데이트
+        setRestaurantList(prevList => 
+            prevList.map(restaurant => 
+                restaurant.id === updatedRestaurant.id ? updatedRestaurant : restaurant
+            )
+        );
+
+        // 2. favorites 상태 업데이트
+        setFavorites(prevList => 
+            prevList.map(restaurant => 
+                restaurant.id === updatedRestaurant.id ? updatedRestaurant : restaurant
+            )
+        );
     };
     
     const handleAddressSearch = () => {
         if (!searchAddress.trim()) {
-            alert("검색어를 입력해주세요.");
+            setAlertInfo({ title: "오류", message: "검색어를 입력해주세요." });
             return;
         }
 
         if (!window.kakao || !window.kakao.maps.services) {
-            alert("지도 서비스가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.");
+            setAlertInfo({ title: "오류", message: "지도 서비스가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요." });
             return;
         }
 
@@ -867,9 +966,9 @@ export default function Home() {
                 
                 mapInstance.current?.setCenter(moveLatLon);
             } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
-                alert("검색 결과가 존재하지 않습니다.");
+                setAlertInfo({ title: "오류", message: "검색 결과가 존재하지 않습니다." });
             } else {
-                alert("검색 중 오류가 발생했습니다.");
+                setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });;
             }
         });
     };
@@ -888,7 +987,7 @@ export default function Home() {
     try {
         const restaurants = await getNearbyRestaurants(lat, lng);
         if (restaurants.length === 0) {
-            alert("주변에 조건에 맞는 음식점을 찾지 못했어요!");
+            setAlertInfo({ title: "오류", message: "주변에 조건에 맞는 음식점을 찾지 못했습니다." });
         } else {
             // 'accuracy'(랜덤) 정렬일 경우 결과를 섞어줌
             const finalRestaurants =
@@ -902,7 +1001,7 @@ export default function Home() {
         }
     } catch (error) {
         console.error("Error:", error);
-        alert("음식점을 불러오는 데 실패했습니다.");
+        setAlertInfo({ title: "오류", message: "음식점을 불러오는데 실패했습니다." });
     } finally {
         setLoading(false);
     }
@@ -1295,6 +1394,33 @@ export default function Home() {
                         <div className="border-t border-gray-200 dark:border-gray-700"></div>
                         <div>
                             <Label className="text-lg font-semibold">
+                                태그로 필터링
+                            </Label>
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                {userTags.length > 0 ? (
+                                    userTags.map((tag) => (
+                                        <div
+                                            key={tag.id}
+                                            onClick={() => handleTempTagChange(tag.id)}
+                                            className={`cursor-pointer rounded-full px-3 py-1 text-sm transition-colors ${
+                                                tempSelectedTags.includes(tag.id)
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted text-muted-foreground'
+                                            }`}
+                                        >
+                                            {tag.name}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                        생성된 태그가 없습니다.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                        <div>
+                            <Label className="text-lg font-semibold">
                                 검색 반경
                             </Label>
                             <RadioGroup
@@ -1477,28 +1603,36 @@ export default function Home() {
                                                         m
                                                     </span>
                                                 </CardHeader>
-                                                <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
-                                                    <span>
-                                                        {/* ✅ categoryName 뒤에 ?. 를 추가하여 안정성을 높입니다. */}
-                                                        {place.categoryName
-                                                            ?.split(
-                                                                ">"
-                                                            )
-                                                            .pop()
-                                                            ?.trim()}
-                                                    </span>
-                                                    {details?.rating && (
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="text-yellow-400">
-                                                                ★
-                                                            </span>
-                                                            <span>
-                                                                {details.rating.toFixed(
-                                                                    1
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
+                                                    <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
+                                                        <span>
+                                                            {place.categoryName
+                                                                ?.split(
+                                                                    ">"
+                                                                )
+                                                                .pop()
+                                                                ?.trim()}
+                                                        </span>
+                                                        {details?.rating && (
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="text-yellow-400">
+                                                                    ★
+                                                                </span>
+                                                                <span>
+                                                                    {details.rating.toFixed(
+                                                                        1
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {/* ✅ 태그 뱃지를 표시하는 부분을 여기에 추가합니다. */}
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {place.tags?.map(tag => (
+                                                            <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
+                                                        ))}
+                                                    </div>
                                                 </CardContent>
                                             </div>
                                         </AccordionTrigger>
@@ -1518,15 +1652,21 @@ export default function Home() {
                                                     <div className="flex items-center">
                                                         {/* ✅ 블랙리스트 버튼은 로그인 상태일 때만 렌더링합니다. */}
                                                         {status === 'authenticated' && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8"
-                                                                onClick={() => toggleBlacklist(place)}
-                                                                title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
-                                                            >
-                                                                <EyeOff className={isBlacklisted(place.id) ? "fill-slate-500 text-slate-500" : "text-gray-400"} />
-                                                            </Button>
+                                                            <>
+                                                                {/* ✅ '태그 관리' 버튼을 추가합니다. */}
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8"
+                                                                    onClick={() => setTaggingRestaurant(place)}
+                                                                    title="태그 관리"
+                                                                >
+                                                                    <Tags className="text-gray-400" />
+                                                                </Button>
+                                                                <Button /* ... 블랙리스트 버튼 ... */ >
+                                                                    <EyeOff /* ... */ />
+                                                                </Button>
+                                                            </>
                                                         )}
                                                         {/* ✅ 즐겨찾기 버튼은 항상 보이도록 유지합니다. */}
                                                         <Button
@@ -1847,19 +1987,36 @@ export default function Home() {
                                                                     {place.placeName}
                                                                 </CardTitle>
                                                             </CardHeader>
-                                                            <CardContent className="px-4 pb-3 pt-0 text-xs flex justify-between items-center text-gray-600 dark:text-gray-400">
-                                                                <span>
-                                                                    {place.categoryName
-                                                                        .split(">")
-                                                                        .pop()
-                                                                        ?.trim()}
-                                                                </span>
-                                                                {details?.rating && (
-                                                                    <div className="flex items-center gap-1">
-                                                                        <span className="text-yellow-400">★</span>
-                                                                        <span>{details.rating.toFixed(1)}</span>
-                                                                    </div>
-                                                                )}
+                                                            <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
+                                                                <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
+                                                                    <span>
+                                                                        {place.categoryName
+                                                                            ?.split(
+                                                                                ">"
+                                                                            )
+                                                                            .pop()
+                                                                            ?.trim()}
+                                                                    </span>
+                                                                    {details?.rating && (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <span className="text-yellow-400">
+                                                                                ★
+                                                                            </span>
+                                                                            <span>
+                                                                                {details.rating.toFixed(
+                                                                                    1
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                
+                                                                {/* ✅ 태그 뱃지를 표시하는 부분을 여기에 추가합니다. */}
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {place.tags?.map(tag => (
+                                                                        <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
+                                                                    ))}
+                                                                </div>
                                                             </CardContent>
                                                         </div>
                                                     </AccordionTrigger>
@@ -1875,15 +2032,21 @@ export default function Home() {
                                                                 <div className="flex items-center">
                                                                     {/* 블랙리스트 버튼은 로그인 상태일 때만 렌더링 */}
                                                                     {status === 'authenticated' && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-8 w-8"
-                                                                            onClick={() => toggleBlacklist(place)}
-                                                                            title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
-                                                                        >
-                                                                            <EyeOff className={isBlacklisted(place.id) ? "fill-slate-500 text-slate-500" : "text-gray-400"} />
-                                                                        </Button>
+                                                                        <>
+                                                                            {/* ✅ '태그 관리' 버튼을 추가합니다. */}
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-8 w-8"
+                                                                                onClick={() => setTaggingRestaurant(place)}
+                                                                                title="태그 관리"
+                                                                            >
+                                                                                <Tags className="text-gray-400" />
+                                                                            </Button>
+                                                                            <Button /* ... 블랙리스트 버튼 ... */ >
+                                                                                <EyeOff /* ... */ />
+                                                                            </Button>
+                                                                        </>
                                                                     )}
                                                                     {/* 즐겨찾기 버튼은 항상 보이도록 유지 */}
                                                                     <Button
@@ -2095,6 +2258,43 @@ export default function Home() {
                             >
                                 돌리기
                             </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+                <Dialog open={!!taggingRestaurant} onOpenChange={() => setTaggingRestaurant(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>태그 관리: {taggingRestaurant?.placeName}</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-2">
+                            {/* 새로운 태그 생성 UI */}
+                            <div className="flex w-full items-center space-x-2 mb-4">
+                                <Input
+                                    type="text"
+                                    placeholder="새 태그 이름 (예: #가성비)"
+                                    value={newTagName}
+                                    onChange={(e) => setNewTagName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
+                                />
+                                <Button onClick={handleCreateTag}>추가</Button>
+                            </div>
+
+                            {/* 기존 태그 목록 UI */}
+                            <div className="max-h-60 overflow-y-auto space-y-2">
+                                <p className="text-sm font-medium text-muted-foreground">내 태그 목록</p>
+                                {userTags.map((tag) => (
+                                    <div key={tag.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`tag-${tag.id}`}
+                                            checked={taggingRestaurant?.tags?.some(rt => rt.id === tag.id)}
+                                            onCheckedChange={() => handleToggleTagLink(tag)}
+                                        />
+                                        <Label htmlFor={`tag-${tag.id}`} className="cursor-pointer">
+                                            {tag.name}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>

@@ -49,4 +49,5 @@ export interface Restaurant {
   distance: string;
   placeUrl: string;
   googleDetails?: GoogleDetails;
+  tags?: { id: number; name: string; }[];
 }

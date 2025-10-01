@@ -25,6 +25,7 @@ model User {
   sessions   Session[]
   favorites  Favorite[]
   blacklist  Blacklist[]
+  tags       Tag[] 
 }
 
 // 2. 음식점 정보 모델
@@ -42,6 +43,7 @@ model Restaurant {
   // 관계 설정
   favorites  Favorite[]
   blacklist  Blacklist[]
+  taggedBy  TagsOnRestaurants[]
 }
 
 // 3. 즐겨찾기 연결 모델 (User와 Restaurant 연결)
@@ -106,4 +108,31 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// 5. 사용자가 생성한 태그 모델
+model Tag {
+  id     Int    @id @default(autoincrement())
+  name   String // 태그 이름 (예: #혼밥하기좋은)
+  userId String // 생성한 사용자 ID
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 관계 설정: 이 태그가 어떤 음식점들에 붙었는지
+  restaurants TagsOnRestaurants[]
+
+  // 한 명의 유저는 동일한 이름의 태그를 중복 생성할 수 없음
+  @@unique([name, userId])
+}
+
+// 6. 음식점과 태그의 다대다 관계를 위한 연결 모델
+model TagsOnRestaurants {
+  restaurantId Int
+  tagId        Int
+  assignedAt   DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([restaurantId, tagId]) // 복합 기본 키
 }

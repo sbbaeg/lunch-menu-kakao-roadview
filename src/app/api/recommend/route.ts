@@ -22,6 +22,9 @@ export async function GET(request: Request) {
     const includeUnknown = searchParams.get('includeUnknown') === 'true';
     const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
 
+    const tagsParam = searchParams.get('tags');
+    const tagIds = tagsParam ? tagsParam.split(',').map(Number).filter(id => !isNaN(id)) : [];
+
     if (!lat || !lng) {
         return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
     }
@@ -36,6 +39,21 @@ export async function GET(request: Request) {
                 select: { restaurant: { select: { kakaoPlaceId: true } } },
             });
             blacklistIds = blacklistEntries.map(entry => entry.restaurant.kakaoPlaceId);
+        }
+
+        let taggedRestaurantIds: Set<string> | null = null;
+        if (tagIds.length > 0) {
+            const taggedRestaurants = await prisma.restaurant.findMany({
+                where: {
+                    taggedBy: {
+                        some: {
+                            tagId: { in: tagIds }
+                        }
+                    }
+                },
+                select: { kakaoPlaceId: true }
+            });
+            taggedRestaurantIds = new Set(taggedRestaurants.map(r => r.kakaoPlaceId));
         }
 
         const categories = query.split(',');
@@ -61,15 +79,21 @@ export async function GET(request: Request) {
             }
         }
 
-        // 2. 블랙리스트 필터링 및 제외 개수 계산
+        // 2. 블랙리스트와 '태그 필터'를 함께 적용합니다.
         const originalCount = candidates.length;
-        candidates = candidates.filter(place => !blacklistIds.includes(place.id));
-        const excludedCount = originalCount - candidates.length;
+        let filteredCandidates = candidates.filter(place => !blacklistIds.includes(place.id));
+
+        // 태그 필터가 활성화된 경우, DB에서 조회한 ID 목록에 포함된 가게만 남깁니다.
+        if (taggedRestaurantIds) {
+            filteredCandidates = filteredCandidates.filter(place => taggedRestaurantIds!.has(place.id));
+        }
+
+        const excludedCount = candidates.length - filteredCandidates.length;
 
         // 3. 후보군을 하나씩 검증하며 최종 결과를 채워나감
         const finalResults: KakaoPlaceItem[] = [];
-        for (const candidate of candidates) {
-            if (finalResults.length >= size) break; // 목표 달성 시 즉시 중단
+        for (const candidate of filteredCandidates) {
+            if (finalResults.length >= size) break;
 
             const enriched = await fetchFullGoogleDetails(candidate);
 
@@ -93,8 +117,29 @@ export async function GET(request: Request) {
             sortedResults = finalResults;
         }
 
+        const resultIds = sortedResults.map(r => r.id);
+
+        const restaurantsWithTags = await prisma.restaurant.findMany({
+            where: { kakaoPlaceId: { in: resultIds } },
+            include: {
+                taggedBy: {
+                    include: {
+                        tag: true
+                    }
+                }
+            }
+        });
+
+        const finalDocuments = sortedResults.map(result => {
+            const match = restaurantsWithTags.find(r => r.kakaoPlaceId === result.id);
+            return {
+                ...result,
+                tags: match ? match.taggedBy.map(t => t.tag) : []
+            };
+        });
+
         return NextResponse.json({
-            documents: sortedResults,
+            documents: finalDocuments,
             excludedCount: excludedCount
         });
 
