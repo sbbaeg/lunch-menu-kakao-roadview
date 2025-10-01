@@ -321,6 +321,27 @@ export default function Home() {
         loadBlacklist();
     }, [status]);
 
+    useEffect(() => {
+        const loadUserTags = async () => {
+            if (status === 'authenticated') {
+                try {
+                    const response = await fetch('/api/tags');
+                    if (response.ok) {
+                        const data = await response.json();
+                        setUserTags(data);
+                    }
+                } catch (error) {
+                    console.error('사용자 태그 로딩 중 오류:', error);
+                }
+            } else {
+                // 로그아웃 시에는 태그 목록을 비웁니다.
+                setUserTags([]);
+            }
+        };
+
+        loadUserTags();
+    }, [status]); // 로그인 상태가 바뀔 때마다 실행됩니다.
+
     const [searchAddress, setSearchAddress] = useState("");
     const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
 
