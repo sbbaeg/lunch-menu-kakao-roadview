@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
  */
 export async function POST(
     request: Request,
-    { params }: { params: { id: string } }
+    context: { params: { id: string } }
 ) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -18,7 +18,7 @@ export async function POST(
     }
 
     try {
-        const restaurantId = parseInt(params.id, 10);
+        const restaurantId = parseInt(context.params.id, 10);
         const { tagId } = await request.json();
 
         if (isNaN(restaurantId) || !tagId) {
