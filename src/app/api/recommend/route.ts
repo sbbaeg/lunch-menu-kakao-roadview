@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
-import { KakaoPlaceItem } from '@/lib/types';
+import { KakaoPlaceItem, RestaurantWithTags } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -130,7 +130,7 @@ export async function GET(request: Request) {
             }
         });
 
-        const finalDocuments = sortedResults.map(result => {
+        const finalDocuments: RestaurantWithTags[] = sortedResults.map(result => {
             const match = restaurantsWithTags.find(r => r.kakaoPlaceId === result.id);
             return {
                 ...result,

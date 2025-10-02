@@ -38,6 +38,11 @@ export interface KakaoPlaceItem {
   googleDetails?: GoogleDetails;
 }
 
+// API 응답에 최종적으로 사용될 타입
+export interface RestaurantWithTags extends KakaoPlaceItem {
+  tags: { id: number; name: string; }[];
+}
+
 // 우리 앱 내부에서 사용할 표준 데이터 타입 (camelCase)
 export interface Restaurant {
   id: string; // kakaoPlaceId
