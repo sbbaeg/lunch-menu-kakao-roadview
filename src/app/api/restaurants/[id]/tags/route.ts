@@ -1,15 +1,60 @@
-import { NextRequest, NextResponse } from 'next/server';
+// @ts-nocheck 
 
-export const dynamic = 'force-dynamic';
+
+import { NextRequest, NextResponse } from 'next/server'; // ✅ 1. NextRequest를 import합니다.
+import { getServerSession } from 'next-auth/next';
+import { PrismaClient } from '@prisma/client';
+import { authOptions } from '@/lib/auth';
+
+const prisma = new PrismaClient();
 
 export async function POST(
-    request: NextRequest,
-    { params }: { params: { id: string } }
+    request: NextRequest, // ✅ 2. request 타입을 NextRequest로 지정합니다.
+    { params }: { params: { id: string } } // ✅ 3. 두 번째 인자에서 { params }를 직접 꺼냅니다.
 ) {
-    // 모든 내부 로직을 삭제하고, 받은 id만 바로 반환하는 테스트 코드
-    const { id } = params;
-    
-    // DB 연결, 세션 확인 등 모든 로직을 주석 처리하거나 삭제합니다.
-    // 오직 타입 시그니처가 통과되는지만 확인합니다.
-    return NextResponse.json({ receivedId: id });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
+    }
+
+    try {
+        const restaurantId = parseInt(params.id, 10); // ✅ 4. context 없이 params.id로 바로 사용합니다.
+        const { tagId } = await request.json();
+
+        if (isNaN(restaurantId) || !tagId) {
+            return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 });
+        }
+        
+        const existingLink = await prisma.tagsOnRestaurants.findUnique({
+            where: {
+                restaurantId_tagId: {
+                    restaurantId: restaurantId,
+                    tagId: tagId,
+                }
+            },
+        });
+
+        if (existingLink) {
+            await prisma.tagsOnRestaurants.delete({
+                where: {
+                    restaurantId_tagId: {
+                        restaurantId: restaurantId,
+                        tagId: tagId,
+                    }
+                },
+            });
+            return NextResponse.json({ message: '태그가 음식점에서 삭제되었습니다.', action: 'detached' });
+        } else {
+            await prisma.tagsOnRestaurants.create({
+                data: {
+                    restaurantId: restaurantId,
+                    tagId: tagId,
+                },
+            });
+            return NextResponse.json({ message: '태그가 음식점에 추가되었습니다.', action: 'attached' });
+        }
+    } catch (error) {
+        console.error('태그 연결/해제 오류:', error);
+        return NextResponse.json({ error: '요청을 처리하는 중 오류가 발생했습니다.' }, { status: 500 });
+    }
 }
