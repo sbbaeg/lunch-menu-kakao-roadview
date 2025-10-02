@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
+    console.log("Checking KAKAO_REST_API_KEY:", process.env.KAKAO_REST_API_KEY);
     const { searchParams } = new URL(request.url);
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
