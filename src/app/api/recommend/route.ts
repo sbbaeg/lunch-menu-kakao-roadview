@@ -58,7 +58,7 @@ export async function GET(request: Request) {
 
         const categories = query.split(',');
         const fetchedIds = new Set<string>();
-        let candidates: KakaoPlaceItem[] = [];
+        const candidates: KakaoPlaceItem[] = [];
         
         // 1. 카카오 API로 비용이 저렴한 기본 후보군을 넉넉히 확보 (최대 45개)
         for (const category of categories) {
