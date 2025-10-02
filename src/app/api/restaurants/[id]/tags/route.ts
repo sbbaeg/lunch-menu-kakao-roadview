@@ -12,15 +12,13 @@ type RouteContext = {
     };
 };
 
-export async function POST(request: NextRequest, context: RouteContext) {
+export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
         return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
     }
 
     try {
-        // context에서 params를 추출
-        const { params } = context;
         const restaurantId = parseInt(params.id, 10);
         const { tagId } = await request.json();
 
