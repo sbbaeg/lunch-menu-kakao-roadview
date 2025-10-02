@@ -5,18 +5,25 @@ import { authOptions } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
-export async function POST(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+// 타입을 별도로 정의
+type RouteContext = {
+    params: {
+        id: string;
+    };
+};
+
+export async function POST(request: NextRequest, context: RouteContext) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
         return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
     }
 
     try {
+        // context에서 params를 추출
+        const { params } = context;
         const restaurantId = parseInt(params.id, 10);
         const { tagId } = await request.json();
+
         if (isNaN(restaurantId) || !tagId) {
             return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 });
         }
