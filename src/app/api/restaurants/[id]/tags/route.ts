@@ -1,16 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'; // ✅ 1. NextRequest를 import합니다.
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
-/**
- * POST: 특정 음식점에 특정 태그를 연결하거나 해제합니다 (토글 방식).
- */
 export async function POST(
-    request: Request,
-    context: { params: { id: string } }
+    request: NextRequest, // ✅ 2. request 타입을 NextRequest로 지정합니다.
+    { params }: { params: { id: string } } // ✅ 3. 두 번째 인자에서 { params }를 직접 꺼냅니다.
 ) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -18,14 +15,13 @@ export async function POST(
     }
 
     try {
-        const restaurantId = parseInt(context.params.id, 10);
+        const restaurantId = parseInt(params.id, 10); // ✅ 4. context 없이 params.id로 바로 사용합니다.
         const { tagId } = await request.json();
 
         if (isNaN(restaurantId) || !tagId) {
             return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 });
         }
         
-        // 연결이 이미 존재하는지 확인
         const existingLink = await prisma.tagsOnRestaurants.findUnique({
             where: {
                 restaurantId_tagId: {
@@ -35,7 +31,6 @@ export async function POST(
             },
         });
 
-        // 존재하면 연결 해제(삭제), 존재하지 않으면 연결(생성)
         if (existingLink) {
             await prisma.tagsOnRestaurants.delete({
                 where: {
