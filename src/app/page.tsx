@@ -2081,7 +2081,7 @@ export default function Home() {
                                 <Button onClick={handleCreateTagFromManager}>추가</Button>
                             </div>
 
-                            <div className="max-h-[60vh] overflow-y-auto pr-4">
+                            <div className="h-[300px] overflow-y-auto pr-4">
                                 {userTags.length > 0 ? (
                                     <ul className="space-y-2">
                                         {filteredTags.map(tag => (
