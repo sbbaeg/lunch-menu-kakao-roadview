@@ -130,7 +130,16 @@ export async function GET(request: Request) {
             include: {
                 taggedBy: {
                     include: {
-                        tag: true
+                        tag: { // ✅ 태그 정보와 함께
+                            include: {
+                                user: { // ✅ 생성한 유저 정보도 포함
+                                    select: { // 단, id와 name만 선택적으로 가져옴
+                                        id: true,
+                                        name: true,
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -140,7 +149,14 @@ export async function GET(request: Request) {
             const match = restaurantsWithTags.find(r => r.kakaoPlaceId === result.id);
             return {
                 ...result,
-                tags: match ? match.taggedBy.map(t => t.tag) : []
+                // ✅ 프론트엔드가 사용하기 편하도록 데이터를 재구성하여 반환
+                tags: match ? match.taggedBy.map(t => ({
+                    id: t.tag.id,
+                    name: t.tag.name,
+                    isPublic: t.tag.isPublic,
+                    creatorId: t.tag.user.id,
+                    creatorName: t.tag.user.name,
+                })) : []
             };
         });
 

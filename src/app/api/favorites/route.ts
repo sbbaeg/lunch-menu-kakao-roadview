@@ -1,5 +1,3 @@
-// app/api/favorites/route.ts (최종 완성본)
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient, Prisma } from '@prisma/client'; 
@@ -15,7 +13,11 @@ type FavoriteWithTags = Prisma.FavoriteGetPayload<{
             include: {
                 taggedBy: {
                     include: {
-                        tag: true
+                        tag: {
+                            include: {
+                                user: true
+                            }
+                        }
                     }
                 }
             }
@@ -36,7 +38,16 @@ export async function GET() {
                     include: {
                         taggedBy: {
                             include: {
-                                tag: true
+                                tag: {
+                                    include: {
+                                        user: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -44,7 +55,6 @@ export async function GET() {
             },
         });
 
-        // ✅ 3. DB 데이터를 Google 정보 조회에 필요한 형태로 1차 변환합니다.
         const basicFavorites: KakaoPlaceItem[] = favorites.map(fav => ({
             id: fav.restaurant.kakaoPlaceId,
             place_name: fav.restaurant.placeName,
@@ -57,14 +67,11 @@ export async function GET() {
             distance: '',
         }));
 
-        // ✅ 4. 각 항목에 대해 Google 상세 정보를 병렬로 조회합니다.
         const enrichedFavorites = await Promise.all(
             basicFavorites.map(place => fetchFullGoogleDetails(place))
         );
 
-        // ✅ 5. 최종적으로 프론트엔드가 사용할 형태로 데이터를 가공합니다.
         const favoriteRestaurants: Restaurant[] = enrichedFavorites.map((place, index) => {
-    // 🔽 원본 favorites 배열에서 현재 순서(index)에 맞는 항목을 찾습니다.
             const originalFavorite = favorites[index];
             return {
                 id: place.id,
@@ -76,8 +83,13 @@ export async function GET() {
                 placeUrl: place.place_url,
                 distance: place.distance,
                 googleDetails: place.googleDetails,
-                // 🔽 위에서 찾은 항목에서 태그 정보를 가져와 추가합니다.
-                tags: originalFavorite.restaurant.taggedBy.map(t => t.tag)
+                tags: originalFavorite.restaurant.taggedBy.map(t => ({
+                    id: t.tag.id,
+                    name: t.tag.name,
+                    isPublic: t.tag.isPublic,
+                    creatorId: t.tag.user.id,
+                    creatorName: t.tag.user.name,
+                }))
             };
         });
 

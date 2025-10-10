@@ -4,6 +4,10 @@ import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } fr
 
 import { useSession, signIn, signOut } from "next-auth/react";
 
+import { Switch } from "@/components/ui/switch";
+
+import Link from 'next/link';
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -293,7 +297,9 @@ export default function Home() {
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
 
     const [taggingRestaurant, setTaggingRestaurant] = useState<Restaurant | null>(null); // 현재 태그를 편집할 음식점 정보
-    const [userTags, setUserTags] = useState<{ id: number; name: string; }[]>([]); // 사용자가 만든 모든 태그 목록  
+    const [userTags, setUserTags] = useState<{ id: number; name: string; isPublic: boolean; }[]>([]);
+    const [subscribedTags, setSubscribedTags] = useState<{ id: number; name: string; creatorName: string | null; }[]>([]);
+    const [subscribedTagIds, setSubscribedTagIds] = useState<number[]>([]);
     const [newTagName, setNewTagName] = useState("");
 
     useEffect(() => {
@@ -504,6 +510,47 @@ export default function Home() {
         }
         }
     }, []); 
+
+    useEffect(() => {
+        const fetchSubscribedTags = async () => {
+            // 로그인 상태일 때만 API를 호출합니다.
+            if (status === 'authenticated') {
+                try {
+                    const response = await fetch('/api/subscriptions');
+                    if (response.ok) {
+                        const data = await response.json();
+                        setSubscribedTags(data);
+                    }
+                } catch (error) {
+                    console.error("구독 태그 로딩 실패:", error);
+                }
+            }
+        };
+
+        // 팝업(isTagManagementOpen)이 열렸을 때만 함수를 실행합니다.
+        if (isTagManagementOpen) {
+            fetchSubscribedTags();
+        }
+    }, [isTagManagementOpen, status]); // 팝업 상태나 로그인 상태가 변경될 때마다 실행됩니다.
+
+    useEffect(() => {
+        const fetchSubscribedTagIds = async () => {
+            if (status === 'authenticated') {
+                try {
+                    const response = await fetch('/api/subscriptions');
+                    if (response.ok) {
+                        const data: { id: number }[] = await response.json();
+                        setSubscribedTagIds(data.map(tag => tag.id)); // ID만 추출하여 상태에 저장
+                    }
+                } catch (error) {
+                    console.error("구독 태그 ID 로딩 실패:", error);
+                }
+            } else {
+                setSubscribedTagIds([]); // 로그아웃 시 목록 비우기
+            }
+        };
+        fetchSubscribedTagIds();
+    }, [status]); // 로그인 상태가 변경될 때마다 실행
 
     const getNearbyRestaurants = async (
         latitude: number,
@@ -950,23 +997,31 @@ export default function Home() {
         }
     };
 
-    const handleToggleTagLink = async (tag: { id: number; name: string; }) => {
-        if (!taggingRestaurant) return;
+    const handleToggleTagLink = async (tag: { id: number; name: string; isPublic: boolean; }) => {
+        if (!taggingRestaurant || !session?.user) return;
 
         const response = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 tagId: tag.id,
-                restaurant: taggingRestaurant // 음식점 정보 전체를 전송
+                restaurant: taggingRestaurant
             }),
         });
 
         if (response.ok) {
             const isCurrentlyTagged = taggingRestaurant.tags?.some(t => t.id === tag.id);
+
             const newTags = isCurrentlyTagged
                 ? taggingRestaurant.tags?.filter(t => t.id !== tag.id)
-                : [...(taggingRestaurant.tags || []), tag];
+                : [...(taggingRestaurant.tags || []), {
+                    // ✅ 'tag' 객체를 완전한 'Tag' 타입으로 변환하여 추가
+                    id: tag.id,
+                    name: tag.name,
+                    isPublic: tag.isPublic,
+                    creatorId: session.user.id,     // 현재 로그인한 사용자 정보로 채움
+                    creatorName: session.user.name || null, // 현재 로그인한 사용자 정보로 채움
+                }];
             
             const updatedRestaurant = { ...taggingRestaurant, tags: newTags };
             handleTagsChange(updatedRestaurant);
@@ -990,6 +1045,51 @@ export default function Home() {
                 restaurant.id === updatedRestaurant.id ? updatedRestaurant : restaurant
             )
         );
+    };
+
+    const handleToggleTagPublic = async (tagId: number, currentIsPublic: boolean) => {
+        const originalTags = userTags;
+        setUserTags(prevTags => 
+            prevTags.map(tag => 
+                tag.id === tagId ? { ...tag, isPublic: !currentIsPublic } : tag
+            )
+        );
+
+        // API 호출
+        try {
+            const response = await fetch(`/api/tags/${tagId}/toggle-public`, {
+                method: 'PATCH',
+            });
+
+            if (!response.ok) {
+                // 실패 시 UI 롤백
+                setUserTags(originalTags);
+                setAlertInfo({ title: "오류", message: "상태 변경에 실패했습니다." });
+            }
+        } catch (error) {
+            // 실패 시 UI 롤백
+            setUserTags(originalTags);
+            setAlertInfo({ title: "오류", message: "상태 변경 중 오류가 발생했습니다." });
+        }
+    };
+
+    const handleUnsubscribe = async (tagId: number) => {
+        // 낙관적 업데이트: API 응답을 기다리지 않고 UI를 먼저 변경
+        const originalSubscriptions = subscribedTags;
+        setSubscribedTags(prev => prev.filter(tag => tag.id !== tagId));
+
+        try {
+            // 구독 토글 API를 호출하여 구독을 취소
+            const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
+            
+            if (!response.ok) {
+                setSubscribedTags(originalSubscriptions); // 실패 시 UI를 원래대로 복구
+                setAlertInfo({ title: "오류", message: "구독 취소에 실패했습니다." });
+            }
+        } catch (error) {
+            setSubscribedTags(originalSubscriptions); // 실패 시 UI를 원래대로 복구
+            setAlertInfo({ title: "오류", message: "구독 취소 중 오류가 발생했습니다." });
+        }
     };
 
     const handleDeleteTag = async (tagId: number) => {
@@ -1212,6 +1312,12 @@ export default function Home() {
                                     >
                                         태그 관리
                                     </Button>
+
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" className="justify-start">
+                                            도움말 및 정보
+                                        </Button>
+                                    </DialogTrigger>
                                 </div>
                                 <Separator className="my-4" />
 
@@ -1295,40 +1401,6 @@ export default function Home() {
                         : "로드뷰 보기"}
                 </Button>
             )}
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute bottom-4 right-4 h-8 w-8 rounded-full z-20"
-                    >
-                        <HelpCircle className="h-5 w-5 text-gray-500" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>API 정보</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4 text-sm space-y-2">
-                        <p>
-                            <strong className="font-semibold">
-                                📍 위치 검색:
-                            </strong>
-                            <span className="ml-2">
-                                Kakao Maps API
-                            </span>
-                        </p>
-                        <p>
-                            <strong className="font-semibold">
-                                ⭐ 별점 및 상세 정보:
-                            </strong>
-                            <span className="ml-2">
-                                Google Maps API
-                            </span>
-                        </p>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     </div>
 
@@ -1723,9 +1795,23 @@ export default function Home() {
                                                     
                                                     {/* ✅ 태그 뱃지를 표시하는 부분을 여기에 추가합니다. */}
                                                     <div className="flex flex-wrap gap-1">
-                                                        {place.tags?.map(tag => (
-                                                            <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
-                                                        ))}
+                                                        {place.tags?.map(tag => {
+                                                            // ✅ 태그의 종류를 판별합니다.
+                                                            const isMyTag = tag.creatorId === session?.user?.id;
+                                                            const isSubscribedTag = subscribedTagIds.includes(tag.id);
+
+                                                            // ✅ 종류에 따라 다른 스타일과 아이콘을 적용합니다.
+                                                            const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
+                                                            const icon = isSubscribedTag ? "★ " : "# ";
+
+                                                            return (
+                                                                <Link key={tag.id} href={`/tags/${tag.id}`}>
+                                                                    <Badge variant={badgeVariant} className="flex items-center">
+                                                                        {icon}{tag.name}
+                                                                    </Badge>
+                                                                </Link>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </CardContent>
                                             </div>
@@ -2069,32 +2155,91 @@ export default function Home() {
                             <DialogTitle className="text-xl">태그 관리</DialogTitle>
                         </DialogHeader>
                         <div className="py-2">
-                            {/* ✅ 새로운 태그 생성 UI 추가 */}
+                            {/* --- 수정 시작 --- */}
+                            {/* 1. '내가 만든 태그' 섹션 */}
+                            <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
                             <div className="flex w-full items-center space-x-2 mb-4 p-1">
                                 <Input
                                     type="text"
-                                    placeholder="새 태그 이름 (예: #분위기좋은)"
+                                    placeholder="새 태그 생성 또는 검색"
                                     value={newTagName}
                                     onChange={(e) => setNewTagName(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleCreateTagFromManager()}
                                 />
                                 <Button onClick={handleCreateTagFromManager}>추가</Button>
                             </div>
-
-                            <div className="h-[300px] overflow-y-auto pr-4">
+                            <div className="h-[200px] overflow-y-auto pr-4">
                                 {userTags.length > 0 ? (
                                     <ul className="space-y-2">
                                         {filteredTags.map(tag => (
                                             <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
                                                 <span>{tag.name}</span>
-                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteTag(tag.id)}>삭제</Button>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Switch
+                                                            id={`public-switch-${tag.id}`}
+                                                            checked={tag.isPublic}
+                                                            onCheckedChange={() => handleToggleTagPublic(tag.id, tag.isPublic)}
+                                                        />
+                                                        <Label htmlFor={`public-switch-${tag.id}`} className="text-xs text-muted-foreground">
+                                                            {tag.isPublic ? '공개' : '비공개'}
+                                                        </Label>
+                                                    </div>
+                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteTag(tag.id)}>삭제</Button>
+                                                </div>
                                             </li>
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="text-center text-muted-foreground py-8">생성된 태그가 없습니다.</p>
+                                    <p className="text-center text-muted-foreground pt-8">
+                                        {newTagName.trim() === '' ? '생성된 태그가 없습니다.' : '일치하는 태그가 없습니다.'}
+                                    </p>
                                 )}
                             </div>
+
+                            <Separator className="my-4" />
+
+                            {/* 2. '구독 중인 태그' 섹션 */}
+                            <h4 className="font-semibold mb-2 px-1">구독 중인 태그</h4>
+                            <div className="h-[200px] overflow-y-auto pr-4">
+                                {subscribedTags.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {subscribedTags.map(tag => (
+                                            <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                                <div>
+                                                    <span className="font-semibold">{tag.name}</span>
+                                                    <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
+                                                </div>
+                                                <Button variant="ghost" size="sm" onClick={() => handleUnsubscribe(tag.id)}>구독 취소</Button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-center text-muted-foreground pt-8">구독 중인 태그가 없습니다.</p>
+                                )}
+                            </div>
+                            
+                            <Separator className="my-4" />
+                            
+                            {/* 3. 태그 범례 UI */}
+                            <div className="space-y-3 px-1">
+                                <h4 className="font-semibold">태그 종류 안내</h4>
+                                <div className="flex items-center gap-x-4 gap-y-2 flex-wrap">
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="default">★ 구독 태그</Badge>
+                                        <span className="text-xs text-muted-foreground">구독한 사용자의 태그</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline"># 내가 만든 태그</Badge>
+                                        <span className="text-xs text-muted-foreground">내가 만든 태그</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="secondary"># 일반 태그</Badge>
+                                        <span className="text-xs text-muted-foreground">다른 사용자의 공개 태그</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* --- 수정 끝 --- */}
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -2151,9 +2296,23 @@ export default function Home() {
                                                                 
                                                                 {/* ✅ 태그 뱃지를 표시하는 부분을 여기에 추가합니다. */}
                                                                 <div className="flex flex-wrap gap-1">
-                                                                    {place.tags?.map(tag => (
-                                                                        <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
-                                                                    ))}
+                                                                    {place.tags?.map(tag => {
+                                                                        // ✅ 태그의 종류를 판별합니다.
+                                                                        const isMyTag = tag.creatorId === session?.user?.id;
+                                                                        const isSubscribedTag = subscribedTagIds.includes(tag.id);
+
+                                                                        // ✅ 종류에 따라 다른 스타일과 아이콘을 적용합니다.
+                                                                        const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
+                                                                        const icon = isSubscribedTag ? "★ " : "# ";
+
+                                                                        return (
+                                                                            <Link key={tag.id} href={`/tags/${tag.id}`}>
+                                                                                <Badge variant={badgeVariant} className="flex items-center">
+                                                                                    {icon}{tag.name}
+                                                                                </Badge>
+                                                                            </Link>
+                                                                        );
+                                                                    })}
                                                                 </div>
                                                             </CardContent>
                                                         </div>
@@ -2362,6 +2521,157 @@ export default function Home() {
                         </div>
                     </DialogContent>
                 </Dialog>
+
+                <div className="absolute top-4 right-4 z-50">
+                    <Dialog>
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <Menu className="h-5 w-5" />
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent>
+                                <SheetHeader>
+                                    <SheetTitle>메뉴</SheetTitle>
+                                </SheetHeader>
+                                <div className="py-4">
+                                    {/* 로딩 중일 때 보여줄 스켈레톤 UI */}
+                                    {status === 'loading' && (
+                                        <div className="flex flex-col items-center gap-2 p-4">
+                                            <Skeleton className="h-20 w-20 rounded-full" />
+                                            <Skeleton className="h-6 w-24" />
+                                            <Skeleton className="h-10 w-full" />
+                                        </div>
+                                    )}
+
+                                    {/* 비로그인 상태일 때 보여줄 UI */}
+                                    {status === 'unauthenticated' && (
+                                        <div className="flex flex-col items-center gap-2 p-4">
+                                            <Avatar className="h-20 w-20">
+                                                <AvatarFallback>👤</AvatarFallback>
+                                            </Avatar>
+                                            <p className="mt-2 font-semibold">게스트</p>
+                                            {/* 로그인 Dialog를 직접 포함하지 않고, 기존 Dialog를 재사용하도록 수정할 수 있습니다. 
+                                                우선은 구조상 문제가 없도록 코드를 유지합니다. */}
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button className="w-full mt-2">로그인</Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle className="text-center text-2xl font-bold">
+                                                            로그인
+                                                        </DialogTitle>
+                                                        <p className="text-sm text-muted-foreground pt-1 text-center">
+                                                            이전에 사용한 계정으로 빠르게 로그인하세요.
+                                                        </p>
+                                                    </DialogHeader>
+                                                    <div className="grid gap-4 py-4">
+                                                        <Button
+                                                            onClick={() => signIn('google')}
+                                                            variant="outline"
+                                                            className="w-full h-12 text-lg"
+                                                        >
+                                                            <Image src="/google_icon.png" alt="Google" width={24} height={24} className="mr-3" />
+                                                            Google로 빠른 로그인
+                                                        </Button>
+                                                        <Button
+                                                            onClick={() => signIn('kakao')}
+                                                            className="w-full h-12 text-lg bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
+                                                        >
+                                                            <Image src="/kakao_icon.png" alt="Kakao" width={24} height={24} className="mr-3" />
+                                                            Kakao로 빠른 로그인
+                                                        </Button>
+                                                    </div>
+                                                    {/* ... (다른 로그인 옵션들) ... */}
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
+                                    )}
+
+                                    {/* 로그인 상태일 때 보여줄 UI */}
+                                    {status === 'authenticated' && session?.user && (
+                                        <div className="flex flex-col items-center gap-2 p-4">
+                                            <Avatar className="h-20 w-20">
+                                                <AvatarImage src={session.user.image || ''} alt={session.user.name || ''} />
+                                                <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <p className="mt-2 font-semibold">{session.user.name}</p>
+                                            <Button variant="outline" onClick={() => signOut()} className="w-full mt-2">
+                                                로그아웃
+                                            </Button>
+                                        </div>
+                                    )}
+                                    <Separator className="my-4" />
+
+                                    <div className="flex flex-col gap-2 px-4">
+                                        <Button
+                                            variant="ghost"
+                                            className="justify-start"
+                                            onClick={() => setIsFavoritesListOpen(true)}
+                                        >
+                                            즐겨찾기 목록
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="justify-start"
+                                            onClick={handleBlacklistClick}
+                                        >
+                                            블랙리스트 관리
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="justify-start"
+                                            onClick={() => setIsTagManagementOpen(true)}
+                                        >
+                                            태그 관리
+                                        </Button>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" className="justify-start">
+                                                도움말 및 정보
+                                            </Button>
+                                        </DialogTrigger>
+                                    </div>
+                                    <Separator className="my-4" />
+
+                                    <div className="px-4 flex items-center justify-between">
+                                        <span className="text-sm font-medium">테마 변경</span>
+                                        <ThemeToggle />
+                                    </div>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                        
+                        {/* 도움말 Dialog 본체 */}
+                        <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle>도움말 및 정보</DialogTitle>
+                            </DialogHeader>
+                            <div className="py-4 text-sm space-y-2">
+                                <p><strong>📍 위치 검색:</strong><span className="ml-2">Kakao Maps API</span></p>
+                                <p><strong>⭐ 별점 및 상세 정보:</strong><span className="ml-2">Google Maps API</span></p>
+                            </div>
+                            <Separator />
+                            <div className="py-4 space-y-3">
+                                <h4 className="font-semibold text-sm">태그 종류 안내</h4>
+                                <div className="flex flex-col space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="default" className="w-28 justify-center">★ 구독 태그</Badge>
+                                        <span className="text-xs text-muted-foreground">구독한 사용자의 태그</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="w-28 justify-center"># 내가 만든 태그</Badge>
+                                        <span className="text-xs text-muted-foreground">내가 직접 만든 태그</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="secondary" className="w-28 justify-center"># 일반 태그</Badge>
+                                        <span className="text-xs text-muted-foreground">다른 사용자의 공개 태그</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
 
                 <Dialog open={isRouletteOpen} onOpenChange={setIsRouletteOpen}>
                     <DialogContent className="max-w-md p-6">

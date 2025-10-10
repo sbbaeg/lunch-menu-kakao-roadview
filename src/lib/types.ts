@@ -1,5 +1,3 @@
-// lib/types.ts
-
 export interface GoogleOpeningHours {
   open_now: boolean;
   weekday_text?: string[];
@@ -38,9 +36,18 @@ export interface KakaoPlaceItem {
   googleDetails?: GoogleDetails;
 }
 
+// ✅ 재사용 가능한 상세한 Tag 타입을 새로 정의합니다.
+export interface Tag {
+    id: number;
+    name: string;
+    isPublic: boolean;
+    creatorId: string;
+    creatorName: string | null;
+}
+
 // API 응답에 최종적으로 사용될 타입
 export interface RestaurantWithTags extends KakaoPlaceItem {
-  tags: { id: number; name: string; }[];
+  tags: Tag[]; // ✅ 새로 정의한 Tag 타입의 배열로 변경
 }
 
 // 우리 앱 내부에서 사용할 표준 데이터 타입 (camelCase)
@@ -54,5 +61,5 @@ export interface Restaurant {
   distance: string;
   placeUrl: string;
   googleDetails?: GoogleDetails;
-  tags?: { id: number; name: string; }[];
+  tags?: Tag[]; // ✅ 새로 정의한 Tag 타입의 배열로 변경
 }
