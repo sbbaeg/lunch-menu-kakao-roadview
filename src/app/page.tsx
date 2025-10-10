@@ -2084,7 +2084,7 @@ export default function Home() {
                             <div className="max-h-[60vh] overflow-y-auto pr-4">
                                 {userTags.length > 0 ? (
                                     <ul className="space-y-2">
-                                        {userTags.map(tag => (
+                                        {filteredTags.map(tag => (
                                             <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
                                                 <span>{tag.name}</span>
                                                 <Button variant="ghost" size="sm" onClick={() => handleDeleteTag(tag.id)}>삭제</Button>
