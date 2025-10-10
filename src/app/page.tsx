@@ -288,6 +288,7 @@ export default function Home() {
 
     const [blacklist, setBlacklist] = useState<Restaurant[]>([]); // 관리 목록을 담을 상태
     const [isBlacklistOpen, setIsBlacklistOpen] = useState(false); // 관리 팝업을 여닫을 상태
+    const [isTagManagementOpen, setIsTagManagementOpen] = useState(false); // 태그 관리 팝업 상태
     const [excludedCount, setExcludedCount] = useState<number>(0); // 제외된 개수를 담을 상태
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
 
@@ -934,7 +935,10 @@ export default function Home() {
         const response = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tagId: tag.id }),
+            body: JSON.stringify({ 
+                tagId: tag.id,
+                restaurant: taggingRestaurant // 음식점 정보 전체를 전송
+            }),
         });
 
         if (response.ok) {
@@ -965,6 +969,28 @@ export default function Home() {
                 restaurant.id === updatedRestaurant.id ? updatedRestaurant : restaurant
             )
         );
+    };
+
+    const handleDeleteTag = async (tagId: number) => {
+        // Optimistic UI Update
+        const originalTags = userTags;
+        setUserTags(userTags.filter(tag => tag.id !== tagId));
+
+        try {
+            const response = await fetch(`/api/tags/${tagId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                // Revert on failure
+                setUserTags(originalTags);
+                setAlertInfo({ title: "오류", message: "태그 삭제에 실패했습니다." });
+            }
+        } catch (error) {
+            // Revert on failure
+            setUserTags(originalTags);
+            setAlertInfo({ title: "오류", message: "태그 삭제 중 오류가 발생했습니다." });
+        }
     };
     
     const handleAddressSearch = () => {
@@ -1153,6 +1179,13 @@ export default function Home() {
                                         onClick={handleBlacklistClick}
                                     >
                                         블랙리스트 관리
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        className="justify-start"
+                                        onClick={() => setIsTagManagementOpen(true)}
+                                    >
+                                        태그 관리
                                     </Button>
                                 </div>
                                 <Separator className="my-4" />
@@ -1684,8 +1717,14 @@ export default function Home() {
                                                                 >
                                                                     <Tags className="text-gray-400" />
                                                                 </Button>
-                                                                <Button /* ... 블랙리스트 버튼 ... */ >
-                                                                    <EyeOff /* ... */ />
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8"
+                                                                    onClick={() => toggleBlacklist(place)}
+                                                                    title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
+                                                                >
+                                                                    <EyeOff className={isBlacklisted(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
                                                                 </Button>
                                                             </>
                                                         )}
@@ -1982,6 +2021,29 @@ export default function Home() {
 </div>
                 </Card>
 
+                {/* 태그 관리 다이얼로그 */}
+                <Dialog open={isTagManagementOpen} onOpenChange={setIsTagManagementOpen}>
+                    <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl">태그 관리</DialogTitle>
+                        </DialogHeader>
+                        <div className="max-h-[70vh] overflow-y-auto pr-4 mt-4">
+                            {userTags.length > 0 ? (
+                                <ul className="space-y-2">
+                                    {userTags.map(tag => (
+                                        <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                            <span>{tag.name}</span>
+                                            <Button variant="ghost" size="sm" onClick={() => handleDeleteTag(tag.id)}>삭제</Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-center text-muted-foreground py-8">생성된 태그가 없습니다.</p>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
                 <Dialog open={isFavoritesListOpen} onOpenChange={setIsFavoritesListOpen}>
                     <DialogContent className="max-w-lg">
                         <DialogHeader>
@@ -2064,8 +2126,14 @@ export default function Home() {
                                                                             >
                                                                                 <Tags className="text-gray-400" />
                                                                             </Button>
-                                                                            <Button /* ... 블랙리스트 버튼 ... */ >
-                                                                                <EyeOff /* ... */ />
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-8 w-8"
+                                                                                onClick={() => toggleBlacklist(place)}
+                                                                                title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
+                                                                            >
+                                                                                <EyeOff className={isBlacklisted(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
                                                                             </Button>
                                                                         </>
                                                                     )}
