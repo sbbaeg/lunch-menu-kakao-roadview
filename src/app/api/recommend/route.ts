@@ -81,15 +81,20 @@ export async function GET(request: Request) {
         }
 
         // 2. 블랙리스트와 '태그 필터'를 함께 적용합니다.
-        const originalCount = candidates.length;
-        let filteredCandidates = candidates.filter(place => !blacklistIds.includes(place.id));
+        let filteredCandidates = [...candidates]; 
 
-        // 태그 필터가 활성화된 경우, DB에서 조회한 ID 목록에 포함된 가게만 남깁니다.
+        // 블랙리스트 제외 수 계산
+        const countBeforeBlacklist = filteredCandidates.length;
+        filteredCandidates = filteredCandidates.filter(place => !blacklistIds.includes(place.id));
+        const blacklistExcludedCount = countBeforeBlacklist - filteredCandidates.length;
+
+        // 태그 필터 제외 수 계산 (태그 필터가 있을 경우에만)
+        let tagExcludedCount = 0;
         if (taggedRestaurantIds) {
+            const countBeforeTagFilter = filteredCandidates.length;
             filteredCandidates = filteredCandidates.filter(place => taggedRestaurantIds!.has(place.id));
+            tagExcludedCount = countBeforeTagFilter - filteredCandidates.length;
         }
-
-        const excludedCount = candidates.length - filteredCandidates.length;
 
         // 3. 후보군을 하나씩 검증하며 최종 결과를 채워나감
         const finalResults: KakaoPlaceItem[] = [];
@@ -141,7 +146,8 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             documents: finalDocuments,
-            excludedCount: excludedCount
+            blacklistExcludedCount: blacklistExcludedCount,
+            tagExcludedCount: tagExcludedCount
         });
 
     } catch (error) {

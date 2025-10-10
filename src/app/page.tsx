@@ -289,7 +289,7 @@ export default function Home() {
     const [blacklist, setBlacklist] = useState<Restaurant[]>([]); // 관리 목록을 담을 상태
     const [isBlacklistOpen, setIsBlacklistOpen] = useState(false); // 관리 팝업을 여닫을 상태
     const [isTagManagementOpen, setIsTagManagementOpen] = useState(false); // 태그 관리 팝업 상태
-    const [excludedCount, setExcludedCount] = useState<number>(0); // 제외된 개수를 담을 상태
+    const [blacklistExcludedCount, setBlacklistExcludedCount] = useState<number>(0);
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
 
     const [taggingRestaurant, setTaggingRestaurant] = useState<Restaurant | null>(null); // 현재 태그를 편집할 음식점 정보
@@ -527,8 +527,8 @@ export default function Home() {
         }
 
         const response = await fetch(apiUrl); // ✅ 수정된 apiUrl을 사용합니다.
-        
-        const data: { documents?: KakaoPlaceItem[], excludedCount?: number } = await response.json();
+    
+        const data: { documents?: KakaoPlaceItem[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
 
         const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
             id: place.id,
@@ -542,7 +542,7 @@ export default function Home() {
             googleDetails: place.googleDetails,
         }));
 
-        setExcludedCount(data.excludedCount || 0);
+        setBlacklistExcludedCount(data.blacklistExcludedCount || 0);
                 
         return formattedRestaurants;
     };
@@ -579,7 +579,7 @@ export default function Home() {
     const recommendProcess = (isRoulette: boolean) => {
     setLoading(true);
     setDisplayedSortOrder(sortOrder);
-    setExcludedCount(0);
+    setBlacklistExcludedCount(0); // 상태 초기화
     clearMapAndResults();
 
     // ✅ results 변수를 함수 최상단에 선언합니다.
@@ -913,7 +913,10 @@ export default function Home() {
         const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tagId: newTag.id }),
+            body: JSON.stringify({ 
+                tagId: newTag.id,
+                restaurant: taggingRestaurant // ✅ 음식점 정보 추가
+            }),
         });
         
         if (linkResponse.ok) {
@@ -1618,11 +1621,26 @@ export default function Home() {
         </div>
 
         <div className="w-full space-y-2">
-            {restaurantList.length > 0 ? (
+            {loading ? (
+                // ✅ 로딩 중일 때 보여줄 스켈레톤 UI
+                <div className="space-y-2 pr-2">
+                    {/* 스켈레톤 UI를 3개 정도 반복해서 보여줍니다. */}
+                    {[...Array(3)].map((_, index) => (
+                        <Card key={index} className="p-4">
+                            <div className="flex justify-between items-center mb-2">
+                                <Skeleton className="h-5 w-3/5" />
+                                <Skeleton className="h-4 w-1/5" />
+                            </div>
+                            <Skeleton className="h-4 w-2/5" />
+                        </Card>
+                    ))}
+                </div>
+            ) : restaurantList.length > 0 ? (
+                // 로딩이 끝났고, 결과가 있을 때
                 <div className="thin-scrollbar space-y-2 max-h-[800px] overflow-y-auto pr-2">
-                    {excludedCount > 0 && (
+                    {blacklistExcludedCount > 0 && (
                         <div className="p-3 mb-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
-                            <p>블랙리스트에 포함된 {excludedCount}개의 장소가 결과에서 제외되었습니다.</p>
+                            <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
                         </div>
                     )}
                     <p className="text-sm font-semibold text-gray-600 pl-1">
@@ -2012,6 +2030,7 @@ export default function Home() {
                     </Accordion>
                 </div>
             ) : (
+                // 로딩이 끝났고, 결과가 없을 때
                 <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm">
                     <p>음식점을 검색해보세요!</p>
                 </Card>
