@@ -2,6 +2,8 @@
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
 
+import { Tag } from '@/lib/types';
+
 import { useSession, signIn, signOut } from "next-auth/react";
 
 import { Switch } from "@/components/ui/switch";
@@ -297,7 +299,7 @@ export default function Home() {
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
 
     const [taggingRestaurant, setTaggingRestaurant] = useState<Restaurant | null>(null); // 현재 태그를 편집할 음식점 정보
-    const [userTags, setUserTags] = useState<{ id: number; name: string; isPublic: boolean; }[]>([]);
+    const [userTags, setUserTags] = useState<Tag[]>([]);
     const [subscribedTags, setSubscribedTags] = useState<{ id: number; name: string; creatorName: string | null; }[]>([]);
     const [subscribedTagIds, setSubscribedTagIds] = useState<number[]>([]);
     const [newTagName, setNewTagName] = useState("");
@@ -967,25 +969,49 @@ export default function Home() {
 
     const handleCreateTag = async () => {
         if (!newTagName.trim() || !taggingRestaurant || isCreatingTag) return;
+    
         setIsCreatingTag(true);
         try {
-            const createResponse = await fetch('/api/tags', { /* ... */ });
+            // 1. 태그 생성 API 호출
+            const createResponse = await fetch('/api/tags', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newTagName }),
+            });
+    
             if (!createResponse.ok) {
+                // 생성 실패 또는 중복 태그 처리
                 setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
+                setIsCreatingTag(false); // 로딩 상태 해제
                 return;
             }
+    
             const newTag = await createResponse.json();
+            
+            // UI에 새로 생성된 태그 즉시 반영
             setUserTags(prevTags => [...prevTags, newTag]);
-            setNewTagName("");
-            const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, { /* ... */ });
+            setNewTagName(""); // 입력 필드 초기화
+    
+            // 2. 생성된 태그와 음식점 연결 API 호출
+            const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    tagId: newTag.id, 
+                    restaurant: taggingRestaurant 
+                }),
+            });
+    
             if (linkResponse.ok) {
+                // 연결 성공 시, 레스토랑 목록의 태그 정보 업데이트
                 const updatedRestaurant = {
                     ...taggingRestaurant,
                     tags: [...(taggingRestaurant.tags || []), newTag],
                 };
-                handleTagsChange(updatedRestaurant);
-                setTaggingRestaurant(updatedRestaurant);
+                handleTagsChange(updatedRestaurant); // restaurantList, favorites 상태 업데이트
+                setTaggingRestaurant(updatedRestaurant); // 현재 열려있는 다이얼로그의 정보도 업데이트
             } else {
+                // 연결 실패 처리
                 setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
             }
         } catch (error) {
