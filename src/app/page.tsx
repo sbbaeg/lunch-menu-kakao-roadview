@@ -890,6 +890,24 @@ export default function Home() {
         }
     };
 
+    const handleCreateTagFromManager = async () => {
+        if (!newTagName.trim()) return;
+
+        const createResponse = await fetch('/api/tags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newTagName }),
+        });
+
+        if (createResponse.ok) {
+            const newTag = await createResponse.json();
+            setUserTags(prevTags => [...prevTags, newTag]);
+            setNewTagName(""); // 입력창 비우기
+        } else {
+            setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
+        }
+    };
+
     const handleCreateTag = async () => {
         if (!newTagName.trim() || !taggingRestaurant) return;
 
@@ -1024,38 +1042,42 @@ export default function Home() {
     };
 
     const handleSearchInArea = async () => {
-    if (!mapInstance.current) return;
+        if (!mapInstance.current) return;
 
-    setShowSearchAreaButton(false); // 버튼을 누르면 다시 숨김
-    setLoading(true);
-    clearMapAndResults();
+        setShowSearchAreaButton(false); // 버튼을 누르면 다시 숨김
+        setLoading(true);
+        clearMapAndResults();
 
-    const center = mapInstance.current.getCenter();
-    const lat = center.getLat();
-    const lng = center.getLng();
+        const center = mapInstance.current.getCenter();
+        const lat = center.getLat();
+        const lng = center.getLng();
 
-    try {
-        const restaurants = await getNearbyRestaurants(lat, lng);
-        if (restaurants.length === 0) {
-            setAlertInfo({ title: "오류", message: "주변에 조건에 맞는 음식점을 찾지 못했습니다." });
-        } else {
-            // 'accuracy'(랜덤) 정렬일 경우 결과를 섞어줌
-            const finalRestaurants =
-                sortOrder === "distance" || sortOrder === "rating"
-                    ? restaurants
-                    : [...restaurants]
-                            .sort(() => 0.5 - Math.random())
-                            .slice(0, resultCount);
-            setRestaurantList(finalRestaurants);
-            displayMarkers(finalRestaurants);
+        try {
+            const restaurants = await getNearbyRestaurants(lat, lng);
+            if (restaurants.length === 0) {
+                setAlertInfo({ title: "오류", message: "주변에 조건에 맞는 음식점을 찾지 못했습니다." });
+            } else {
+                // 'accuracy'(랜덤) 정렬일 경우 결과를 섞어줌
+                const finalRestaurants =
+                    sortOrder === "distance" || sortOrder === "rating"
+                        ? restaurants
+                        : [...restaurants]
+                                .sort(() => 0.5 - Math.random())
+                                .slice(0, resultCount);
+                setRestaurantList(finalRestaurants);
+                displayMarkers(finalRestaurants);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            setAlertInfo({ title: "오류", message: "음식점을 불러오는데 실패했습니다." });
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error("Error:", error);
-        setAlertInfo({ title: "오류", message: "음식점을 불러오는데 실패했습니다." });
-    } finally {
-        setLoading(false);
-    }
-};
+    };
+
+    const filteredTags = newTagName.trim() === ''
+        ? userTags // 입력창이 비어있으면 모든 태그를 보여줌
+        : userTags.filter(tag => tag.name.toLowerCase().includes(newTagName.trim().toLowerCase()));
 
     return (
         <main className="w-full min-h-screen">
@@ -2046,19 +2068,33 @@ export default function Home() {
                         <DialogHeader>
                             <DialogTitle className="text-xl">태그 관리</DialogTitle>
                         </DialogHeader>
-                        <div className="max-h-[70vh] overflow-y-auto pr-4 mt-4">
-                            {userTags.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {userTags.map(tag => (
-                                        <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                                            <span>{tag.name}</span>
-                                            <Button variant="ghost" size="sm" onClick={() => handleDeleteTag(tag.id)}>삭제</Button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-center text-muted-foreground py-8">생성된 태그가 없습니다.</p>
-                            )}
+                        <div className="py-2">
+                            {/* ✅ 새로운 태그 생성 UI 추가 */}
+                            <div className="flex w-full items-center space-x-2 mb-4 p-1">
+                                <Input
+                                    type="text"
+                                    placeholder="새 태그 이름 (예: #분위기좋은)"
+                                    value={newTagName}
+                                    onChange={(e) => setNewTagName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleCreateTagFromManager()}
+                                />
+                                <Button onClick={handleCreateTagFromManager}>추가</Button>
+                            </div>
+
+                            <div className="max-h-[60vh] overflow-y-auto pr-4">
+                                {userTags.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {userTags.map(tag => (
+                                            <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                                <span>{tag.name}</span>
+                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteTag(tag.id)}>삭제</Button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-center text-muted-foreground py-8">생성된 태그가 없습니다.</p>
+                                )}
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -2390,7 +2426,8 @@ export default function Home() {
                             {/* 기존 태그 목록 UI */}
                             <div className="max-h-60 overflow-y-auto space-y-2">
                                 <p className="text-sm font-medium text-muted-foreground">내 태그 목록</p>
-                                {userTags.map((tag) => (
+                                {/* ✅ userTags 대신 filteredTags를 사용 */}
+                                {filteredTags.map((tag) => (
                                     <div key={tag.id} className="flex items-center space-x-2">
                                         <Checkbox
                                             id={`tag-${tag.id}`}
