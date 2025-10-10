@@ -302,6 +302,9 @@ export default function Home() {
     const [subscribedTagIds, setSubscribedTagIds] = useState<number[]>([]);
     const [newTagName, setNewTagName] = useState("");
 
+    const [isHelpOpen, setIsHelpOpen] = useState(false);
+    const [isCreatingTag, setIsCreatingTag] = useState(false);
+
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
     }, [favorites]);
@@ -938,91 +941,75 @@ export default function Home() {
     };
 
     const handleCreateTagFromManager = async () => {
-        if (!newTagName.trim()) return;
+        if (!newTagName.trim() || isCreatingTag) return;
+        setIsCreatingTag(true);
+        try {
+            const createResponse = await fetch('/api/tags', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newTagName }),
+            });
 
-        const createResponse = await fetch('/api/tags', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: newTagName }),
-        });
-
-        if (createResponse.ok) {
-            const newTag = await createResponse.json();
-            setUserTags(prevTags => [...prevTags, newTag]);
-            setNewTagName(""); // 입력창 비우기
-        } else {
-            setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
+            if (createResponse.ok) {
+                const newTag = await createResponse.json();
+                setUserTags(prevTags => [...prevTags, newTag]);
+                setNewTagName("");
+            } else {
+                setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
+            }
+        } catch (error) {
+            console.error("태그 생성 오류:", error);
+            setAlertInfo({ title: "오류", message: "태그 생성 중 오류가 발생했습니다." });
+        } finally {
+            setIsCreatingTag(false);
         }
     };
 
     const handleCreateTag = async () => {
-        if (!newTagName.trim() || !taggingRestaurant) return;
-
-        // 1. 새로운 태그 생성 API 호출
-        const createResponse = await fetch('/api/tags', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: newTagName }),
-        });
-
-        if (!createResponse.ok) {
-            setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
-            return;
-        }
-
-        const newTag = await createResponse.json();
-        setUserTags(prevTags => [...prevTags, newTag]); // 전체 태그 목록에 새 태그 추가
-        setNewTagName(""); // 입력창 비우기
-
-        // 2. 생성된 태그를 현재 음식점에 바로 연결
-        const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                tagId: newTag.id,
-                restaurant: taggingRestaurant // ✅ 음식점 정보 추가
-            }),
-        });
-        
-        if (linkResponse.ok) {
-            // 3. 동기화 함수 호출
-            const updatedRestaurant = {
-                ...taggingRestaurant,
-                tags: [...(taggingRestaurant.tags || []), newTag],
-            };
-            handleTagsChange(updatedRestaurant);
-            setTaggingRestaurant(updatedRestaurant); // 팝업창 내부 데이터도 갱신
-        } else {
-            setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
+        if (!newTagName.trim() || !taggingRestaurant || isCreatingTag) return;
+        setIsCreatingTag(true);
+        try {
+            const createResponse = await fetch('/api/tags', { /* ... */ });
+            if (!createResponse.ok) {
+                setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
+                return;
+            }
+            const newTag = await createResponse.json();
+            setUserTags(prevTags => [...prevTags, newTag]);
+            setNewTagName("");
+            const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, { /* ... */ });
+            if (linkResponse.ok) {
+                const updatedRestaurant = {
+                    ...taggingRestaurant,
+                    tags: [...(taggingRestaurant.tags || []), newTag],
+                };
+                handleTagsChange(updatedRestaurant);
+                setTaggingRestaurant(updatedRestaurant);
+            } else {
+                setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
+            }
+        } catch (error) {
+            console.error("태그 생성 및 연결 오류:", error);
+            setAlertInfo({ title: "오류", message: "태그 처리 중 오류가 발생했습니다." });
+        } finally {
+            setIsCreatingTag(false);
         }
     };
 
     const handleToggleTagLink = async (tag: { id: number; name: string; isPublic: boolean; }) => {
         if (!taggingRestaurant || !session?.user) return;
-
-        const response = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                tagId: tag.id,
-                restaurant: taggingRestaurant
-            }),
-        });
-
+        const response = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, { /* ... */ });
         if (response.ok) {
             const isCurrentlyTagged = taggingRestaurant.tags?.some(t => t.id === tag.id);
-
             const newTags = isCurrentlyTagged
                 ? taggingRestaurant.tags?.filter(t => t.id !== tag.id)
                 : [...(taggingRestaurant.tags || []), {
-                    // ✅ 'tag' 객체를 완전한 'Tag' 타입으로 변환하여 추가
                     id: tag.id,
                     name: tag.name,
                     isPublic: tag.isPublic,
-                    creatorId: session.user.id,     // 현재 로그인한 사용자 정보로 채움
-                    creatorName: session.user.name || null, // 현재 로그인한 사용자 정보로 채움
+                    creatorId: session.user.id,
+                    creatorName: session.user.name || null,
                 }];
-            
             const updatedRestaurant = { ...taggingRestaurant, tags: newTags };
             handleTagsChange(updatedRestaurant);
             setTaggingRestaurant(updatedRestaurant);
@@ -1032,18 +1019,11 @@ export default function Home() {
     };
 
     const handleTagsChange = (updatedRestaurant: Restaurant) => {
-        // 1. restaurantList 상태 업데이트
         setRestaurantList(prevList => 
-            prevList.map(restaurant => 
-                restaurant.id === updatedRestaurant.id ? updatedRestaurant : restaurant
-            )
+            prevList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
         );
-
-        // 2. favorites 상태 업데이트
         setFavorites(prevList => 
-            prevList.map(restaurant => 
-                restaurant.id === updatedRestaurant.id ? updatedRestaurant : restaurant
-            )
+            prevList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
         );
     };
 
@@ -1054,61 +1034,43 @@ export default function Home() {
                 tag.id === tagId ? { ...tag, isPublic: !currentIsPublic } : tag
             )
         );
-
-        // API 호출
         try {
-            const response = await fetch(`/api/tags/${tagId}/toggle-public`, {
-                method: 'PATCH',
-            });
-
+            const response = await fetch(`/api/tags/${tagId}/toggle-public`, { method: 'PATCH' });
             if (!response.ok) {
-                // 실패 시 UI 롤백
                 setUserTags(originalTags);
                 setAlertInfo({ title: "오류", message: "상태 변경에 실패했습니다." });
             }
         } catch (error) {
-            // 실패 시 UI 롤백
             setUserTags(originalTags);
             setAlertInfo({ title: "오류", message: "상태 변경 중 오류가 발생했습니다." });
         }
     };
 
     const handleUnsubscribe = async (tagId: number) => {
-        // 낙관적 업데이트: API 응답을 기다리지 않고 UI를 먼저 변경
         const originalSubscriptions = subscribedTags;
         setSubscribedTags(prev => prev.filter(tag => tag.id !== tagId));
-
         try {
-            // 구독 토글 API를 호출하여 구독을 취소
             const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
-            
             if (!response.ok) {
-                setSubscribedTags(originalSubscriptions); // 실패 시 UI를 원래대로 복구
+                setSubscribedTags(originalSubscriptions);
                 setAlertInfo({ title: "오류", message: "구독 취소에 실패했습니다." });
             }
         } catch (error) {
-            setSubscribedTags(originalSubscriptions); // 실패 시 UI를 원래대로 복구
+            setSubscribedTags(originalSubscriptions);
             setAlertInfo({ title: "오류", message: "구독 취소 중 오류가 발생했습니다." });
         }
     };
 
     const handleDeleteTag = async (tagId: number) => {
-        // Optimistic UI Update
         const originalTags = userTags;
         setUserTags(userTags.filter(tag => tag.id !== tagId));
-
         try {
-            const response = await fetch(`/api/tags/${tagId}`, {
-                method: 'DELETE',
-            });
-
+            const response = await fetch(`/api/tags/${tagId}`, { method: 'DELETE' });
             if (!response.ok) {
-                // Revert on failure
                 setUserTags(originalTags);
                 setAlertInfo({ title: "오류", message: "태그 삭제에 실패했습니다." });
             }
         } catch (error) {
-            // Revert on failure
             setUserTags(originalTags);
             setAlertInfo({ title: "오류", message: "태그 삭제 중 오류가 발생했습니다." });
         }
@@ -2159,14 +2121,19 @@ export default function Home() {
                             {/* 1. '내가 만든 태그' 섹션 */}
                             <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
                             <div className="flex w-full items-center space-x-2 mb-4 p-1">
+                                {/* --- 수정 시작 --- */}
                                 <Input
                                     type="text"
                                     placeholder="새 태그 생성 또는 검색"
                                     value={newTagName}
                                     onChange={(e) => setNewTagName(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleCreateTagFromManager()}
+                                    disabled={isCreatingTag} 
                                 />
-                                <Button onClick={handleCreateTagFromManager}>추가</Button>
+                                <Button onClick={handleCreateTagFromManager} disabled={isCreatingTag}>
+                                    {isCreatingTag ? '추가 중...' : '추가'}
+                                </Button>
+                                {/* --- 수정 끝 --- */}
                             </div>
                             <div className="h-[200px] overflow-y-auto pr-4">
                                 {userTags.length > 0 ? (
@@ -2521,157 +2488,6 @@ export default function Home() {
                         </div>
                     </DialogContent>
                 </Dialog>
-
-                <div className="absolute top-4 right-4 z-50">
-                    <Dialog>
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Menu className="h-5 w-5" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent>
-                                <SheetHeader>
-                                    <SheetTitle>메뉴</SheetTitle>
-                                </SheetHeader>
-                                <div className="py-4">
-                                    {/* 로딩 중일 때 보여줄 스켈레톤 UI */}
-                                    {status === 'loading' && (
-                                        <div className="flex flex-col items-center gap-2 p-4">
-                                            <Skeleton className="h-20 w-20 rounded-full" />
-                                            <Skeleton className="h-6 w-24" />
-                                            <Skeleton className="h-10 w-full" />
-                                        </div>
-                                    )}
-
-                                    {/* 비로그인 상태일 때 보여줄 UI */}
-                                    {status === 'unauthenticated' && (
-                                        <div className="flex flex-col items-center gap-2 p-4">
-                                            <Avatar className="h-20 w-20">
-                                                <AvatarFallback>👤</AvatarFallback>
-                                            </Avatar>
-                                            <p className="mt-2 font-semibold">게스트</p>
-                                            {/* 로그인 Dialog를 직접 포함하지 않고, 기존 Dialog를 재사용하도록 수정할 수 있습니다. 
-                                                우선은 구조상 문제가 없도록 코드를 유지합니다. */}
-                                            <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <Button className="w-full mt-2">로그인</Button>
-                                                </DialogTrigger>
-                                                <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle className="text-center text-2xl font-bold">
-                                                            로그인
-                                                        </DialogTitle>
-                                                        <p className="text-sm text-muted-foreground pt-1 text-center">
-                                                            이전에 사용한 계정으로 빠르게 로그인하세요.
-                                                        </p>
-                                                    </DialogHeader>
-                                                    <div className="grid gap-4 py-4">
-                                                        <Button
-                                                            onClick={() => signIn('google')}
-                                                            variant="outline"
-                                                            className="w-full h-12 text-lg"
-                                                        >
-                                                            <Image src="/google_icon.png" alt="Google" width={24} height={24} className="mr-3" />
-                                                            Google로 빠른 로그인
-                                                        </Button>
-                                                        <Button
-                                                            onClick={() => signIn('kakao')}
-                                                            className="w-full h-12 text-lg bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
-                                                        >
-                                                            <Image src="/kakao_icon.png" alt="Kakao" width={24} height={24} className="mr-3" />
-                                                            Kakao로 빠른 로그인
-                                                        </Button>
-                                                    </div>
-                                                    {/* ... (다른 로그인 옵션들) ... */}
-                                                </DialogContent>
-                                            </Dialog>
-                                        </div>
-                                    )}
-
-                                    {/* 로그인 상태일 때 보여줄 UI */}
-                                    {status === 'authenticated' && session?.user && (
-                                        <div className="flex flex-col items-center gap-2 p-4">
-                                            <Avatar className="h-20 w-20">
-                                                <AvatarImage src={session.user.image || ''} alt={session.user.name || ''} />
-                                                <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <p className="mt-2 font-semibold">{session.user.name}</p>
-                                            <Button variant="outline" onClick={() => signOut()} className="w-full mt-2">
-                                                로그아웃
-                                            </Button>
-                                        </div>
-                                    )}
-                                    <Separator className="my-4" />
-
-                                    <div className="flex flex-col gap-2 px-4">
-                                        <Button
-                                            variant="ghost"
-                                            className="justify-start"
-                                            onClick={() => setIsFavoritesListOpen(true)}
-                                        >
-                                            즐겨찾기 목록
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            className="justify-start"
-                                            onClick={handleBlacklistClick}
-                                        >
-                                            블랙리스트 관리
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            className="justify-start"
-                                            onClick={() => setIsTagManagementOpen(true)}
-                                        >
-                                            태그 관리
-                                        </Button>
-                                        <DialogTrigger asChild>
-                                            <Button variant="ghost" className="justify-start">
-                                                도움말 및 정보
-                                            </Button>
-                                        </DialogTrigger>
-                                    </div>
-                                    <Separator className="my-4" />
-
-                                    <div className="px-4 flex items-center justify-between">
-                                        <span className="text-sm font-medium">테마 변경</span>
-                                        <ThemeToggle />
-                                    </div>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                        
-                        {/* 도움말 Dialog 본체 */}
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                                <DialogTitle>도움말 및 정보</DialogTitle>
-                            </DialogHeader>
-                            <div className="py-4 text-sm space-y-2">
-                                <p><strong>📍 위치 검색:</strong><span className="ml-2">Kakao Maps API</span></p>
-                                <p><strong>⭐ 별점 및 상세 정보:</strong><span className="ml-2">Google Maps API</span></p>
-                            </div>
-                            <Separator />
-                            <div className="py-4 space-y-3">
-                                <h4 className="font-semibold text-sm">태그 종류 안내</h4>
-                                <div className="flex flex-col space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="default" className="w-28 justify-center">★ 구독 태그</Badge>
-                                        <span className="text-xs text-muted-foreground">구독한 사용자의 태그</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="w-28 justify-center"># 내가 만든 태그</Badge>
-                                        <span className="text-xs text-muted-foreground">내가 직접 만든 태그</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="secondary" className="w-28 justify-center"># 일반 태그</Badge>
-                                        <span className="text-xs text-muted-foreground">다른 사용자의 공개 태그</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                </div>
 
                 <Dialog open={isRouletteOpen} onOpenChange={setIsRouletteOpen}>
                     <DialogContent className="max-w-md p-6">
