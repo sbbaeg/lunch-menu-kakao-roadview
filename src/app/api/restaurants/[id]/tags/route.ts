@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
+import { Restaurant } from '@/lib/types'; // Restaurant 타입을 가져옵니다.
 
 const prisma = new PrismaClient();
 
 // 타입을 별도로 정의
 type RouteContext = {
     params: {
-        id: string;
+        id: string; // kakaoPlaceId
     };
 };
 
@@ -19,13 +20,30 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     try {
-        const restaurantId = parseInt(params.id, 10);
-        const { tagId } = await request.json();
+        const kakaoPlaceId = params.id;
+        const { tagId, restaurant } = await request.json() as { tagId: number, restaurant: Restaurant };
 
-        if (isNaN(restaurantId) || !tagId) {
+        if (!tagId || !restaurant) {
             return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 });
         }
-        
+
+        // 1. 레스토랑 정보를 DB에 Upsert (없으면 생성, 있으면 가져오기)
+        const dbRestaurant = await prisma.restaurant.upsert({
+            where: { kakaoPlaceId: kakaoPlaceId },
+            update: {},
+            create: {
+                kakaoPlaceId: restaurant.id,
+                placeName: restaurant.placeName,
+                address: restaurant.address,
+                latitude: Number(restaurant.y),
+                longitude: Number(restaurant.x),
+                categoryName: restaurant.categoryName,
+            }
+        });
+
+        // 2. DB에 저장된 레스토랑의 실제 ID (Int)를 사용
+        const restaurantId = dbRestaurant.id;
+
         const existingLink = await prisma.tagsOnRestaurants.findUnique({
             where: {
                 restaurantId_tagId: {
