@@ -1,6 +1,6 @@
 "use client";
 
-import { Restaurant, KakaoPlaceItem, GoogleOpeningHours } from '@/lib/types'; 
+import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
 
 import { useSession, signIn, signOut } from "next-auth/react";
 
@@ -526,9 +526,8 @@ export default function Home() {
             apiUrl += `&tags=${selectedTags.join(',')}`;
         }
 
-        const response = await fetch(apiUrl); // ✅ 수정된 apiUrl을 사용합니다.
-    
-        const data: { documents?: KakaoPlaceItem[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
+        const response = await fetch(apiUrl);
+        const data: { documents?: RestaurantWithTags[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
 
         const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
             id: place.id,
@@ -540,6 +539,7 @@ export default function Home() {
             placeUrl: place.place_url,
             distance: place.distance,
             googleDetails: place.googleDetails,
+            tags: place.tags,
         }));
 
         setBlacklistExcludedCount(data.blacklistExcludedCount || 0);
