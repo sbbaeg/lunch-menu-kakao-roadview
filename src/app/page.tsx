@@ -1724,7 +1724,7 @@ export default function Home() {
                                                                     onClick={() => toggleBlacklist(place)}
                                                                     title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
                                                                 >
-                                                                    <EyeOff className={isBlacklisted(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                                                    <EyeOff className={isBlacklisted(place.id) ? "fill-foreground" : "text-gray-400"} />
                                                                 </Button>
                                                             </>
                                                         )}
@@ -2133,7 +2133,7 @@ export default function Home() {
                                                                                 onClick={() => toggleBlacklist(place)}
                                                                                 title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
                                                                             >
-                                                                                <EyeOff className={isBlacklisted(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                                                                <EyeOff className={isBlacklisted(place.id) ? "fill-foreground" : "text-gray-400"} />
                                                                             </Button>
                                                                         </>
                                                                     )}
