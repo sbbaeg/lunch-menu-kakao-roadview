@@ -58,7 +58,6 @@ export async function POST(request: Request) {
             }
         }
         console.error('태그 생성 오류:', error);
-        const message = error instanceof Error ? error.message : String(error);
-        return NextResponse.json({ error: '태그를 생성하는 중 오류가 발생했습니다.', debug_message: message }, { status: 500 });
+        return NextResponse.json({ error: '태그를 생성하는 중 오류가 발생했습니다.' }, { status: 500 });
     }
 }

@@ -1023,24 +1023,51 @@ export default function Home() {
     };
 
     const handleToggleTagLink = async (tag: { id: number; name: string; isPublic: boolean; }) => {
-        if (!taggingRestaurant || !session?.user) return;
-        const response = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, { /* ... */ });
-        if (response.ok) {
-            const isCurrentlyTagged = taggingRestaurant.tags?.some(t => t.id === tag.id);
-            const newTags = isCurrentlyTagged
-                ? taggingRestaurant.tags?.filter(t => t.id !== tag.id)
-                : [...(taggingRestaurant.tags || []), {
-                    id: tag.id,
-                    name: tag.name,
-                    isPublic: tag.isPublic,
+        if (!taggingRestaurant) return;
+
+        // 원래 상태를 백업해둡니다.
+        const originalRestaurant = taggingRestaurant;
+
+        // 낙관적 업데이트: API 호출 전에 UI를 먼저 변경
+        const isCurrentlyTagged = originalRestaurant.tags?.some(t => t.id === tag.id);
+        const newTags = isCurrentlyTagged
+            ? originalRestaurant.tags?.filter(t => t.id !== tag.id)
+            : [...(originalRestaurant.tags || []), {
+                id: tag.id,
+                name: tag.name,
+                isPublic: tag.isPublic,
+                ...(session?.user && { 
                     creatorId: session.user.id,
-                    creatorName: session.user.name || null,
-                }];
-            const updatedRestaurant = { ...taggingRestaurant, tags: newTags };
-            handleTagsChange(updatedRestaurant);
-            setTaggingRestaurant(updatedRestaurant);
-        } else {
-            setAlertInfo({ title: "오류", message: "태그 변경에 실패했습니다." });
+                    creatorName: session.user.name || null
+                })
+            }];
+        const updatedRestaurant = { ...originalRestaurant, tags: newTags };
+        
+        handleTagsChange(updatedRestaurant);
+        setTaggingRestaurant(updatedRestaurant);
+
+        // API 호출
+        try {
+            const response = await fetch(`/api/restaurants/${originalRestaurant.id}/tags`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    tagId: tag.id, 
+                    restaurant: originalRestaurant
+                }),
+            });
+    
+            if (!response.ok) {
+                // API 호출 실패 시, UI를 원래 상태로 되돌림 (롤백)
+                handleTagsChange(originalRestaurant); 
+                setTaggingRestaurant(originalRestaurant);
+                setAlertInfo({ title: "오류", message: "태그 변경에 실패했습니다." });
+            }
+        } catch (error) {
+            // 네트워크 오류 등 fetch 자체가 실패한 경우
+            handleTagsChange(originalRestaurant);
+            setTaggingRestaurant(originalRestaurant);
+            setAlertInfo({ title: "오류", message: "태그 변경 중 네트워크 오류가 발생했습니다." });
         }
     };
 
