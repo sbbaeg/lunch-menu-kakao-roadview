@@ -1743,298 +1743,320 @@ export default function Home() {
                 </div>
             ) : restaurantList.length > 0 ? (
                 // 로딩이 끝났고, 결과가 있을 때
-                <div className="thin-scrollbar space-y-2 max-h-[800px] overflow-y-auto pr-2">
+                <Card className="w-full flex-1 flex flex-col">
                     {blacklistExcludedCount > 0 && (
-                        <div className="p-3 mb-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
+                        <div className="p-3 m-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
                             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
                         </div>
                     )}
-                    <p className="text-sm font-semibold text-gray-600 pl-1">
+                    <p className="text-sm font-semibold text-gray-600 px-4 pt-2">
                         {getSortTitle(displayedSortOrder)}:{" "}
                         {restaurantList.length}개
                     </p>
-                    <Accordion
-                        type="single"
-                        collapsible
-                        className="w-full"
-                        value={selectedItemId}
-                        onValueChange={setSelectedItemId}
-                    >
-                        {restaurantList.map((place) => {
-                            const details =
-                                place.googleDetails;
-                            return (
-                                <AccordionItem value={place.id} key={place.id} className="border-none group">
-                                    <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
-                                        <AccordionTrigger className="text-left hover:no-underline p-0 [&_svg]:hidden">
-                                            <div className="w-full">
-                                                <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
-                                                    <CardTitle className="text-md">
-                                                        {
-                                                            place.placeName
-                                                        }
-                                                    </CardTitle>
-                                                    <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
-                                                        {
-                                                            place.distance
-                                                        }
-                                                        m
-                                                    </span>
-                                                </CardHeader>
-                                                <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
-                                                    <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
-                                                        <span>
-                                                            {place.categoryName
-                                                                ?.split(
-                                                                    ">"
-                                                                )
-                                                                .pop()
-                                                                ?.trim()}
+                    <CardContent className="p-2 thin-scrollbar overflow-y-auto flex-1">
+                        <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
+                            value={selectedItemId}
+                            onValueChange={setSelectedItemId}
+                        >
+                            {restaurantList.map((place) => {
+                                const details =
+                                    place.googleDetails;
+                                return (
+                                    <AccordionItem value={place.id} key={place.id} className="border-none group">
+                                        <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
+                                            <AccordionTrigger className="text-left hover:no-underline p-0 [&_svg]:hidden">
+                                                <div className="w-full">
+                                                    <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
+                                                        <CardTitle className="text-md">
+                                                            {
+                                                                place.placeName
+                                                            }
+                                                        </CardTitle>
+                                                        <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
+                                                            {
+                                                                place.distance
+                                                            }
+                                                            m
                                                         </span>
-                                                        {details?.rating && (
-                                                            <div className="flex items-center gap-1">
-                                                                <span className="text-yellow-400">
-                                                                    ★
-                                                                </span>
-                                                                <span>
-                                                                    {details.rating.toFixed(
-                                                                        1
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    
-                                                    {/* ✅ 태그 뱃지를 표시하는 부분을 여기에 추가합니다. */}
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {place.tags?.map(tag => {
-                                                            // ✅ 태그의 종류를 판별합니다.
-                                                            const isMyTag = tag.creatorId === session?.user?.id;
-                                                            const isSubscribedTag = subscribedTagIds.includes(tag.id);
+                                                    </CardHeader>
+                                                    <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
+                                                        <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
+                                                            <span>
+                                                                {place.categoryName
+                                                                    ?.split(
+                                                                        ">"
+                                                                    )
+                                                                    .pop()
+                                                                    ?.trim()}
+                                                            </span>
+                                                            {details?.rating && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="text-yellow-400">
+                                                                        ★
+                                                                    </span>
+                                                                    <span>
+                                                                        {details.rating.toFixed(
+                                                                            1
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        {/* ✅ 태그 뱃지를 표시하는 부분을 여기에 추가합니다. */}
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {place.tags?.map(tag => {
+                                                                // ✅ 태그의 종류를 판별합니다.
+                                                                const isMyTag = tag.creatorId === session?.user?.id;
+                                                                const isSubscribedTag = subscribedTagIds.includes(tag.id);
 
-                                                            // ✅ 종류에 따라 다른 스타일과 아이콘을 적용합니다.
-                                                            const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
-                                                            const icon = isSubscribedTag ? "★ " : "# ";
+                                                                // ✅ 종류에 따라 다른 스타일과 아이콘을 적용합니다.
+                                                                const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
+                                                                const icon = isSubscribedTag ? "★ " : "# ";
 
-                                                            return (
-                                                                <Link key={tag.id} href={`/tags/${tag.id}`}>
-                                                                    <Badge variant={badgeVariant} className="flex items-center">
-                                                                        {icon}{tag.name}
-                                                                    </Badge>
-                                                                </Link>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </CardContent>
-                                            </div>
-                                        </AccordionTrigger>
-                                        <AccordionContent>
-                                            <div
-                                                className="px-4 pb-4 text-sm space-y-3 border-t"
-                                                onClick={(
-                                                    e
-                                                ) =>
-                                                    e.stopPropagation()
-                                                }
-                                            >
-                                                <div className="flex items-center justify-between pt-2">
-                                                    <p className="text-xs text-gray-500">
-                                                        {place.categoryName?.split('>').pop()?.trim()}
-                                                    </p>
-                                                    <div className="flex items-center">
-                                                        {/* ✅ 블랙리스트 버튼은 로그인 상태일 때만 렌더링합니다. */}
-                                                        {status === 'authenticated' && (
-                                                            <>
-                                                                {/* ✅ '태그 관리' 버튼을 추가합니다. */}
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8"
-                                                                    onClick={() => setTaggingRestaurant(place)}
-                                                                    title="태그 관리"
-                                                                >
-                                                                    <Tags className="text-gray-400" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8"
-                                                                    onClick={() => toggleBlacklist(place)}
-                                                                    title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
-                                                                >
-                                                                    <EyeOff className={isBlacklisted(place.id) ? "fill-foreground" : "text-gray-400"} />
-                                                                </Button>
-                                                            </>
-                                                        )}
-                                                        {/* ✅ 즐겨찾기 버튼은 항상 보이도록 유지합니다. */}
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                            onClick={() => toggleFavorite(place)}
-                                                            title={isFavorite(place.id) ? "즐겨찾기에서 제거" : "즐겨찾기에 추가"}
-                                                        >
-                                                            <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
-                                                        </Button>
-                                                    </div>
+                                                                return (
+                                                                    <Link key={tag.id} href={`/tags/${tag.id}`}>
+                                                                        <Badge variant={badgeVariant} className="flex items-center">
+                                                                            {icon}{tag.name}
+                                                                        </Badge>
+                                                                    </Link>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </CardContent>
                                                 </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div
+                                                    className="px-4 pb-4 text-sm space-y-3 border-t"
+                                                    onClick={(
+                                                        e
+                                                    ) =>
+                                                        e.stopPropagation()
+                                                    }
+                                                >
+                                                    <div className="flex items-center justify-between pt-2">
+                                                        <p className="text-xs text-gray-500">
+                                                            {place.categoryName?.split('>').pop()?.trim()}
+                                                        </p>
+                                                        <div className="flex items-center">
+                                                            {/* ✅ 블랙리스트 버튼은 로그인 상태일 때만 렌더링합니다. */}
+                                                            {status === 'authenticated' && (
+                                                                <>
+                                                                    {/* ✅ '태그 관리' 버튼을 추가합니다. */}
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8"
+                                                                        onClick={() => setTaggingRestaurant(place)}
+                                                                        title="태그 관리"
+                                                                    >
+                                                                        <Tags className="text-gray-400" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8"
+                                                                        onClick={() => toggleBlacklist(place)}
+                                                                        title={isBlacklisted(place.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}
+                                                                    >
+                                                                        <EyeOff className={isBlacklisted(place.id) ? "fill-foreground" : "text-gray-400"} />
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                            {/* ✅ 즐겨찾기 버튼은 항상 보이도록 유지합니다. */}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                onClick={() => toggleFavorite(place)}
+                                                                title={isFavorite(place.id) ? "즐겨찾기에서 제거" : "즐겨찾기에 추가"}
+                                                            >
+                                                                <Heart className={isFavorite(place.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
 
-                                                {!details && (
-                                                    <p className="text-gray-500">
-                                                        Google에서
-                                                        추가
-                                                        정보를
-                                                        찾지
-                                                        못했습니다.
-                                                    </p>
-                                                )}
+                                                    {!details && (
+                                                        <p className="text-gray-500">
+                                                            Google에서
+                                                            추가
+                                                            정보를
+                                                            찾지
+                                                            못했습니다.
+                                                        </p>
+                                                    )}
 
-                                                {details?.rating && (
-                                                    <Accordion type="single" collapsible className="w-full">
-                                                        <AccordionItem value="reviews" className="border-none">
-                                                            <AccordionTrigger className="hover:no-underline py-1">
-                                                                <StarRating
-                                                                    rating={details.rating}
-                                                                    reviewCount={
-                                                                        details.reviews?.length || 0
-                                                                    }
-                                                                    isTrigger={true}
-                                                                />
-                                                            </AccordionTrigger>
-                                                            <AccordionContent>
-                                                                <div className="max-h-[300px] overflow-y-auto pr-2">
-                                                                    {details?.reviews &&
-                                                                    details.reviews.length > 0 ? (
-                                                                        details.reviews.map(
-                                                                            (review, index) => (
-                                                                                <div
-                                                                                    key={index}
-                                                                                    className="border-b py-4"
-                                                                                >
-                                                                                    <div className="flex items-center mb-2">
-                                                                                        <Image
-                                                                                            src={
-                                                                                                review.profile_photo_url
-                                                                                            }
-                                                                                            alt={
-                                                                                                review.author_name
-                                                                                            }
-                                                                                            width={40}
-                                                                                            height={40}
-                                                                                            className="rounded-full mr-3"
-                                                                                        />
-                                                                                        <div>
-                                                                                            <p className="font-semibold">
-                                                                                                {
+                                                    {details?.rating && (
+                                                        <Accordion type="single" collapsible className="w-full">
+                                                            <AccordionItem value="reviews" className="border-none">
+                                                                <AccordionTrigger className="hover:no-underline py-1">
+                                                                    <StarRating
+                                                                        rating={details.rating}
+                                                                        reviewCount={
+                                                                            details.reviews?.length || 0
+                                                                        }
+                                                                        isTrigger={true}
+                                                                    />
+                                                                </AccordionTrigger>
+                                                                <AccordionContent>
+                                                                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                                                                        {details?.reviews &&
+                                                                        details.reviews.length > 0 ? (
+                                                                            details.reviews.map(
+                                                                                (review, index) => (
+                                                                                    <div
+                                                                                        key={index}
+                                                                                        className="border-b py-4"
+                                                                                    >
+                                                                                        <div className="flex items-center mb-2">
+                                                                                            <Image
+                                                                                                src={
+                                                                                                    review.profile_photo_url
+                                                                                                }
+                                                                                                alt={
                                                                                                     review.author_name
                                                                                                 }
-                                                                                            </p>
-                                                                                            <p className="text-xs text-gray-500">
-                                                                                                {
-                                                                                                    review.relative_time_description
-                                                                                                }
-                                                                                            </p>
+                                                                                                width={40}
+                                                                                                height={40}
+                                                                                                className="rounded-full mr-3"
+                                                                                            />
+                                                                                            <div>
+                                                                                                <p className="font-semibold">
+                                                                                                    {
+                                                                                                        review.author_name
+                                                                                                    }
+                                                                                                </p>
+                                                                                                <p className="text-xs text-gray-500">
+                                                                                                    {
+                                                                                                        review.relative_time_description
+                                                                                                    }
+                                                                                                </p>
+                                                                                            </div>
                                                                                         </div>
+                                                                                        <div>
+                                                                                            <StarRating
+                                                                                                rating={
+                                                                                                    review.rating
+                                                                                                }
+                                                                                            />
+                                                                                        </div>
+                                                                                        <p className="mt-2 text-sm">
+                                                                                            {review.text}
+                                                                                        </p>
                                                                                     </div>
-                                                                                    <div>
-                                                                                        <StarRating
-                                                                                            rating={
-                                                                                                review.rating
-                                                                                            }
-                                                                                        />
-                                                                                    </div>
-                                                                                    <p className="mt-2 text-sm">
-                                                                                        {review.text}
-                                                                                    </p>
-                                                                                </div>
+                                                                                )
                                                                             )
-                                                                        )
-                                                                    ) : (
-                                                                        <p className="py-4 text-center text-gray-500">
-                                                                            표시할 리뷰가 없습니다.
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </AccordionContent>
-                                                        </AccordionItem>
-                                                    </Accordion>
-                                                )}
+                                                                        ) : (
+                                                                            <p className="py-4 text-center text-gray-500">
+                                                                                표시할 리뷰가 없습니다.
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                </AccordionContent>
+                                                            </AccordionItem>
+                                                        </Accordion>
+                                                    )}
 
-                                                {details?.opening_hours && (
-                                                    <div className="flex flex-col">
-                                                        <p>
-                                                            <strong>
-                                                                영업:
-                                                            </strong>{" "}
-                                                            <span
-                                                                className={
-                                                                    details
+                                                    {details?.opening_hours && (
+                                                        <div className="flex flex-col">
+                                                            <p>
+                                                                <strong>
+                                                                    영업:
+                                                                </strong>{" "}
+                                                                <span
+                                                                    className={
+                                                                        details
+                                                                            .opening_hours
+                                                                            .open_now
+                                                                            ? "text-green-600 font-bold"
+                                                                            : "text-red-600 font-bold"
+                                                                    }
+                                                                >
+                                                                    {details
                                                                         .opening_hours
                                                                         .open_now
-                                                                        ? "text-green-600 font-bold"
-                                                                        : "text-red-600 font-bold"
-                                                                }
-                                                            >
-                                                                {details
-                                                                    .opening_hours
-                                                                    .open_now
-                                                                    ? "영업 중"
-                                                                    : "영업 종료"}
-                                                            </span>
-                                                        </p>
-                                                        <p className="text-xs text-gray-500 ml-1">
-                                                            (오늘:{" "}
-                                                            {getTodaysOpeningHours(
-                                                                details.opening_hours
-                                                            )}
+                                                                        ? "영업 중"
+                                                                        : "영업 종료"}
+                                                                </span>
+                                                            </p>
+                                                            <p className="text-xs text-gray-500 ml-1">
+                                                                (오늘:{" "}
+                                                                {getTodaysOpeningHours(
+                                                                    details.opening_hours
+                                                                )}
 
-                                                            )
-                                                        </p>
-                                                    </div>
-                                                )}
+                                                                )
+                                                            </p>
+                                                        </div>
+                                                    )}
 
-                                                {details?.phone && (
-                                                    <p>
-                                                        <strong>
-                                                            전화:
-                                                        </strong>{" "}
-                                                        <a
-                                                            href={`tel:${details.phone}`}
-                                                            className="text-blue-600 hover:underline"
-                                                        >
-                                                            {
-                                                                details.phone
-                                                            }
-                                                        </a>
-                                                    </p>
-                                                )}
-
-                                                {details?.photos &&
-                                                    details
-                                                        .photos
-                                                        .length >
-                                                        0 && (
-                                                        <div>
+                                                    {details?.phone && (
+                                                        <p>
                                                             <strong>
-                                                                사진:
-                                                            </strong>
-                                                            <Carousel className="w-full max-w-xs mx-auto mt-2">
-                                                                <CarouselContent>
-                                                                    {details.photos.map(
-                                                                        (
-                                                                            photoUrl,
-                                                                            index
-                                                                        ) => (
-                                                                            <CarouselItem
-                                                                                key={
-                                                                                    index
-                                                                                }
-                                                                            >
-                                                                                <Dialog>
-                                                                                    <DialogTrigger
-                                                                                        asChild
-                                                                                    >
-                                                                                        <button className="w-full focus:outline-none">
+                                                                전화:
+                                                            </strong>{" "}
+                                                            <a
+                                                                href={`tel:${details.phone}`}
+                                                                className="text-blue-600 hover:underline"
+                                                            >
+                                                                {
+                                                                    details.phone
+                                                                }
+                                                            </a>
+                                                        </p>
+                                                    )}
+
+                                                    {details?.photos &&
+                                                        details
+                                                            .photos
+                                                            .length >
+                                                            0 && (
+                                                            <div>
+                                                                <strong>
+                                                                    사진:
+                                                                </strong>
+                                                                <Carousel className="w-full max-w-xs mx-auto mt-2">
+                                                                    <CarouselContent>
+                                                                        {details.photos.map(
+                                                                            (
+                                                                                photoUrl,
+                                                                                index
+                                                                            ) => (
+                                                                                <CarouselItem
+                                                                                    key={
+                                                                                        index
+                                                                                    }
+                                                                                >
+                                                                                    <Dialog>
+                                                                                        <DialogTrigger
+                                                                                            asChild
+                                                                                        >
+                                                                                            <button className="w-full focus:outline-none">
+                                                                                                <Image
+                                                                                                    src={
+                                                                                                        photoUrl
+                                                                                                    }
+                                                                                                    alt={`${
+                                                                                                        place.placeName
+                                                                                                    } photo ${
+                                                                                                        index +
+                                                                                                        1
+                                                                                                    }`}
+                                                                                                    width={
+                                                                                                        400
+                                                                                                    }
+                                                                                                    height={
+                                                                                                        225
+                                                                                                    }
+                                                                                                    className="object-cover aspect-video rounded-md"
+                                                                                                />
+                                                                                            </button>
+                                                                                        </DialogTrigger>
+                                                                                        <DialogContent className="max-w-3xl h-[80vh] p-2">
                                                                                             <Image
                                                                                                 src={
                                                                                                     photoUrl
@@ -2045,89 +2067,40 @@ export default function Home() {
                                                                                                     index +
                                                                                                     1
                                                                                                 }`}
-                                                                                                width={
-                                                                                                    400
-                                                                                                }
-                                                                                                height={
-                                                                                                    225
-                                                                                                }
-                                                                                                className="object-cover aspect-video rounded-md"
+                                                                                                fill
+                                                                                                style={{
+                                                                                                    objectFit:
+                                                                                                        "contain",
+                                                                                                }}
                                                                                             />
-                                                                                        </button>
-                                                                                    </DialogTrigger>
-                                                                                    <DialogContent className="max-w-3xl h-[80vh] p-2">
-                                                                                        <Image
-                                                                                            src={
-                                                                                                photoUrl
-                                                                                            }
-                                                                                            alt={`${
-                                                                                                place.placeName
-                                                                                            } photo ${
-                                                                                                index +
-                                                                                                1
-                                                                                            }`}
-                                                                                            fill
-                                                                                            style={{
-                                                                                                objectFit:
-                                                                                                    "contain",
-                                                                                            }}
-                                                                                        />
-                                                                                    </DialogContent>
-                                                                                </Dialog>
-                                                                            </CarouselItem>
-                                                                        )
-                                                                    )}
-                                                                </CarouselContent>
-                                                                <CarouselPrevious className="left-2" />
-                                                                <CarouselNext className="right-2" />
-                                                            </Carousel>
-                                                        </div>
-                                                    )}
+                                                                                        </DialogContent>
+                                                                                    </Dialog>
+                                                                                </CarouselItem>
+                                                                            )
+                                                                        )}
+                                                                    </CarouselContent>
+                                                                    <CarouselPrevious className="left-2" />
+                                                                    <CarouselNext className="right-2" />
+                                                                </Carousel>
+                                                            </div>
+                                                        )}
 
-                                                <div className="flex gap-2 pt-2">
-                                                    <a
-                                                        href={
-                                                            place.placeUrl
-                                                        }
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex-1"
-                                                    >
-                                                        <Button
-                                                            size="sm"
-                                                            className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold flex items-center justify-center"
-                                                        >
-                                                            <Image
-                                                                src="/kakaomap_icon.png"
-                                                                alt="카카오맵 로고"
-                                                                width={
-                                                                    16
-                                                                }
-                                                                height={
-                                                                    16
-                                                                }
-                                                                className="mr-2"
-                                                            />
-                                                            카카오맵
-                                                        </Button>
-                                                    </a>
-                                                    {details?.url && (
+                                                    <div className="flex gap-2 pt-2">
                                                         <a
                                                             href={
-                                                                details.url
+                                                                place.placeUrl
                                                             }
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="flex-1"
                                                         >
                                                             <Button
-                                                                variant="outline"
                                                                 size="sm"
-                                                                className="w-full font-bold flex items-center justify-center"
+                                                                className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold flex items-center justify-center"
                                                             >
                                                                 <Image
-                                                                    src="/googlemap_icon.png"
-                                                                    alt="구글맵 로고"
+                                                                    src="/kakaomap_icon.png"
+                                                                    alt="카카오맵 로고"
                                                                     width={
                                                                         16
                                                                     }
@@ -2136,19 +2109,48 @@ export default function Home() {
                                                                     }
                                                                     className="mr-2"
                                                                 />
-                                                                구글맵
+                                                                카카오맵
                                                             </Button>
                                                         </a>
-                                                    )}
+                                                        {details?.url && (
+                                                            <a
+                                                                href={
+                                                                    details.url
+                                                                }
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex-1"
+                                                            >
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="w-full font-bold flex items-center justify-center"
+                                                                >
+                                                                    <Image
+                                                                        src="/googlemap_icon.png"
+                                                                        alt="구글맵 로고"
+                                                                        width={
+                                                                            16
+                                                                        }
+                                                                        height={
+                                                                            16
+                                                                        }
+                                                                        className="mr-2"
+                                                                    />
+                                                                    구글맵
+                                                                </Button>
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </AccordionContent>
-                                    </Card>
-                                </AccordionItem>
-                            );
-                        })}
-                    </Accordion>
-                </div>
+                                            </AccordionContent>
+                                        </Card>
+                                    </AccordionItem>
+                                );
+                            })}
+                        </Accordion>
+                    </CardContent>
+                </Card>
             ) : (
                 // 로딩이 끝났고, 결과가 없을 때
                 <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm">
