@@ -74,7 +74,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         }
     } catch (error) {
         console.error('태그 연결/해제 오류:', error);
-        const message = error instanceof Error ? error.message : String(error);
-        return NextResponse.json({ error: '요청을 처리하는 중 오류가 발생했습니다.', debug_message: message }, { status: 500 });
+        return NextResponse.json({ error: '요청을 처리하는 중 오류가 발생했습니다.' }, { status: 500 });
     }
 }
