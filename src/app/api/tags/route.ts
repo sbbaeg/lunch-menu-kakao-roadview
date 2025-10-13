@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 
 const prisma = new PrismaClient();
@@ -51,11 +51,14 @@ export async function POST(request: Request) {
 
         return NextResponse.json(newTag, { status: 201 }); // 201 Created
     } catch (error: unknown) {
-        // Prisma 고유 제약 조건 위반 오류 코드 (P2002) - 중복된 태그 생성 시도
-        if (error instanceof Error && 'code' in error && error.code === 'P2002') {
-            return NextResponse.json({ error: '이미 존재하는 태그입니다.' }, { status: 409 });
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            // Prisma 고유 제약 조건 위반 오류 코드 (P2002) - 중복된 태그 생성 시도
+            if (error.code === 'P2002') {
+                return NextResponse.json({ error: '이미 존재하는 태그입니다.' }, { status: 409 });
+            }
         }
         console.error('태그 생성 오류:', error);
-        return NextResponse.json({ error: '태그를 생성하는 중 오류가 발생했습니다.' }, { status: 500 });
+        const message = error instanceof Error ? error.message : String(error);
+        return NextResponse.json({ error: '태그를 생성하는 중 오류가 발생했습니다.', debug_message: message }, { status: 500 });
     }
 }
