@@ -1,5 +1,7 @@
 "use client";
 
+import { FilterDialog, type FilterState } from "@/components/FilterDialog"; // 파일 경로에 맞게 수정
+
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
 
 import { Tag } from '@/lib/types';
@@ -277,26 +279,12 @@ export default function Home() {
     >("accuracy");
 
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [tempSelectedCategories, setTempSelectedCategories] = useState<
-        string[]
-    >([]);
-    const [tempSelectedDistance, setTempSelectedDistance] =
-        useState<string>("800");
-    const [tempSortOrder, setTempSortOrder] = useState<
-        "accuracy" | "distance" | "rating"
-    >("accuracy");
-    const [tempResultCount, setTempResultCount] = useState<number>(5);
-    const [tempMinRating, setTempMinRating] = useState<number>(4.0);
     const [searchInFavoritesOnly, setSearchInFavoritesOnly] = useState(false);
-    const [tempSearchInFavoritesOnly, setTempSearchInFavoritesOnly] = useState(false);
 
     const [openNowOnly, setOpenNowOnly] = useState(false);
     const [includeUnknownHours, setIncludeUnknownHours] = useState(true); // 정보 없는 가게 포함 여부 (기본값 true)
-    const [tempOpenNowOnly, setTempOpenNowOnly] = useState(false);
-    const [tempIncludeUnknownHours, setTempIncludeUnknownHours] = useState(true);
 
     const [selectedTags, setSelectedTags] = useState<number[]>([]); // 실제 적용될 태그 ID 목록
-    const [tempSelectedTags, setTempSelectedTags] = useState<number[]>([]); // 필터창에서 임시로 선택할 목록
 
 
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
@@ -377,18 +365,6 @@ export default function Home() {
     const roadviewInstance = useRef<kakao.maps.Roadview | null>(null); // 변경
     const roadviewClient = useRef<kakao.maps.RoadviewClient | null>(null); // 변경
     const markers = useRef<kakao.maps.Marker[]>([]); // 변경
-    const openFilterDialog = () => {
-        setTempSelectedCategories(selectedCategories);
-        setTempSelectedDistance(selectedDistance);
-        setTempSortOrder(sortOrder);
-        setTempResultCount(resultCount);
-        setTempMinRating(minRating);
-        setTempSearchInFavoritesOnly(searchInFavoritesOnly);
-        setTempOpenNowOnly(openNowOnly);
-        setTempIncludeUnknownHours(includeUnknownHours);
-        setTempSelectedTags(selectedTags);
-        setIsFilterOpen(true);
-    };
 
     // 즐겨찾기 목록이 변경될 때마다 로컬 저장소에 저장     
     useEffect(() => {
@@ -608,17 +584,6 @@ export default function Home() {
         setBlacklistExcludedCount(data.blacklistExcludedCount || 0);
                 
         return formattedRestaurants;
-    };
-    const handleTempCategoryChange = (category: string) => {
-        setTempSelectedCategories((prev) =>
-            prev.includes(category)
-                ? prev.filter((c) => c !== category)
-                : [...prev, category]
-        );
-    };
-
-    const handleTempSelectAll = (checked: boolean | "indeterminate") => {
-        setTempSelectedCategories(checked === true ? CATEGORIES : []);
     };
 
     const displayMarkers = (places: Restaurant[]) => {
@@ -855,23 +820,16 @@ export default function Home() {
         }
     };
 
-    const handleTempTagChange = (tagId: number) => {
-        setTempSelectedTags(prev =>
-            prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-        );
-    };
-
-    const handleApplyFilters = () => {
-        setSelectedCategories(tempSelectedCategories);
-        setSelectedDistance(tempSelectedDistance);
-        setSortOrder(tempSortOrder);
-        setResultCount(tempResultCount);
-        setMinRating(tempMinRating);
-        setSearchInFavoritesOnly(tempSearchInFavoritesOnly);
-        setOpenNowOnly(tempOpenNowOnly);
-        setIncludeUnknownHours(tempIncludeUnknownHours);
-        setSelectedTags(tempSelectedTags);
-        setIsFilterOpen(false);
+    const handleApplyFilters = (newFilters: FilterState) => {
+        setSelectedCategories(newFilters.categories);
+        setSelectedDistance(newFilters.distance);
+        setSortOrder(newFilters.sortOrder);
+        setResultCount(newFilters.resultCount);
+        setMinRating(newFilters.minRating);
+        setSearchInFavoritesOnly(newFilters.searchInFavoritesOnly);
+        setOpenNowOnly(newFilters.openNowOnly);
+        setIncludeUnknownHours(newFilters.includeUnknownHours);
+        setSelectedTags(newFilters.tags);
     };
 
     const handleBlacklistClick = () => {
@@ -1547,295 +1505,31 @@ export default function Home() {
             >
                 룰렛
             </Button>
-            <Dialog
-                open={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
+            <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setIsFilterOpen(true)} // DialogTrigger를 일반 Button으로 변경
             >
-                <DialogTrigger asChild>
-                    <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={openFilterDialog}
-                    >
-                        필터
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="max-sm:max-h-[90vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle>
-                            검색 필터 설정
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4 space-y-4 dark:text-foreground overflow-y-auto pr-4 flex-1">
-                        <div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="temp-favorites-only"
-                                    checked={tempSearchInFavoritesOnly}
-                                    onCheckedChange={(checked) => setTempSearchInFavoritesOnly(Boolean(checked))}
-                                />
-                                <Label
-                                    htmlFor="temp-favorites-only"
-                                    className="font-semibold text-lg cursor-pointer"
-                                >
-                                    즐겨찾기에서만 검색
-                                </Label>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="temp-open-now"
-                                    checked={tempOpenNowOnly}
-                                    onCheckedChange={(checked) => setTempOpenNowOnly(Boolean(checked))}
-                                />
-                                <Label
-                                    htmlFor="temp-open-now"
-                                    className="font-semibold text-lg cursor-pointer"
-                                >
-                                    영업 중인 가게만 보기
-                                </Label>
-                            </div>
-                            <div className="flex items-center space-x-2 pl-6">
-                                <Checkbox
-                                    id="temp-include-unknown"
-                                    checked={tempIncludeUnknownHours}
-                                    onCheckedChange={(checked) => setTempIncludeUnknownHours(Boolean(checked))}
-                                    disabled={!tempOpenNowOnly} // '영업 중' 필터가 꺼져있으면 비활성화
-                                />
-                                <Label
-                                    htmlFor="temp-include-unknown"
-                                    className={tempOpenNowOnly ? "cursor-pointer" : "text-gray-400 dark:text-gray-500"}
-                                >
-                                    영업 정보 없는 가게 포함
-                                </Label>
-                            </div>
-                        </div>
-                        <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                        <div>
-                            <Label className="text-lg font-semibold">
-                                음식 종류
-                            </Label>
-                            <div className="grid grid-cols-2 gap-4 pt-2">
-                                {CATEGORIES.map(
-                                    (category) => (
-                                        <div
-                                            key={category}
-                                            className="flex items-center space-x-2"
-                                        >
-                                            <Checkbox
-                                                id={`temp-${category}`}
-                                                checked={tempSelectedCategories.includes(
-                                                    category
-                                                )}
-                                                onCheckedChange={() =>
-                                                    handleTempCategoryChange(
-                                                        category
-                                                    )
-                                                }
-                                            />
-                                            <Label
-                                                htmlFor={`temp-${category}`}
-                                            >
-                                                {category}
-                                            </Label>
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                            <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
-                                <Checkbox
-                                    id="temp-select-all"
-                                    checked={
-                                        tempSelectedCategories.length ===
-                                        CATEGORIES.length
-                                    }
-                                    onCheckedChange={(
-                                        checked
-                                    ) =>
-                                        handleTempSelectAll(
-                                            checked
-                                        )
-                                    }
-                                />
-                                <Label
-                                    htmlFor="temp-select-all"
-                                    className="font-semibold"
-                                >
-                                    모두 선택
-                                </Label>
-                            </div>
-                        </div>
-                        <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                        <div>
-                            <Label className="text-lg font-semibold">
-                                태그로 필터링
-                            </Label>
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                {userTags.length > 0 ? (
-                                    userTags.map((tag) => (
-                                        <div
-                                            key={tag.id}
-                                            onClick={() => handleTempTagChange(tag.id)}
-                                            className={`cursor-pointer rounded-full px-3 py-1 text-sm transition-colors ${
-                                                tempSelectedTags.includes(tag.id)
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted text-muted-foreground'
-                                            }`}
-                                        >
-                                            {tag.name}
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">
-                                        생성된 태그가 없습니다.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                        <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                        <div>
-                            <Label className="text-lg font-semibold">
-                                검색 반경
-                            </Label>
-                            <RadioGroup
-                                value={tempSelectedDistance}
-                                onValueChange={
-                                    setTempSelectedDistance
-                                }
-                                className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2"
-                            >
-                                {DISTANCES.map((dist) => (
-                                    <div
-                                        key={dist.value}
-                                        className="flex items-center space-x-2"
-                                    >
-                                        <RadioGroupItem
-                                            value={
-                                                dist.value
-                                            }
-                                            id={`temp-${dist.value}`}
-                                        />
-                                        <Label
-                                            htmlFor={`temp-${dist.value}`}
-                                            className="cursor-pointer"
-                                        >
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold">
-                                                    {
-                                                        dist.label
-                                                    }
-                                                </span>
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">{`(${dist.value}m ${dist.walkTime})`}</span>
-                                            </div>
-                                        </Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
-                        </div>
-                        <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                        <div>
-                            <Label className="text-lg font-semibold">
-                                정렬 방식
-                            </Label>
-                            <RadioGroup
-                                value={tempSortOrder}
-                                onValueChange={(value) =>
-                                    setTempSortOrder(
-                                        value as
-                                            | "accuracy"
-                                            | "distance"
-                                            | "rating"
-                                    )
-                                }
-                                className="flex flex-wrap gap-4 pt-2"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem
-                                        value="accuracy"
-                                        id="temp-sort-accuracy"
-                                    />
-                                    <Label htmlFor="temp-sort-accuracy">
-                                        랜덤 추천
-                                    </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem
-                                        value="distance"
-                                        id="temp-sort-distance"
-                                    />
-                                    <Label htmlFor="temp-sort-distance">
-                                        가까운 순
-                                    </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem
-                                        value="rating"
-                                        id="temp-sort-rating"
-                                    />
-                                    <Label htmlFor="temp-sort-rating">
-                                        별점 순
-                                    </Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                        <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                        <div>
-                            <Label
-                                htmlFor="temp-min-rating"
-                                className="text-lg font-semibold"
-                            >
-                                최소 별점:{" "}
-                                {tempMinRating.toFixed(1)}점
-                                이상
-                            </Label>
-                            <Slider
-                                id="temp-min-rating"
-                                value={[tempMinRating]}
-                                onValueChange={(value) =>
-                                    setTempMinRating(
-                                        value[0]
-                                    )
-                                }
-                                min={0}
-                                max={5}
-                                step={0.1}
-                                className="mt-2"
-                            />
-                        </div>
-                        <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                        <div>
-                            <Label
-                                htmlFor="temp-result-count"
-                                className="text-lg font-semibold"
-                            >
-                                검색 개수: {tempResultCount}
-                                개
-                            </Label>
-                            <Slider
-                                id="temp-result-count"
-                                value={[tempResultCount]}
-                                onValueChange={(value) =>
-                                    setTempResultCount(
-                                        value[0]
-                                    )
-                                }
-                                min={5}
-                                max={15}
-                                step={1}
-                                className="mt-2"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            onClick={handleApplyFilters}
-                        >
-                            완료
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                필터
+            </Button>
+
+            <FilterDialog
+                isOpen={isFilterOpen}
+                onOpenChange={setIsFilterOpen}
+                initialFilters={{
+                    categories: selectedCategories,
+                    distance: selectedDistance,
+                    sortOrder: sortOrder,
+                    resultCount: resultCount,
+                    minRating: minRating,
+                    searchInFavoritesOnly: searchInFavoritesOnly,
+                    openNowOnly: openNowOnly,
+                    includeUnknownHours: includeUnknownHours,
+                    tags: selectedTags,
+                }}
+                onApplyFilters={handleApplyFilters}
+                userTags={userTags}
+            />
         </div>
 
         <Card className="w-full flex-1 flex flex-col min-h-0">
