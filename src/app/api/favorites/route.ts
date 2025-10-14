@@ -75,6 +75,7 @@ export async function GET() {
             const originalFavorite = favorites[index];
             return {
                 id: place.id,
+                kakaoPlaceId: place.id,
                 placeName: place.place_name,
                 categoryName: place.category_name,
                 address: place.road_address_name,

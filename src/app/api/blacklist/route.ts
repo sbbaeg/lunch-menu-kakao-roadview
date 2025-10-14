@@ -25,6 +25,7 @@ export async function GET() {
         // 프론트엔드에서 사용하는 Restaurant 타입으로 변환
         const blacklistRestaurants: Restaurant[] = blacklistEntries.map(entry => ({
             id: entry.restaurant.kakaoPlaceId,
+            kakaoPlaceId: entry.restaurant.kakaoPlaceId,
             placeName: entry.restaurant.placeName,
             categoryName: entry.restaurant.categoryName || '',
             address: entry.restaurant.address || '',
