@@ -356,6 +356,7 @@ export default function Home() {
     }, [status]); // 로그인 상태가 바뀔 때마다 실행됩니다.
 
     const [searchAddress, setSearchAddress] = useState("");
+    const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
     const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
 
     const mapContainer = useRef<HTMLDivElement | null>(null);
@@ -1128,29 +1129,78 @@ export default function Home() {
     
     const handleAddressSearch = () => {
         if (!searchAddress.trim()) {
-            setAlertInfo({ title: "오류", message: "검색어를 입력해주세요." });
+            setAlertInfo({ title: "알림", message: "검색어를 입력해주세요." });
             return;
         }
 
-        if (!window.kakao || !window.kakao.maps.services) {
+        if (!window.kakao || !window.kakao.maps.services || !mapInstance.current) {
             setAlertInfo({ title: "오류", message: "지도 서비스가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요." });
             return;
         }
 
         const ps = new window.kakao.maps.services.Places();
-        
-        ps.keywordSearch(searchAddress, (data, status) => {
-            if (status === window.kakao.maps.services.Status.OK) {
-                const firstResult = data[0];
-                const moveLatLon = new window.kakao.maps.LatLng(Number(firstResult.y), Number(firstResult.x));
-                
-                mapInstance.current?.setCenter(moveLatLon);
-            } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
-                setAlertInfo({ title: "오류", message: "검색 결과가 존재하지 않습니다." });
-            } else {
-                setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });;
-            }
-        });
+
+        if (searchMode === 'place') {
+            // 장소 검색 모드: 기존 로직 수행
+            ps.keywordSearch(searchAddress, (data, status) => {
+                if (status === window.kakao.maps.services.Status.OK) {
+                    const firstResult = data[0];
+                    const moveLatLon = new window.kakao.maps.LatLng(Number(firstResult.y), Number(firstResult.x));
+                    mapInstance.current?.setCenter(moveLatLon);
+                } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
+                    setAlertInfo({ title: "알림", message: "검색 결과가 존재하지 않습니다." });
+                } else {
+                    setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });
+                }
+            });
+        } else {
+            // 음식점 검색 모드: 새로운 로직 수행
+            setLoading(true);
+            clearMapAndResults();
+            
+            const mapCenter = mapInstance.current.getCenter();
+            const searchOptions = {
+                location: mapCenter,
+                radius: parseInt(selectedDistance, 10)
+            };
+
+            ps.keywordSearch(searchAddress, (data, status) => {
+                if (status === window.kakao.maps.services.Status.OK) {
+                    const formattedRestaurants: Restaurant[] = data.map(place => ({
+                        id: place.id, // Kakao Place ID
+                        kakaoPlaceId: place.id,
+                        placeName: place.place_name,
+                        categoryName: place.category_name,
+                        address: place.road_address_name,
+                        x: place.x,
+                        y: place.y,
+                        placeUrl: place.place_url,
+                        distance: place.distance,
+                    }));
+
+                    // 블랙리스트 필터링 (클라이언트 측)
+                    const blacklistIds = new Set(blacklist.map(b => b.kakaoPlaceId));
+                    const filteredRestaurants = formattedRestaurants.filter(r => !blacklistIds.has(r.kakaoPlaceId));
+                    
+                    setBlacklistExcludedCount(formattedRestaurants.length - filteredRestaurants.length);
+
+                    if (filteredRestaurants.length === 0) {
+                        setAlertInfo({ title: "알림", message: "조건에 맞는 음식점을 찾지 못했어요!" });
+                    } else {
+                        setRestaurantList(filteredRestaurants);
+                        displayMarkers(filteredRestaurants);
+                    }
+                    setLoading(false);
+
+                } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
+                    setAlertInfo({ title: "알림", message: "주변에 해당 음식점이 없습니다." });
+                    setLoading(false);
+                } else {
+                    setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });
+                    setLoading(false);
+                }
+            }, searchOptions);
+        }
     };
 
     const handleSearchInArea = async () => {
@@ -1384,13 +1434,23 @@ export default function Home() {
     <div className="w-full h-[800px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
         
         {/* 주소 검색 영역 */}
-        <div className="p-4 border-b bg-muted/40">
+        <div className="p-4 border-b bg-muted/40 space-y-3">
+            <div className="flex items-center justify-center space-x-2">
+                <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'place' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>장소</Label>
+                <Switch
+                    id="search-mode"
+                    checked={searchMode === 'food'}
+                    onCheckedChange={(checked) => setSearchMode(checked ? 'food' : 'place')}
+                />
+                <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'food' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>음식점</Label>
+            </div>
             <div className="flex gap-2">
                 <Input
                     type="text"
-                    placeholder="주소나 장소 이름으로 검색"
+                    placeholder={searchMode === 'place' ? "예: 강남역 (장소로 이동)" : "예: 마라탕 (주변 음식점 검색)"}
                     value={searchAddress}
                     onChange={(e) => setSearchAddress(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddressSearch()}
                     className="bg-background text-base h-11"
                 />
                 <Button
@@ -1398,7 +1458,7 @@ export default function Home() {
                     className="h-11"
                     onClick={handleAddressSearch}
                 >
-                    이동
+                    검색
                 </Button>
             </div>
         </div>
@@ -1766,7 +1826,7 @@ export default function Home() {
         <Card className="w-full flex-1 flex flex-col min-h-0">
             {loading ? (
                 // ✅ 로딩 중일 때 보여줄 스켈레톤 UI
-                <div className="space-y-2 pr-2">
+                    <div className="h-full flex flex-col justify-center p-2">
                     {/* 스켈레톤 UI를 3개 정도 반복해서 보여줍니다. */}
                     {[...Array(3)].map((_, index) => (
                         <Card key={index} className="p-4">
