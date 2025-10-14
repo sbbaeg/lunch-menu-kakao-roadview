@@ -1417,7 +1417,7 @@ export default function Home() {
     </div>
 
     {/* 오른쪽 제어 패널 */}
-    <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4">
+    <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[720px]">
         <div className="w-full flex gap-2 justify-center">
             <Button
                 onClick={() => recommendProcess(false)}
@@ -1726,7 +1726,7 @@ export default function Home() {
             </Dialog>
         </div>
 
-        <div className="w-full space-y-2">
+        <Card className="w-full flex-1 flex flex-col min-h-0">
             {loading ? (
                 // ✅ 로딩 중일 때 보여줄 스켈레톤 UI
                 <div className="space-y-2 pr-2">
@@ -1743,7 +1743,7 @@ export default function Home() {
                 </div>
             ) : restaurantList.length > 0 ? (
                 // 로딩이 끝났고, 결과가 있을 때
-                <Card className="w-full flex-1 flex flex-col min-h-0">
+                <>
                     {blacklistExcludedCount > 0 && (
                         <div className="p-3 m-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
                             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
@@ -2150,14 +2150,13 @@ export default function Home() {
                             })}
                         </Accordion>
                     </CardContent>
-                </Card>
+                </>
             ) : (
-                // 로딩이 끝났고, 결과가 없을 때
-                <Card className="w-full flex items-center justify-center h-40 text-gray-500 border shadow-sm">
-                    <p>음식점을 검색해보세요!</p>
-                </Card>
+                <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-muted-foreground">검색 결과가 여기에 표시됩니다.</p>
+                </div>
             )}
-        </div>
+        </Card>
     </div>
 </div>
                 </Card>
