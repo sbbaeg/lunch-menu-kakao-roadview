@@ -1136,7 +1136,7 @@ export default function Home() {
         }
     };
     
-    const handleAddressSearch = () => {
+    const handleAddressSearch = async () => {
         if (!searchAddress.trim()) {
             setAlertInfo({ title: "알림", message: "검색어를 입력해주세요." });
             return;
@@ -1147,10 +1147,8 @@ export default function Home() {
             return;
         }
 
-        const ps = new window.kakao.maps.services.Places();
-
         if (searchMode === 'place') {
-            // 장소 검색 모드: 기존 로직 수행
+            const ps = new window.kakao.maps.services.Places();
             ps.keywordSearch(searchAddress, (data, status) => {
                 if (status === window.kakao.maps.services.Status.OK) {
                     const firstResult = data[0];
@@ -1162,53 +1160,61 @@ export default function Home() {
                     setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });
                 }
             });
-        } else {
-            // 음식점 검색 모드: 새로운 로직 수행
+        } else { // '음식점' 검색 모드
             setLoading(true);
             clearMapAndResults();
-            
-            const mapCenter = mapInstance.current.getCenter();
-            const searchOptions = {
-                location: mapCenter,
-                radius: parseInt(selectedDistance, 10)
-            };
+            setDisplayedSortOrder(sortOrder);
 
-            ps.keywordSearch(searchAddress, (data, status) => {
-                if (status === window.kakao.maps.services.Status.OK) {
-                    const formattedRestaurants: Restaurant[] = data.map(place => ({
-                        id: place.id, // Kakao Place ID
-                        kakaoPlaceId: place.id,
-                        placeName: place.place_name,
-                        categoryName: place.category_name,
-                        address: place.road_address_name,
-                        x: place.x,
-                        y: place.y,
-                        placeUrl: place.place_url,
-                        distance: place.distance,
-                    }));
+            const center = mapInstance.current.getCenter();
+            const lat = center.getLat();
+            const lng = center.getLng();
 
-                    // 블랙리스트 필터링 (클라이언트 측)
-                    const blacklistIds = new Set(blacklist.map(b => b.kakaoPlaceId));
-                    const filteredRestaurants = formattedRestaurants.filter(r => !blacklistIds.has(r.kakaoPlaceId));
-                    
-                    setBlacklistExcludedCount(formattedRestaurants.length - filteredRestaurants.length);
+            const query = searchAddress;
+            const radius = selectedDistance;
+            const sort = sortOrder;
+            const size = resultCount;
 
-                    if (filteredRestaurants.length === 0) {
-                        setAlertInfo({ title: "알림", message: "조건에 맞는 음식점을 찾지 못했어요!" });
-                    } else {
-                        setRestaurantList(filteredRestaurants);
-                        displayMarkers(filteredRestaurants);
-                    }
-                    setLoading(false);
+            let apiUrl = `/api/recommend?lat=${lat}&lng=${lng}&query=${encodeURIComponent(query)}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`;
 
-                } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
-                    setAlertInfo({ title: "알림", message: "주변에 해당 음식점이 없습니다." });
-                    setLoading(false);
+            if (selectedTags.length > 0) {
+                apiUrl += `&tags=${selectedTags.join(',')}`;
+            }
+
+            try {
+                const response = await fetch(apiUrl);
+                const data: { documents?: RestaurantWithTags[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
+
+                const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
+                    id: place.id,
+                    kakaoPlaceId: place.id,
+                    placeName: place.place_name,
+                    categoryName: place.category_name,
+                    address: place.road_address_name,
+                    x: place.x,
+                    y: place.y,
+                    placeUrl: place.place_url,
+                    distance: place.distance,
+                    googleDetails: place.googleDetails,
+                    tags: place.tags,
+                }));
+
+                setBlacklistExcludedCount(data.blacklistExcludedCount || 0);
+                
+                if (formattedRestaurants.length === 0) {
+                    setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
                 } else {
-                    setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });
-                    setLoading(false);
+                    const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
+                        ? formattedRestaurants
+                        : [...formattedRestaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
+                    setRestaurantList(finalRestaurants);
+                    displayMarkers(finalRestaurants);
                 }
-            }, searchOptions);
+            } catch (error) {
+                console.error("Error:", error);
+                setAlertInfo({ title: "오류", message: "음식점을 불러오는 데 실패했습니다." });
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -1443,28 +1449,28 @@ export default function Home() {
     <div className="w-full h-[800px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
         
         {/* 주소 검색 영역 */}
-        <div className="p-4 border-b bg-muted/40 space-y-3">
-            <div className="flex items-center justify-center space-x-2">
-                <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'place' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>장소</Label>
-                <Switch
-                    id="search-mode"
-                    checked={searchMode === 'food'}
-                    onCheckedChange={(checked) => setSearchMode(checked ? 'food' : 'place')}
-                />
-                <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'food' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>음식점</Label>
-            </div>
-            <div className="flex gap-2">
+        <div className="p-4 border-b bg-muted/40">
+            <div className="flex items-center gap-2">
                 <Input
                     type="text"
                     placeholder={searchMode === 'place' ? "예: 강남역 (장소로 이동)" : "예: 마라탕 (주변 음식점 검색)"}
                     value={searchAddress}
                     onChange={(e) => setSearchAddress(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddressSearch()}
-                    className="bg-background text-base h-11"
+                    className="bg-background text-base h-11 flex-grow"
                 />
+                <div className="flex items-center justify-center space-x-2 shrink-0">
+                    <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'place' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>장소</Label>
+                    <Switch
+                        id="search-mode"
+                        checked={searchMode === 'food'}
+                        onCheckedChange={(checked) => setSearchMode(checked ? 'food' : 'place')}
+                    />
+                    <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'food' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>음식점</Label>
+                </div>
                 <Button
                     size="lg"
-                    className="h-11"
+                    className="h-11 shrink-0"
                     onClick={handleAddressSearch}
                 >
                     검색
