@@ -117,7 +117,7 @@ export function FilterDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-sm:max-h-[90vh] flex flex-col">
+      <DialogContent className="max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>검색 필터 설정</DialogTitle>
         </DialogHeader>
