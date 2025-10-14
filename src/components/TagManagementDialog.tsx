@@ -1,0 +1,169 @@
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Tag } from "@/lib/types";
+import { useSession } from "next-auth/react";
+
+interface SubscribedTag {
+    id: number;
+    name: string;
+    creatorName: string | null;
+}
+
+interface TagManagementDialogProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  userTags: Tag[];
+  onDeleteTag: (tagId: number) => void;
+  onToggleTagPublic: (tagId: number, isPublic: boolean) => void;
+  onCreateTag: (tagName: string) => Promise<void>; // 비동기 처리를 위해 Promise 반환 타입 명시
+}
+
+export function TagManagementDialog({
+  isOpen,
+  onOpenChange,
+  userTags,
+  onDeleteTag,
+  onToggleTagPublic,
+  onCreateTag,
+}: TagManagementDialogProps) {
+  const { status } = useSession();
+  const [newTagName, setNewTagName] = useState("");
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [subscribedTags, setSubscribedTags] = useState<SubscribedTag[]>([]);
+
+  // 구독 태그 목록 fetching 로직을 이 컴포넌트 내부로 가져옵니다.
+  useEffect(() => {
+    const fetchSubscribedTags = async () => {
+      if (status === 'authenticated') {
+        try {
+          const response = await fetch('/api/subscriptions');
+          if (response.ok) {
+            const data = await response.json();
+            setSubscribedTags(data);
+          }
+        } catch (error) {
+          console.error("구독 태그 로딩 실패:", error);
+        }
+      }
+    };
+    if (isOpen) {
+      fetchSubscribedTags();
+    }
+  }, [isOpen, status]);
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim() || isCreatingTag) return;
+    setIsCreatingTag(true);
+    await onCreateTag(newTagName); // 부모의 생성 함수 호출
+    setNewTagName("");
+    setIsCreatingTag(false);
+  };
+
+  const handleUnsubscribe = async (tagId: number) => {
+    const originalSubscriptions = subscribedTags;
+    setSubscribedTags(prev => prev.filter(tag => tag.id !== tagId));
+    try {
+        const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
+        if (!response.ok) {
+            setSubscribedTags(originalSubscriptions);
+            // alert('구독 취소에 실패했습니다.'); // alert 대신 다른 UI 처리 권장
+        }
+    } catch (error) {
+        setSubscribedTags(originalSubscriptions);
+        // alert('구독 취소 중 오류가 발생했습니다.');
+    }
+  };
+  
+  const filteredTags = newTagName.trim() === ''
+    ? userTags
+    : userTags.filter(tag => tag.name.toLowerCase().includes(newTagName.trim().toLowerCase()));
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-xl">태그 관리</DialogTitle>
+        </DialogHeader>
+        <div className="py-2">
+          <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
+          <div className="flex w-full items-center space-x-2 mb-4 p-1">
+            <Input
+              type="text"
+              placeholder="새 태그 생성 또는 검색"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
+              disabled={isCreatingTag}
+            />
+            <Button onClick={handleCreateTag} disabled={isCreatingTag}>
+              {isCreatingTag ? '추가 중...' : '추가'}
+            </Button>
+          </div>
+          <div className="h-[200px] overflow-y-auto pr-4">
+            {userTags.length > 0 ? (
+              <ul className="space-y-2">
+                {filteredTags.map(tag => (
+                  <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                    <span>{tag.name}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Switch id={`public-switch-${tag.id}`} checked={tag.isPublic} onCheckedChange={() => onToggleTagPublic(tag.id, tag.isPublic)} />
+                        <Label htmlFor={`public-switch-${tag.id}`} className="text-xs text-muted-foreground">{tag.isPublic ? '공개' : '비공개'}</Label>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => onDeleteTag(tag.id)}>삭제</Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-center text-muted-foreground pt-8">
+                {newTagName.trim() === '' ? '생성된 태그가 없습니다.' : '일치하는 태그가 없습니다.'}
+              </p>
+            )}
+          </div>
+
+          <Separator className="my-4" />
+
+          <h4 className="font-semibold mb-2 px-1">구독 중인 태그</h4>
+          <div className="h-[200px] overflow-y-auto pr-4">
+            {subscribedTags.length > 0 ? (
+              <ul className="space-y-2">
+                {subscribedTags.map(tag => (
+                  <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                    <div>
+                      <span className="font-semibold">{tag.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => handleUnsubscribe(tag.id)}>구독 취소</Button>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-center text-muted-foreground pt-8">구독 중인 태그가 없습니다.</p>}
+          </div>
+          
+          <Separator className="my-4" />
+          
+          <div className="space-y-3 px-1">
+            <h4 className="font-semibold">태그 종류 안내</h4>
+            <div className="flex items-center gap-x-4 gap-y-2 flex-wrap">
+              <div className="flex items-center gap-2"><Badge variant="default">★ 구독 태그</Badge><span className="text-xs text-muted-foreground">구독한 태그</span></div>
+              <div className="flex items-center gap-2"><Badge variant="outline"># 내가 만든 태그</Badge><span className="text-xs text-muted-foreground">내가 만든 태그</span></div>
+              <div className="flex items-center gap-2"><Badge variant="secondary"># 일반 태그</Badge><span className="text-xs text-muted-foreground">다른 사용자의 공개 태그</span></div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
