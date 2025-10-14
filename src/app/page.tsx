@@ -118,10 +118,14 @@ declare namespace kakao.maps {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace services {
         interface PlacesSearchResultItem {
+            id: string;
             y: string;
             x: string;
             place_name: string;
             road_address_name: string;
+            category_name: string;
+            place_url: string;
+            distance: string;
         }
 
         type PlacesSearchResult = PlacesSearchResultItem[];
