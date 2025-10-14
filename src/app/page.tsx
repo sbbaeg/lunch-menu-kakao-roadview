@@ -1745,7 +1745,7 @@ export default function Home() {
                 // 로딩이 끝났고, 결과가 있을 때
                 <>
                     {blacklistExcludedCount > 0 && (
-                        <div className="p-2 mx-4 mt-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
+                        <div className="p-2 mx-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
                             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
                         </div>
                     )}
