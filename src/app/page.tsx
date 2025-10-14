@@ -148,7 +148,11 @@ declare namespace kakao.maps {
                     data: PlacesSearchResult,
                     status: Status,
                     pagination: Pagination
-                ) => void
+                ) => void,
+                options?: {
+                    location?: LatLng;
+                    radius?: number;
+                }
             ): void;
         }
 
