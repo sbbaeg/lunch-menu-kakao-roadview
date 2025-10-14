@@ -3,6 +3,9 @@
 import { FilterDialog, type FilterState } from "@/components/FilterDialog";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { FavoritesDialog } from "@/components/FavoritesDialog"; 
+import { BlacklistDialog } from "@/components/BlacklistDialog";
+import { TagManagementDialog } from "@/components/TagManagementDialog";
+import { TaggingDialog } from "@/components/TaggingDialog";
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -262,12 +265,9 @@ export default function Home() {
 
     const [taggingRestaurant, setTaggingRestaurant] = useState<Restaurant | null>(null); // 현재 태그를 편집할 음식점 정보
     const [userTags, setUserTags] = useState<Tag[]>([]);
-    const [subscribedTags, setSubscribedTags] = useState<{ id: number; name: string; creatorName: string | null; }[]>([]);
     const [subscribedTagIds, setSubscribedTagIds] = useState<number[]>([]);
-    const [newTagName, setNewTagName] = useState("");
 
     const [isHelpOpen, setIsHelpOpen] = useState(false);
-    const [isCreatingTag, setIsCreatingTag] = useState(false);
 
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
@@ -466,28 +466,6 @@ export default function Home() {
         }
         }
     }, []); 
-
-    useEffect(() => {
-        const fetchSubscribedTags = async () => {
-            // 로그인 상태일 때만 API를 호출합니다.
-            if (status === 'authenticated') {
-                try {
-                    const response = await fetch('/api/subscriptions');
-                    if (response.ok) {
-                        const data = await response.json();
-                        setSubscribedTags(data);
-                    }
-                } catch (error) {
-                    console.error("구독 태그 로딩 실패:", error);
-                }
-            }
-        };
-
-        // 팝업(isTagManagementOpen)이 열렸을 때만 함수를 실행합니다.
-        if (isTagManagementOpen) {
-            fetchSubscribedTags();
-        }
-    }, [isTagManagementOpen, status]); // 팝업 상태나 로그인 상태가 변경될 때마다 실행됩니다.
 
     useEffect(() => {
         const fetchSubscribedTagIds = async () => {
@@ -876,83 +854,65 @@ export default function Home() {
         }
     };
 
-    const handleCreateTagFromManager = async () => {
-        if (!newTagName.trim() || isCreatingTag) return;
-        setIsCreatingTag(true);
+    const handleCreateTagFromManager = async (name: string) => {
+        // isCreatingTag 상태는 이제 Dialog 컴포넌트가 자체 관리하므로 여기서 필요 없습니다.
         try {
             const createResponse = await fetch('/api/tags', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newTagName }),
+                body: JSON.stringify({ name }),
             });
 
             if (createResponse.ok) {
                 const newTag = await createResponse.json();
                 setUserTags(prevTags => [...prevTags, newTag]);
-                setNewTagName("");
+                // newTagName 상태도 Dialog가 관리하므로 여기서 초기화할 필요가 없습니다.
             } else {
                 setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
             }
         } catch (error) {
             console.error("태그 생성 오류:", error);
             setAlertInfo({ title: "오류", message: "태그 생성 중 오류가 발생했습니다." });
-        } finally {
-            setIsCreatingTag(false);
         }
     };
 
-    const handleCreateTag = async () => {
-        if (!newTagName.trim() || !taggingRestaurant || isCreatingTag) return;
-    
-        setIsCreatingTag(true);
+    const handleCreateTag = async (name: string) => {
+        if (!name.trim() || !taggingRestaurant) return;
+
         try {
-            // 1. 태그 생성 API 호출
             const createResponse = await fetch('/api/tags', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newTagName }),
+                body: JSON.stringify({ name }),
             });
-    
+
             if (!createResponse.ok) {
-                // 생성 실패 또는 중복 태그 처리
                 setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
-                setIsCreatingTag(false); // 로딩 상태 해제
                 return;
             }
-    
+
             const newTag = await createResponse.json();
-            
-            // UI에 새로 생성된 태그 즉시 반영
             setUserTags(prevTags => [...prevTags, newTag]);
-            setNewTagName(""); // 입력 필드 초기화
-    
-            // 2. 생성된 태그와 음식점 연결 API 호출
+
             const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    tagId: newTag.id, 
-                    restaurant: taggingRestaurant 
-                }),
+                body: JSON.stringify({ tagId: newTag.id, restaurant: taggingRestaurant }),
             });
-    
+
             if (linkResponse.ok) {
-                // 연결 성공 시, 레스토랑 목록의 태그 정보 업데이트
                 const updatedRestaurant = {
                     ...taggingRestaurant,
                     tags: [...(taggingRestaurant.tags || []), newTag],
                 };
-                handleTagsChange(updatedRestaurant); // restaurantList, favorites 상태 업데이트
-                setTaggingRestaurant(updatedRestaurant); // 현재 열려있는 다이얼로그의 정보도 업데이트
+                handleTagsChange(updatedRestaurant);
+                setTaggingRestaurant(updatedRestaurant);
             } else {
-                // 연결 실패 처리
                 setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
             }
         } catch (error) {
             console.error("태그 생성 및 연결 오류:", error);
             setAlertInfo({ title: "오류", message: "태그 처리 중 오류가 발생했습니다." });
-        } finally {
-            setIsCreatingTag(false);
         }
     };
 
@@ -1026,21 +986,6 @@ export default function Home() {
         } catch (error) {
             setUserTags(originalTags);
             setAlertInfo({ title: "오류", message: "상태 변경 중 오류가 발생했습니다." });
-        }
-    };
-
-    const handleUnsubscribe = async (tagId: number) => {
-        const originalSubscriptions = subscribedTags;
-        setSubscribedTags(prev => prev.filter(tag => tag.id !== tagId));
-        try {
-            const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
-            if (!response.ok) {
-                setSubscribedTags(originalSubscriptions);
-                setAlertInfo({ title: "오류", message: "구독 취소에 실패했습니다." });
-            }
-        } catch (error) {
-            setSubscribedTags(originalSubscriptions);
-            setAlertInfo({ title: "오류", message: "구독 취소 중 오류가 발생했습니다." });
         }
     };
 
@@ -1174,10 +1119,6 @@ export default function Home() {
             setLoading(false);
         }
     };
-
-    const filteredTags = newTagName.trim() === ''
-        ? userTags // 입력창이 비어있으면 모든 태그를 보여줌
-        : userTags.filter(tag => tag.name.toLowerCase().includes(newTagName.trim().toLowerCase()));
 
     return (
         <main className="w-full min-h-screen">
@@ -1558,106 +1499,14 @@ export default function Home() {
 </div>
                 </Card>
 
-                {/* 태그 관리 다이얼로그 */}
-                <Dialog open={isTagManagementOpen} onOpenChange={setIsTagManagementOpen}>
-                    <DialogContent className="max-w-lg">
-                        <DialogHeader>
-                            <DialogTitle className="text-xl">태그 관리</DialogTitle>
-                        </DialogHeader>
-                        <div className="py-2">
-                            {/* --- 수정 시작 --- */}
-                            {/* 1. '내가 만든 태그' 섹션 */}
-                            <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
-                            <div className="flex w-full items-center space-x-2 mb-4 p-1">
-                                {/* --- 수정 시작 --- */}
-                                <Input
-                                    type="text"
-                                    placeholder="새 태그 생성 또는 검색"
-                                    value={newTagName}
-                                    onChange={(e) => setNewTagName(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleCreateTagFromManager()}
-                                    disabled={isCreatingTag} 
-                                />
-                                <Button onClick={handleCreateTagFromManager} disabled={isCreatingTag}>
-                                    {isCreatingTag ? '추가 중...' : '추가'}
-                                </Button>
-                                {/* --- 수정 끝 --- */}
-                            </div>
-                            <div className="h-[200px] overflow-y-auto pr-4">
-                                {userTags.length > 0 ? (
-                                    <ul className="space-y-2">
-                                        {filteredTags.map(tag => (
-                                            <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                                                <span>{tag.name}</span>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex items-center space-x-2">
-                                                        <Switch
-                                                            id={`public-switch-${tag.id}`}
-                                                            checked={tag.isPublic}
-                                                            onCheckedChange={() => handleToggleTagPublic(tag.id, tag.isPublic)}
-                                                        />
-                                                        <Label htmlFor={`public-switch-${tag.id}`} className="text-xs text-muted-foreground">
-                                                            {tag.isPublic ? '공개' : '비공개'}
-                                                        </Label>
-                                                    </div>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteTag(tag.id)}>삭제</Button>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-center text-muted-foreground pt-8">
-                                        {newTagName.trim() === '' ? '생성된 태그가 없습니다.' : '일치하는 태그가 없습니다.'}
-                                    </p>
-                                )}
-                            </div>
-
-                            <Separator className="my-4" />
-
-                            {/* 2. '구독 중인 태그' 섹션 */}
-                            <h4 className="font-semibold mb-2 px-1">구독 중인 태그</h4>
-                            <div className="h-[200px] overflow-y-auto pr-4">
-                                {subscribedTags.length > 0 ? (
-                                    <ul className="space-y-2">
-                                        {subscribedTags.map(tag => (
-                                            <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                                                <div>
-                                                    <span className="font-semibold">{tag.name}</span>
-                                                    <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
-                                                </div>
-                                                <Button variant="ghost" size="sm" onClick={() => handleUnsubscribe(tag.id)}>구독 취소</Button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-center text-muted-foreground pt-8">구독 중인 태그가 없습니다.</p>
-                                )}
-                            </div>
-                            
-                            <Separator className="my-4" />
-                            
-                            {/* 3. 태그 범례 UI */}
-                            <div className="space-y-3 px-1">
-                                <h4 className="font-semibold">태그 종류 안내</h4>
-                                <div className="flex items-center gap-x-4 gap-y-2 flex-wrap">
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="default">★ 구독 태그</Badge>
-                                        <span className="text-xs text-muted-foreground">구독한 사용자의 태그</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="outline"># 내가 만든 태그</Badge>
-                                        <span className="text-xs text-muted-foreground">내가 만든 태그</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="secondary"># 일반 태그</Badge>
-                                        <span className="text-xs text-muted-foreground">다른 사용자의 공개 태그</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* --- 수정 끝 --- */}
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <TagManagementDialog
+                    isOpen={isTagManagementOpen}
+                    onOpenChange={setIsTagManagementOpen}
+                    userTags={userTags}
+                    onCreateTag={handleCreateTagFromManager}
+                    onDeleteTag={handleDeleteTag}
+                    onToggleTagPublic={handleToggleTagPublic}
+                />
 
                 <FavoritesDialog
                     isOpen={isFavoritesListOpen}
@@ -1674,41 +1523,12 @@ export default function Home() {
                     onTagManagement={setTaggingRestaurant}
                 />
 
-                <Dialog open={isBlacklistOpen} onOpenChange={setIsBlacklistOpen}>
-                    <DialogContent className="max-w-md">
-                        <DialogHeader>
-                            <DialogTitle className="text-xl">블랙리스트 관리</DialogTitle>
-                        </DialogHeader>
-                        <div className="max-h-[60vh] overflow-y-auto pr-4 mt-4">
-                            {blacklist.length > 0 ? (
-                                // ✅ ul 내부를 실제 데이터로 채우고 [삭제] 버튼을 추가합니다.
-                                <ul className="space-y-3">
-                                    {blacklist.map((place) => (
-                                        <li key={place.id} className="flex items-center justify-between p-2 rounded-md border">
-                                            <div>
-                                                <p className="font-semibold">{place.placeName}</p>
-                                                <p className="text-sm text-gray-500">
-                                                    {place.categoryName?.split('>').pop()?.trim()}
-                                                </p>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => toggleBlacklist(place)}
-                                            >
-                                                삭제
-                                            </Button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    <p>블랙리스트에 등록된 음식점이 없습니다.</p>
-                                </div>
-                            )}
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <BlacklistDialog
+                    isOpen={isBlacklistOpen}
+                    onOpenChange={setIsBlacklistOpen}
+                    blacklist={blacklist}
+                    onToggleBlacklist={toggleBlacklist}
+                />
 
                 <Dialog open={isRouletteOpen} onOpenChange={setIsRouletteOpen}>
                     <DialogContent className="max-w-md p-6">
@@ -1752,44 +1572,13 @@ export default function Home() {
                         </div>
                     </DialogContent>
                 </Dialog>
-                <Dialog open={!!taggingRestaurant} onOpenChange={() => setTaggingRestaurant(null)}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>태그 관리: {taggingRestaurant?.placeName}</DialogTitle>
-                        </DialogHeader>
-                        <div className="py-2">
-                            {/* 새로운 태그 생성 UI */}
-                            <div className="flex w-full items-center space-x-2 mb-4">
-                                <Input
-                                    type="text"
-                                    placeholder="새 태그 이름 (예: #가성비)"
-                                    value={newTagName}
-                                    onChange={(e) => setNewTagName(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
-                                />
-                                <Button onClick={handleCreateTag}>추가</Button>
-                            </div>
-
-                            {/* 기존 태그 목록 UI */}
-                            <div className="max-h-60 overflow-y-auto space-y-2">
-                                <p className="text-sm font-medium text-muted-foreground">내 태그 목록</p>
-                                {/* ✅ userTags 대신 filteredTags를 사용 */}
-                                {filteredTags.map((tag) => (
-                                    <div key={tag.id} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`tag-${tag.id}`}
-                                            checked={taggingRestaurant?.tags?.some(rt => rt.id === tag.id)}
-                                            onCheckedChange={() => handleToggleTagLink(tag)}
-                                        />
-                                        <Label htmlFor={`tag-${tag.id}`} className="cursor-pointer">
-                                            {tag.name}
-                                        </Label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <TaggingDialog
+                    restaurant={taggingRestaurant}
+                    onOpenChange={() => setTaggingRestaurant(null)}
+                    userTags={userTags}
+                    onToggleTagLink={handleToggleTagLink}
+                    onCreateAndLinkTag={handleCreateTag}
+                />
                 <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
