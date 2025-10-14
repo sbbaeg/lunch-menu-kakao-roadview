@@ -1325,11 +1325,48 @@ export default function Home() {
                                         태그 관리
                                     </Button>
 
-                                    <DialogTrigger asChild>
-                                        <Button variant="ghost" className="justify-start">
-                                            도움말 및 정보
-                                        </Button>
-                                    </DialogTrigger>
+                                    <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" className="justify-start">
+                                                도움말 및 정보
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>도움말 및 정보</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="py-4 space-y-4 text-sm">
+                                                <div className="space-y-1">
+                                                    <h3 className="font-semibold">기본 기능</h3>
+                                                    <ul className="list-disc list-inside text-muted-foreground">
+                                                        <li><strong>검색/룰렛:</strong> 현재 위치나 지도 중앙을 기준으로 주변 음식점을 검색하거나 룰렛으로 추첨합니다.</li>
+                                                        <li><strong>필터:</strong> 카테고리, 거리, 별점 등 다양한 조건으로 검색 결과를 좁힐 수 있습니다.</li>
+                                                    </ul>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h3 className="font-semibold">지도 기능</h3>
+                                                    <ul className="list-disc list-inside text-muted-foreground">
+                                                        <li><strong>지도 검색창:</strong> 특정 장소(예: 강남역)를 검색하여 지도를 해당 위치로 이동시킬 수 있습니다.</li>
+                                                        <li><strong>이 지역에서 재검색:</strong> 지도를 드래그하여 옮긴 후 버튼을 누르면, 현재 보이는 지도 중앙을 기준으로 다시 검색합니다.</li>
+                                                    </ul>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h3 className="font-semibold">개인화 기능 (로그인)</h3>
+                                                    <ul className="list-disc list-inside text-muted-foreground">
+                                                        <li><strong>즐겨찾기:</strong> 마음에 드는 가게를 저장하고 필터에서 '즐겨찾기만' 선택해 볼 수 있습니다.</li>
+                                                        <li><strong>블랙리스트:</strong> 보고 싶지 않은 가게를 목록에서 숨깁니다.</li>
+                                                        <li><strong>태그:</strong> '#혼밥'처럼 나만의 태그를 만들고 가게에 붙여 관리할 수 있습니다.
+                                                            <ul className="list-['-_'] list-inside ml-4 mt-1 space-y-1">
+                                                                <li><Badge variant="outline" className="mr-1 cursor-default">#내 태그</Badge> : 내가 만든 태그</li>
+                                                                <li><Badge variant="default" className="mr-1 cursor-default">★ 구독 태그</Badge> : 내가 구독한 태그</li>
+                                                                <li><Badge variant="secondary" className="mr-1 cursor-default"># 공개 태그</Badge> : 다른 사람이 공개한 태그</li>
+                                                            </ul>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
                                 </div>
                                 <Separator className="my-4" />
 
@@ -1753,7 +1790,7 @@ export default function Home() {
                         {getSortTitle(displayedSortOrder)}:{" "}
                         {restaurantList.length}개
                     </p>
-                    <CardContent className="p-2 thin-scrollbar overflow-y-auto flex-1">
+                    <CardContent className="px-2 pt-1 pb-2 thin-scrollbar overflow-y-auto flex-1">
                         <Accordion
                             type="single"
                             collapsible
