@@ -1344,7 +1344,7 @@ export default function Home() {
             <Card className="w-full max-w-6xl p-6 md:p-8">
 <div className="flex flex-col md:flex-row gap-6">
     {/* 왼쪽 지도 패널 */}
-    <div className="w-full h-[720px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
+    <div className="w-full h-[800px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
         
         {/* 주소 검색 영역 */}
         <div className="p-4 border-b bg-muted/40">
@@ -1417,7 +1417,7 @@ export default function Home() {
     </div>
 
     {/* 오른쪽 제어 패널 */}
-    <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[720px]">
+    <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
         <div className="w-full flex gap-2 justify-center">
             <Button
                 onClick={() => recommendProcess(false)}
@@ -1745,11 +1745,11 @@ export default function Home() {
                 // 로딩이 끝났고, 결과가 있을 때
                 <>
                     {blacklistExcludedCount > 0 && (
-                        <div className="p-3 m-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
+                        <div className="p-2 mx-2 mb-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
                             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
                         </div>
                     )}
-                    <p className="text-sm font-semibold text-gray-600 px-4 pt-2">
+                    <p className="text-sm font-semibold text-gray-600 px-4">
                         {getSortTitle(displayedSortOrder)}:{" "}
                         {restaurantList.length}개
                     </p>
