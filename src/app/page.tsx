@@ -1743,7 +1743,7 @@ export default function Home() {
                 </div>
             ) : restaurantList.length > 0 ? (
                 // 로딩이 끝났고, 결과가 있을 때
-                <Card className="w-full flex-1 flex flex-col">
+                <Card className="w-full flex-1 flex flex-col min-h-0">
                     {blacklistExcludedCount > 0 && (
                         <div className="p-3 m-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
                             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
