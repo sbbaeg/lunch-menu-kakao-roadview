@@ -589,6 +589,7 @@ export default function Home() {
 
         const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
             id: place.id,
+            kakaoPlaceId: place.id,
             placeName: place.place_name,
             categoryName: place.category_name,
             address: place.road_address_name,
