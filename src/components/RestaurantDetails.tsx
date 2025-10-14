@@ -1,5 +1,3 @@
-// components/RestaurantDetails.tsx (새 파일)
-
 import {
   Accordion,
   AccordionContent,

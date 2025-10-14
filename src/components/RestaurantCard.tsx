@@ -1,5 +1,3 @@
-// components/RestaurantCard.tsx (새 파일)
-
 import {
   AccordionContent,
   AccordionItem,
