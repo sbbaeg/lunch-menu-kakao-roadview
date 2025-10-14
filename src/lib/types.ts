@@ -53,6 +53,7 @@ export interface RestaurantWithTags extends KakaoPlaceItem {
 // 우리 앱 내부에서 사용할 표준 데이터 타입 (camelCase)
 export interface Restaurant {
   id: string; // kakaoPlaceId
+  kakaoPlaceId: string;
   placeName: string;
   categoryName: string;
   address: string;
