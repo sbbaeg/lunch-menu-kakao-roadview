@@ -1,0 +1,106 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { Accordion } from "@/components/ui/accordion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Restaurant } from "@/lib/types";
+import { Session } from "next-auth";
+import { RestaurantCard } from "./RestaurantCard";
+
+interface ResultPanelProps {
+  isLoading: boolean;
+  restaurants: Restaurant[];
+  blacklistExcludedCount: number;
+  displayedSortOrder: "accuracy" | "distance" | "rating";
+  selectedItemId: string | undefined;
+  setSelectedItemId: (id: string | undefined) => void;
+  // --- RestaurantCard에 전달할 Props ---
+  session: Session | null;
+  subscribedTagIds: number[];
+  isFavorite: (id: string) => boolean;
+  isBlacklisted: (id: string) => boolean;
+  onToggleFavorite: (restaurant: Restaurant) => void;
+  onToggleBlacklist: (restaurant: Restaurant) => void;
+  onTagManagement: (restaurant: Restaurant) => void;
+}
+
+const getSortTitle = (sort: "accuracy" | "distance" | "rating"): string => {
+  switch (sort) {
+    case "distance": return "가까운 순 결과";
+    case "rating": return "별점 순 결과";
+    case "accuracy":
+    default: return "랜덤 추천 결과";
+  }
+};
+
+export function ResultPanel({
+  isLoading,
+  restaurants,
+  blacklistExcludedCount,
+  displayedSortOrder,
+  selectedItemId,
+  setSelectedItemId,
+  ...cardProps // session, onToggleFavorite 등 RestaurantCard에 필요한 나머지 props
+}: ResultPanelProps) {
+  if (isLoading) {
+    return (
+      <Card className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+        <div className="w-full flex-1 flex flex-col min-h-0">
+          <div className="h-full flex flex-col justify-center p-2">
+            {[...Array(3)].map((_, index) => (
+              <Card key={index} className="p-4 mb-2">
+                <div className="flex justify-between items-center mb-2">
+                  <Skeleton className="h-5 w-3/5" />
+                  <Skeleton className="h-4 w-1/5" />
+                </div>
+                <Skeleton className="h-4 w-2/5" />
+              </Card>
+            ))}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (restaurants.length === 0) {
+    return (
+      <Card className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+        <div className="w-full flex-1 flex flex-col min-h-0">
+          <div className="w-full h-full flex items-center justify-center">
+            <p className="text-muted-foreground">검색 결과가 여기에 표시됩니다.</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+      <div className="w-full flex-1 flex flex-col min-h-0">
+        {blacklistExcludedCount > 0 && (
+          <div className="p-2 mx-4 mt-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
+            <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
+          </div>
+        )}
+        <p className="text-sm font-semibold text-gray-600 px-4 pt-4">
+          {getSortTitle(displayedSortOrder)}: {restaurants.length}개
+        </p>
+        <CardContent className="px-2 pt-1 pb-2 thin-scrollbar overflow-y-auto flex-1">
+          <Accordion
+            type="single"
+            collapsible
+            className="w-full"
+            value={selectedItemId}
+            onValueChange={setSelectedItemId}
+          >
+            {restaurants.map((place) => (
+              <RestaurantCard
+                key={place.id}
+                restaurant={place}
+                {...cardProps}
+              />
+            ))}
+          </Accordion>
+        </CardContent>
+      </div>
+    </Card>
+  );
+}

@@ -6,6 +6,8 @@ import { FavoritesDialog } from "@/components/FavoritesDialog";
 import { BlacklistDialog } from "@/components/BlacklistDialog";
 import { TagManagementDialog } from "@/components/TagManagementDialog";
 import { TaggingDialog } from "@/components/TaggingDialog";
+import { ResultPanel } from "@/components/ResultPanel";
+
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -1395,106 +1397,25 @@ export default function Home() {
     {/* 오른쪽 제어 패널 */}
     <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
         <div className="w-full flex gap-2 justify-center">
-            <Button
-                onClick={() => recommendProcess(false)}
-                disabled={loading || !isMapReady}
-                size="lg"
-                className="px-6"
-            >
-                검색
-            </Button>
-            <Button
-                onClick={() => recommendProcess(true)}
-                disabled={loading || !isMapReady}
-                size="lg"
-                className="px-6"
-            >
-                룰렛
-            </Button>
-            <Button
-                variant="outline"
-                size="lg"
-                onClick={() => setIsFilterOpen(true)} // DialogTrigger를 일반 Button으로 변경
-            >
-                필터
-            </Button>
-
-            <FilterDialog
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                initialFilters={{
-                    categories: selectedCategories,
-                    distance: selectedDistance,
-                    sortOrder: sortOrder,
-                    resultCount: resultCount,
-                    minRating: minRating,
-                    searchInFavoritesOnly: searchInFavoritesOnly,
-                    openNowOnly: openNowOnly,
-                    includeUnknownHours: includeUnknownHours,
-                    tags: selectedTags,
-                }}
-                onApplyFilters={handleApplyFilters}
-                userTags={userTags}
-            />
+            <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="px-6">검색</Button>
+            <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="px-6">룰렛</Button>
+            <Button variant="outline" size="lg" onClick={() => setIsFilterOpen(true)}>필터</Button>
         </div>
-
-        <Card className="w-full flex-1 flex flex-col min-h-0">
-            {loading ? (
-                // ✅ 로딩 중일 때 보여줄 스켈레톤 UI
-                    <div className="h-full flex flex-col justify-center p-2">
-                    {/* 스켈레톤 UI를 3개 정도 반복해서 보여줍니다. */}
-                    {[...Array(3)].map((_, index) => (
-                        <Card key={index} className="p-4">
-                            <div className="flex justify-between items-center mb-2">
-                                <Skeleton className="h-5 w-3/5" />
-                                <Skeleton className="h-4 w-1/5" />
-                            </div>
-                            <Skeleton className="h-4 w-2/5" />
-                        </Card>
-                    ))}
-                </div>
-            ) : restaurantList.length > 0 ? (
-                // 로딩이 끝났고, 결과가 있을 때
-                <>
-                    {blacklistExcludedCount > 0 && (
-                        <div className="p-2 mx-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
-                            <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
-                        </div>
-                    )}
-                    <p className="text-sm font-semibold text-gray-600 px-4">
-                        {getSortTitle(displayedSortOrder)}:{" "}
-                        {restaurantList.length}개
-                    </p>
-                    <CardContent className="px-2 pt-1 pb-2 thin-scrollbar overflow-y-auto flex-1">
-                        <Accordion
-                            type="single"
-                            collapsible
-                            className="w-full"
-                            value={selectedItemId}
-                            onValueChange={setSelectedItemId}
-                        >
-                            {restaurantList.map((place) => (
-                                <RestaurantCard
-                                    key={place.id}
-                                    restaurant={place}
-                                    session={session}
-                                    subscribedTagIds={subscribedTagIds}
-                                    isFavorite={isFavorite}
-                                    isBlacklisted={isBlacklisted}
-                                    onToggleFavorite={toggleFavorite}
-                                    onToggleBlacklist={toggleBlacklist}
-                                    onTagManagement={setTaggingRestaurant}
-                                />
-                            ))}
-                        </Accordion>
-                    </CardContent>
-                </>
-            ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                    <p className="text-muted-foreground">검색 결과가 여기에 표시됩니다.</p>
-                </div>
-            )}
-        </Card>
+        <ResultPanel
+            isLoading={loading}
+            restaurants={restaurantList}
+            blacklistExcludedCount={blacklistExcludedCount}
+            displayedSortOrder={displayedSortOrder}
+            selectedItemId={selectedItemId}
+            setSelectedItemId={setSelectedItemId}
+            session={session}
+            subscribedTagIds={subscribedTagIds}
+            isFavorite={isFavorite}
+            isBlacklisted={isBlacklisted}
+            onToggleFavorite={toggleFavorite}
+            onToggleBlacklist={toggleBlacklist}
+            onTagManagement={setTaggingRestaurant}
+        />
     </div>
 </div>
                 </Card>
