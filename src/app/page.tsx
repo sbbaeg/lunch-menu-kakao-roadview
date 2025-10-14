@@ -2,7 +2,7 @@
 //리펙토링한 컴포넌트
 import { FilterDialog, type FilterState } from "@/components/FilterDialog";
 import { RestaurantCard } from "@/components/RestaurantCard";
-
+import { FavoritesDialog } from "@/components/FavoritesDialog"; 
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -1659,42 +1659,20 @@ export default function Home() {
                     </DialogContent>
                 </Dialog>
 
-                <Dialog open={isFavoritesListOpen} onOpenChange={setIsFavoritesListOpen}>
-                    <DialogContent className="max-w-lg">
-                        <DialogHeader>
-                            <DialogTitle className="text-xl">즐겨찾기 목록</DialogTitle>
-                        </DialogHeader>
-                        <div className="max-h-[70vh] overflow-y-auto pr-4 mt-4">
-                            {favorites.length > 0 ? (
-                                <Accordion
-                                    type="single"
-                                    collapsible
-                                    className="w-full"
-                                    value={selectedItemId}
-                                    onValueChange={setSelectedItemId}
-                                >
-                                    {favorites.map((place) => (
-                                        <RestaurantCard
-                                            key={place.id}
-                                            restaurant={place}
-                                            session={session}
-                                            subscribedTagIds={subscribedTagIds}
-                                            isFavorite={isFavorite}
-                                            isBlacklisted={isBlacklisted}
-                                            onToggleFavorite={toggleFavorite}
-                                            onToggleBlacklist={toggleBlacklist}
-                                            onTagManagement={setTaggingRestaurant}
-                                        />
-                                    ))}
-                                </Accordion>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    <p>즐겨찾기에 등록된 음식점이 없습니다.</p>
-                                </div>
-                            )}
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <FavoritesDialog
+                    isOpen={isFavoritesListOpen}
+                    onOpenChange={setIsFavoritesListOpen}
+                    favorites={favorites}
+                    session={session}
+                    subscribedTagIds={subscribedTagIds}
+                    selectedItemId={selectedItemId}
+                    setSelectedItemId={setSelectedItemId}
+                    isFavorite={isFavorite}
+                    isBlacklisted={isBlacklisted}
+                    onToggleFavorite={toggleFavorite}
+                    onToggleBlacklist={toggleBlacklist}
+                    onTagManagement={setTaggingRestaurant}
+                />
 
                 <Dialog open={isBlacklistOpen} onOpenChange={setIsBlacklistOpen}>
                     <DialogContent className="max-w-md">
