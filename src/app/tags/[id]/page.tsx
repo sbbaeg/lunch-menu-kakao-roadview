@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Share2, Star } from 'lucide-react';
 import { Restaurant } from '@/lib/types'; // 메인 페이지의 타입을 재사용합니다.
 import { TagHeader } from "@/components/TagHeader";
+import { MapPanel } from '@/components/MapPanel';
 
 // 페이지에서 사용할 데이터의 타입을 정의합니다.
 interface TagProfileData {
@@ -32,10 +33,6 @@ export default function TagProfilePage() {
     const { data: session, status } = useSession();
     const [tagData, setTagData] = useState<TagProfileData | null>(null);
     const [loading, setLoading] = useState(true);
-
-    const mapContainer = useRef<HTMLDivElement | null>(null);
-    const mapInstance = useRef<any>(null); // 카카오맵 인스턴스
-    const markers = useRef<any[]>([]); // 마커 배열
 
     const tagId = params.id;
 
@@ -63,40 +60,6 @@ export default function TagProfilePage() {
         fetchData();
     }, [tagId, router]);
 
-    // 2. 카카오맵을 초기화하고 마커를 표시하는 useEffect
-    useEffect(() => {
-        if (tagData && tagData.restaurants.length > 0 && mapContainer.current) {
-            const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
-            const script = document.createElement('script');
-            script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
-            script.async = true;
-            document.head.appendChild(script);
-
-            script.onload = () => {
-                window.kakao.maps.load(() => {
-                    const center = new window.kakao.maps.LatLng(
-                        Number(tagData.restaurants[0].y),
-                        Number(tagData.restaurants[0].x)
-                    );
-                    const mapOption = { center: center, level: 5 };
-                    mapInstance.current = new window.kakao.maps.Map(mapContainer.current!, mapOption);
-
-                    // 마커 표시
-                    markers.current.forEach(marker => marker.setMap(null));
-                    markers.current = [];
-                    tagData.restaurants.forEach(place => {
-                        const position = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
-                        const marker = new window.kakao.maps.Marker({ position });
-                        marker.setMap(mapInstance.current);
-                        markers.current.push(marker);
-                    });
-                });
-            };
-        }
-    }, [tagData]);
-
-
-    // 3. 구독 버튼 핸들러
     const handleSubscribe = async () => {
         if (status !== 'authenticated' || !tagData) return;
         
@@ -157,7 +120,17 @@ export default function TagProfilePage() {
                 {/* 본문: 지도와 음식점 목록 */}
                 <div className="flex flex-col md:flex-row gap-6" style={{ height: 'calc(100vh - 150px)' }}>
                     {/* 왼쪽 지도 패널 */}
-                    <div ref={mapContainer} className="w-full h-[400px] md:h-full md:w-2/3 rounded-lg border shadow-sm" />
+                    <div className="w-full h-[400px] md:h-full md:w-2/3">
+                        <MapPanel 
+                            restaurants={tagData.restaurants}
+                            hideControls={true}
+                            // 이 페이지에서는 아래 기능들이 필요 없으므로 빈 함수나 null을 전달합니다.
+                            selectedRestaurant={null}
+                            userLocation={null}
+                            onSearchInArea={() => {}}
+                            onAddressSearch={() => {}}
+                        />
+                    </div>
 
                     {/* 오른쪽 음식점 목록 패널 */}
                     <div className="w-full md:w-1/3 h-full overflow-y-auto">

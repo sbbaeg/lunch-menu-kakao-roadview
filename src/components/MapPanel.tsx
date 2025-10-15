@@ -15,6 +15,7 @@ interface MapPanelProps {
   onSearchInArea: (center: { lat: number; lng: number }) => void;
   onAddressSearch: (keyword: string, mode: 'place' | 'food', center: { lat: number; lng: number }) => void;
   onMapReady?: (isReady: boolean) => void;
+  hideControls?: boolean;
 }
 
 export function MapPanel({
@@ -24,6 +25,7 @@ export function MapPanel({
   onSearchInArea,
   onAddressSearch,
   onMapReady,
+  hideControls = false,
 }: MapPanelProps) {
   const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview } = useKakaoMap();
   
@@ -107,29 +109,31 @@ export function MapPanel({
     onSearchInArea({ lat: center.getLat(), lng: center.getLng() });
   }
 
-  // ... (return JSX 부분은 변경 없음)
   return (
     <div className="w-full h-[800px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
-      <div className="p-4 border-b bg-muted/40">
-         <div className="flex items-center gap-2">
-          <Input
-            type="text"
-            placeholder={searchMode === 'place' ? "예: 강남역 (장소로 이동)" : "예: 마라탕 (주변 음식점 검색)"}
-            value={searchAddress}
-            onChange={(e) => setSearchAddress(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="bg-background text-base h-11 flex-grow"
-          />
-          <div className="flex items-center justify-center space-x-2 shrink-0">
-            <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'place' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>장소</Label>
-            <Switch id="search-mode" checked={searchMode === 'food'} onCheckedChange={(checked) => setSearchMode(checked ? 'food' : 'place')} />
-            <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'food' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>음식점</Label>
+      {!hideControls && (
+        <div className="p-4 border-b bg-muted/40">
+          <div className="flex items-center gap-2">
+            <Input
+              type="text"
+              placeholder={searchMode === 'place' ? "예: 강남역 (장소로 이동)" : "예: 마라탕 (주변 음식점 검색)"}
+              value={searchAddress}
+              onChange={(e) => setSearchAddress(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="bg-background text-base h-11 flex-grow"
+            />
+            <div className="flex items-center justify-center space-x-2 shrink-0">
+              <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'place' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>장소</Label>
+              <Switch id="search-mode" checked={searchMode === 'food'} onCheckedChange={(checked) => setSearchMode(checked ? 'food' : 'place')} />
+              <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'food' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>음식점</Label>
+            </div>
+            <Button size="lg" className="h-11 shrink-0" onClick={handleSearch}>검색</Button>
           </div>
-          <Button size="lg" className="h-11 shrink-0" onClick={handleSearch}>검색</Button>
         </div>
-      </div>
+      )}
+
       <div className="relative flex-1">
-        {showSearchAreaButton && (
+        {showSearchAreaButton && !hideControls && ( // '이 지역에서 재검색' 버튼도 컨트롤 UI의 일부
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 shadow-md">
             <Button size="lg" onClick={handleSearchAreaClick} className="bg-white text-black rounded-full hover:bg-gray-200 shadow-lg">
               이 지역에서 재검색
@@ -140,7 +144,7 @@ export function MapPanel({
         <div ref={mapContainerRef} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? "opacity-0 invisible" : "opacity-100 visible"}`} />
         <div ref={roadviewContainerRef} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? "opacity-100 visible" : "opacity-0 invisible"}`} />
 
-        {selectedRestaurant && (
+        {selectedRestaurant && !hideControls && ( // 로드뷰 버튼도 컨트롤 UI의 일부
             <Button onClick={() => setRoadviewVisible((prev) => !prev)} variant="secondary" className="absolute top-3 right-3 z-10 shadow-lg">
                 {isRoadviewVisible ? "지도 보기" : "로드뷰 보기"}
             </Button>
