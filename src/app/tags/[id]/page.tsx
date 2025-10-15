@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Share2, Star } from 'lucide-react';
 import { Restaurant } from '@/lib/types'; // 메인 페이지의 타입을 재사용합니다.
+import { TagHeader } from "@/components/TagHeader";
 
 // 페이지에서 사용할 데이터의 타입을 정의합니다.
 interface TagProfileData {
@@ -21,6 +22,8 @@ interface TagProfileData {
     };
     restaurants: Restaurant[];
     isSubscribed: boolean;
+    subscriberCount: number;
+    restaurantCount: number; 
 }
 
 export default function TagProfilePage() {
@@ -139,32 +142,17 @@ export default function TagProfilePage() {
     return (
         <main className="w-full min-h-screen">
             <div className="p-4 md:p-8">
-                {/* 헤더: 뒤로가기, 태그 정보, 구독/공유 버튼 */}
-                <header className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <Button variant="outline" size="icon" onClick={() => router.back()}>
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <div>
-                            <h1 className="text-2xl font-bold">{tagData.name}</h1>
-                            <p className="text-sm text-muted-foreground">
-                                by {tagData.creator.name}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {status === 'authenticated' && tagData.creator.id !== session?.user?.id && (
-                             <Button onClick={handleSubscribe} variant={tagData.isSubscribed ? "default" : "outline"}>
-                                <Star className={`mr-2 h-4 w-4 ${tagData.isSubscribed ? "fill-white" : ""}`} />
-                                {tagData.isSubscribed ? '구독중' : '구독하기'}
-                            </Button>
-                        )}
-                        <Button variant="secondary" onClick={handleShare}>
-                            <Share2 className="mr-2 h-4 w-4" />
-                            공유
-                        </Button>
-                    </div>
-                </header>
+                <TagHeader
+                    tagData={{
+                        name: tagData.name,
+                        creator: tagData.creator,
+                        subscriberCount: tagData.subscriberCount,
+                        restaurantCount: tagData.restaurantCount,
+                        isSubscribed: tagData.isSubscribed,
+                    }}
+                    onSubscribe={handleSubscribe}
+                    onShare={handleShare}
+                />
 
                 {/* 본문: 지도와 음식점 목록 */}
                 <div className="flex flex-col md:flex-row gap-6" style={{ height: 'calc(100vh - 150px)' }}>
