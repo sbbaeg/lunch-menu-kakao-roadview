@@ -1,13 +1,14 @@
 "use client";
 //리펙토링한 컴포넌트
-import { FilterDialog, type FilterState } from "@/components/FilterDialog";
-import { FavoritesDialog } from "@/components/FavoritesDialog"; 
-import { BlacklistDialog } from "@/components/BlacklistDialog";
-import { TagManagementDialog } from "@/components/TagManagementDialog";
-import { TaggingDialog } from "@/components/TaggingDialog";
-import { ResultPanel } from "@/components/ResultPanel";
-import { MapPanel } from "@/components/MapPanel"; 
-import { MainControlPanel } from "@/components/MainControlPanel";
+import { FilterDialog, type FilterState } from "@/components/FilterDialog"; //필터
+import { FavoritesDialog } from "@/components/FavoritesDialog"; //즐겨찾기
+import { BlacklistDialog } from "@/components/BlacklistDialog"; //블랙리스트
+import { TagManagementDialog } from "@/components/TagManagementDialog"; //태그관리
+import { TaggingDialog } from "@/components/TaggingDialog"; //태그
+import { ResultPanel } from "@/components/ResultPanel"; //오른쪽 결과
+import { MapPanel } from "@/components/MapPanel";  //지도
+import { MainControlPanel } from "@/components/MainControlPanel"; //오른쪽 버튼
+import { RouletteDialog } from "@/components/RouletteDialog"; //룰렛
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -96,8 +97,6 @@ export default function Home() {
     const [restaurantList, setRestaurantList] = useState<Restaurant[]>([]);
     const [rouletteItems, setRouletteItems] = useState<Restaurant[]>([]);
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
-    const [mustSpin, setMustSpin] = useState(false);
-    const [prizeNumber, setPrizeNumber] = useState(0);
     const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedDistance, setSelectedDistance] = useState<string>("800");
@@ -345,44 +344,15 @@ export default function Home() {
         );
     };
 
-    const handleSpinClick = () => {
-        if (mustSpin) return;
-        const newPrizeNumber = Math.floor(Math.random() * rouletteItems.length);
-        setPrizeNumber(newPrizeNumber);
-        setMustSpin(true);
-    };
-
     const clearMapAndResults = () => {
         setSelectedItemId(undefined);
         setRestaurantList([]);
     };
-    
-    const rouletteData: RouletteOption[] = rouletteItems.map((item, index) => {
-        const colors = [
-            "#FF6B6B",
-            "#FFD966",
-            "#96F291",
-            "#66D9E8",
-            "#63A4FF",
-            "#f9a8d4",
-            "#d9a8f9",
-            "#f3a683",
-            "#a29bfe",
-            "#e17055",
-            "#00b894",
-            "#74b9ff",
-            "#ff7675",
-            "#fdcb6e",
-            "#55efc4",
-        ];
-        return {
-            option: item.placeName,
-            style: {
-                backgroundColor: colors[index % colors.length],
-                textColor: "#333333",
-            },
-        };
-    });
+
+    const handleRouletteResult = (winner: Restaurant) => {
+        setRestaurantList([winner]);
+        setSelectedItemId(winner.id);
+    };
 
     const handleApplyFilters = (newFilters: FilterState) => {
         setSelectedCategories(newFilters.categories);
@@ -957,41 +927,13 @@ export default function Home() {
                     onToggleBlacklist={toggleBlacklist}
                 />
 
-                <Dialog open={isRouletteOpen} onOpenChange={setIsRouletteOpen}>
-                    <DialogContent className="max-w-md p-6">
-                        <DialogHeader>
-                            <DialogTitle className="text-center text-2xl mb-4">
-                                룰렛을 돌려 오늘 점심을 선택하세요!
-                            </DialogTitle>
-                        </DialogHeader>
-                        <div className="flex flex-col justify-center items-center space-y-6">
-                            {rouletteData.length > 0 && (
-                                <Wheel
-                                    mustStartSpinning={mustSpin}
-                                    prizeNumber={prizeNumber}
-                                    data={rouletteData}
-                                    onStopSpinning={() => {
-                                        setMustSpin(false);
-                                        setTimeout(() => {
-                                            setIsRouletteOpen(false);
-                                            const winner = rouletteItems[prizeNumber];
-                                            setRestaurantList([winner]);
-                                            setSelectedItemId(winner.id);
-                                            // displayMarkers, updateViews 호출은 MapPanel이 알아서 처리하므로 삭제
-                                        }, 2000);
-                                    }}
-                                />
-                            )}
-                            <Button
-                                onClick={handleSpinClick}
-                                disabled={mustSpin}
-                                className="w-full max-w-[150px]"
-                            >
-                                돌리기
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <RouletteDialog
+                    isOpen={isRouletteOpen}
+                    onOpenChange={setIsRouletteOpen}
+                    items={rouletteItems}
+                    onResult={handleRouletteResult}
+                />
+
                 <TaggingDialog
                     restaurant={taggingRestaurant}
                     onOpenChange={() => setTaggingRestaurant(null)}
@@ -999,6 +941,7 @@ export default function Home() {
                     onToggleTagLink={handleToggleTagLink}
                     onCreateAndLinkTag={handleCreateTag}
                 />
+                
                 <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
