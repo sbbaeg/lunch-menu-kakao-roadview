@@ -906,6 +906,24 @@ export default function Home() {
 </div>
                 </Card>
 
+                <FilterDialog
+                    isOpen={isFilterOpen}
+                    onOpenChange={setIsFilterOpen}
+                    initialFilters={{
+                        categories: selectedCategories,
+                        distance: selectedDistance,
+                        sortOrder: sortOrder,
+                        resultCount: resultCount,
+                        minRating: minRating,
+                        searchInFavoritesOnly: searchInFavoritesOnly,
+                        openNowOnly: openNowOnly,
+                        includeUnknownHours: includeUnknownHours,
+                        tags: selectedTags,
+                    }}
+                    onApplyFilters={handleApplyFilters}
+                    userTags={userTags}
+                />
+
                 <TagManagementDialog
                     isOpen={isTagManagementOpen}
                     onOpenChange={setIsTagManagementOpen}
