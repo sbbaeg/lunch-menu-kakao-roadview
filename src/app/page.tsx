@@ -10,9 +10,11 @@ import { MapPanel } from "@/components/MapPanel";  //지도
 import { MainControlPanel } from "@/components/MainControlPanel"; //오른쪽 버튼
 import { RouletteDialog } from "@/components/RouletteDialog"; //룰렛
 
-//태그 기능 강화중 추가한 외부 컴포넌트
+//논리구조 리펙토링
 import { useFavorites } from "@/hooks/useFavorites";
 import { useBlacklist } from "@/hooks/useBlacklist";
+import { useUserTags } from "@/hooks/useUserTags";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -98,6 +100,9 @@ export default function Home() {
 
     const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
     const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
+    const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
+    const { subscribedTagIds } = useSubscriptions();
+
 
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
         undefined
@@ -135,35 +140,12 @@ export default function Home() {
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
 
     const [taggingRestaurant, setTaggingRestaurant] = useState<Restaurant | null>(null); // 현재 태그를 편집할 음식점 정보
-    const [userTags, setUserTags] = useState<Tag[]>([]);
-    const [subscribedTagIds, setSubscribedTagIds] = useState<number[]>([]);
 
     const [isHelpOpen, setIsHelpOpen] = useState(false);
 
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
     }, [favorites]);
-
-    useEffect(() => {
-        const loadUserTags = async () => {
-            if (status === 'authenticated') {
-                try {
-                    const response = await fetch('/api/tags');
-                    if (response.ok) {
-                        const data = await response.json();
-                        setUserTags(data);
-                    }
-                } catch (error) {
-                    console.error('사용자 태그 로딩 중 오류:', error);
-                }
-            } else {
-                // 로그아웃 시에는 태그 목록을 비웁니다.
-                setUserTags([]);
-            }
-        };
-
-        loadUserTags();
-    }, [status]); // 로그인 상태가 바뀔 때마다 실행됩니다.
 
     const [loading, setLoading] = useState(false);
     const [isMapReady, setIsMapReady] = useState(false);
@@ -180,25 +162,6 @@ export default function Home() {
         }
         }
     }, []); 
-
-    useEffect(() => {
-        const fetchSubscribedTagIds = async () => {
-            if (status === 'authenticated') {
-                try {
-                    const response = await fetch('/api/subscriptions');
-                    if (response.ok) {
-                        const data: { id: number }[] = await response.json();
-                        setSubscribedTagIds(data.map(tag => tag.id)); // ID만 추출하여 상태에 저장
-                    }
-                } catch (error) {
-                    console.error("구독 태그 ID 로딩 실패:", error);
-                }
-            } else {
-                setSubscribedTagIds([]); // 로그아웃 시 목록 비우기
-            }
-        };
-        fetchSubscribedTagIds();
-    }, [status]); // 로그인 상태가 변경될 때마다 실행
 
     const getNearbyRestaurants = async (
         latitude: number,
@@ -328,28 +291,6 @@ export default function Home() {
         }
     };
 
-    const handleCreateTagFromManager = async (name: string) => {
-        // isCreatingTag 상태는 이제 Dialog 컴포넌트가 자체 관리하므로 여기서 필요 없습니다.
-        try {
-            const createResponse = await fetch('/api/tags', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name }),
-            });
-
-            if (createResponse.ok) {
-                const newTag = await createResponse.json();
-                setUserTags(prevTags => [...prevTags, newTag]);
-                // newTagName 상태도 Dialog가 관리하므로 여기서 초기화할 필요가 없습니다.
-            } else {
-                setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
-            }
-        } catch (error) {
-            console.error("태그 생성 오류:", error);
-            setAlertInfo({ title: "오류", message: "태그 생성 중 오류가 발생했습니다." });
-        }
-    };
-
     const handleSearchInArea = async (center: { lat: number; lng: number }) => {
         setLoading(true);
         clearMapAndResults();
@@ -412,35 +353,27 @@ export default function Home() {
         if (!name.trim() || !taggingRestaurant) return;
 
         try {
-            const createResponse = await fetch('/api/tags', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name }),
-            });
+            // 1. 훅의 createTag 함수를 호출하고, 생성된 태그를 반환받습니다.
+            const newTag = await createTag(name);
 
-            if (!createResponse.ok) {
-                setAlertInfo({ title: "오류", message: "태그 생성에 실패했거나 이미 존재하는 태그입니다." });
-                return;
-            }
+            // 2. 태그 생성이 성공했을 때만(newTag가 null이 아닐 때) 연결 로직을 실행합니다.
+            if (newTag) {
+                const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tagId: newTag.id, restaurant: taggingRestaurant }),
+                });
 
-            const newTag = await createResponse.json();
-            setUserTags(prevTags => [...prevTags, newTag]);
-
-            const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tagId: newTag.id, restaurant: taggingRestaurant }),
-            });
-
-            if (linkResponse.ok) {
-                const updatedRestaurant = {
-                    ...taggingRestaurant,
-                    tags: [...(taggingRestaurant.tags || []), newTag],
-                };
-                handleTagsChange(updatedRestaurant);
-                setTaggingRestaurant(updatedRestaurant);
-            } else {
-                setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
+                if (linkResponse.ok) {
+                    const updatedRestaurant = {
+                        ...taggingRestaurant,
+                        tags: [...(taggingRestaurant.tags || []), newTag],
+                    };
+                    handleTagsChange(updatedRestaurant);
+                    setTaggingRestaurant(updatedRestaurant);
+                } else {
+                    setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
+                }
             }
         } catch (error) {
             console.error("태그 생성 및 연결 오류:", error);
@@ -498,40 +431,6 @@ export default function Home() {
             prevList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
         );
         updateFavoriteInList(updatedRestaurant);
-    };
-
-    const handleToggleTagPublic = async (tagId: number, currentIsPublic: boolean) => {
-        const originalTags = userTags;
-        setUserTags(prevTags => 
-            prevTags.map(tag => 
-                tag.id === tagId ? { ...tag, isPublic: !currentIsPublic } : tag
-            )
-        );
-        try {
-            const response = await fetch(`/api/tags/${tagId}/toggle-public`, { method: 'PATCH' });
-            if (!response.ok) {
-                setUserTags(originalTags);
-                setAlertInfo({ title: "오류", message: "상태 변경에 실패했습니다." });
-            }
-        } catch (error) {
-            setUserTags(originalTags);
-            setAlertInfo({ title: "오류", message: "상태 변경 중 오류가 발생했습니다." });
-        }
-    };
-
-    const handleDeleteTag = async (tagId: number) => {
-        const originalTags = userTags;
-        setUserTags(userTags.filter(tag => tag.id !== tagId));
-        try {
-            const response = await fetch(`/api/tags/${tagId}`, { method: 'DELETE' });
-            if (!response.ok) {
-                setUserTags(originalTags);
-                setAlertInfo({ title: "오류", message: "태그 삭제에 실패했습니다." });
-            }
-        } catch (error) {
-            setUserTags(originalTags);
-            setAlertInfo({ title: "오류", message: "태그 삭제 중 오류가 발생했습니다." });
-        }
     };
 
     return (
@@ -722,41 +621,41 @@ export default function Home() {
                     </Sheet>
                 </div>
             <Card className="w-full max-w-6xl p-6 md:p-8">
-<div className="flex flex-col md:flex-row gap-6">
-    <MapPanel
-        restaurants={restaurantList}
-        selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
-        userLocation={userLocation}
-        onSearchInArea={handleSearchInArea}
-        onAddressSearch={handleAddressSearch}
-        onMapReady={setIsMapReady}
-    />
+                <div className="flex flex-col md:flex-row gap-6">
+                    <MapPanel
+                        restaurants={restaurantList}
+                        selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
+                        userLocation={userLocation}
+                        onSearchInArea={handleSearchInArea}
+                        onAddressSearch={handleAddressSearch}
+                        onMapReady={setIsMapReady}
+                    />
 
-    {/* 오른쪽 제어 패널 */}
-    <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
-        <MainControlPanel
-            isSearchDisabled={loading || !isMapReady}
-            onSearchClick={() => recommendProcess(false)}
-            onRouletteClick={() => recommendProcess(true)}
-            onFilterClick={() => setIsFilterOpen(true)}
-        />
-        <ResultPanel
-            isLoading={loading}
-            restaurants={restaurantList}
-            blacklistExcludedCount={blacklistExcludedCount}
-            displayedSortOrder={displayedSortOrder}
-            selectedItemId={selectedItemId}
-            setSelectedItemId={setSelectedItemId}
-            session={session}
-            subscribedTagIds={subscribedTagIds}
-            isFavorite={isFavorite}
-            isBlacklisted={isBlacklisted}
-            onToggleFavorite={toggleFavorite}
-            onToggleBlacklist={toggleBlacklist}
-            onTagManagement={setTaggingRestaurant}
-        />
-    </div>
-</div>
+                    {/* 오른쪽 제어 패널 */}
+                    <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+                        <MainControlPanel
+                            isSearchDisabled={loading || !isMapReady}
+                            onSearchClick={() => recommendProcess(false)}
+                            onRouletteClick={() => recommendProcess(true)}
+                            onFilterClick={() => setIsFilterOpen(true)}
+                        />
+                        <ResultPanel
+                            isLoading={loading}
+                            restaurants={restaurantList}
+                            blacklistExcludedCount={blacklistExcludedCount}
+                            displayedSortOrder={displayedSortOrder}
+                            selectedItemId={selectedItemId}
+                            setSelectedItemId={setSelectedItemId}
+                            session={session}
+                            subscribedTagIds={subscribedTagIds}
+                            isFavorite={isFavorite}
+                            isBlacklisted={isBlacklisted}
+                            onToggleFavorite={toggleFavorite}
+                            onToggleBlacklist={toggleBlacklist}
+                            onTagManagement={setTaggingRestaurant}
+                        />
+                    </div>
+                </div>
                 </Card>
 
                 <FilterDialog
@@ -781,9 +680,9 @@ export default function Home() {
                     isOpen={isTagManagementOpen}
                     onOpenChange={setIsTagManagementOpen}
                     userTags={userTags}
-                    onCreateTag={handleCreateTagFromManager}
-                    onDeleteTag={handleDeleteTag}
-                    onToggleTagPublic={handleToggleTagPublic}
+                    onCreateTag={createTag}
+                    onDeleteTag={deleteTag}
+                    onToggleTagPublic={toggleTagPublic}
                 />
 
                 <FavoritesDialog

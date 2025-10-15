@@ -26,7 +26,7 @@ interface TagManagementDialogProps {
   userTags: Tag[];
   onDeleteTag: (tagId: number) => void;
   onToggleTagPublic: (tagId: number, isPublic: boolean) => void;
-  onCreateTag: (tagName: string) => Promise<void>; // 비동기 처리를 위해 Promise 반환 타입 명시
+  onCreateTag: (tagName: string) => Promise<Tag | null>;
 }
 
 export function TagManagementDialog({
