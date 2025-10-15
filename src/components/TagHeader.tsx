@@ -28,7 +28,11 @@ export function TagHeader({ tagData, onSubscribe, onShare }: TagHeaderProps) {
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-bold">{tagData.name}</h1>
+                    {/* ✅ 이 부분을 수정합니다. */}
+                    <div className="flex items-baseline gap-2">
+                        <h1 className="text-2xl font-bold">{tagData.name}</h1>
+                        <span className="text-sm text-muted-foreground">by {tagData.creator.name}</span>
+                    </div>
                     <p className="text-sm text-muted-foreground">
                         맛집 {tagData.restaurantCount}개 ・ 구독자 {tagData.subscriberCount}명
                     </p>
