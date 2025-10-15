@@ -42,7 +42,7 @@ export function ResultPanel({
 }: ResultPanelProps) {
   if (isLoading) {
     return (
-      <Card className="w-full md:w-2/5 flex flex-col md:justify-start space-y-4 flex-1 min-h-0">
+      <Card className="w-full flex flex-col flex-1 min-h-0">
         <div className="w-full flex-1 flex flex-col min-h-0">
           <div className="h-full flex flex-col justify-center p-2">
             {[...Array(3)].map((_, index) => (
@@ -62,7 +62,7 @@ export function ResultPanel({
 
   if (restaurants.length === 0) {
     return (
-      <Card className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+      <Card className="w-full flex flex-col flex-1 min-h-0">
         <div className="w-full flex-1 flex flex-col min-h-0">
           <div className="w-full h-full flex items-center justify-center">
             <p className="text-muted-foreground">검색 결과가 여기에 표시됩니다.</p>
@@ -73,7 +73,7 @@ export function ResultPanel({
   }
 
   return (
-    <Card className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+    <Card className="w-full flex flex-col flex-1 min-h-0">
       <div className="w-full flex-1 flex flex-col min-h-0">
         {blacklistExcludedCount > 0 && (
           <div className="p-2 mx-4 mt-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
