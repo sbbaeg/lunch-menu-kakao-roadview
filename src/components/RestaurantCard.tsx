@@ -21,11 +21,11 @@ interface RestaurantCardProps {
   restaurant: Restaurant;
   session: Session | null;
   subscribedTagIds: number[];
-  isFavorite: (id: string) => boolean;
-  isBlacklisted: (id: string) => boolean;
-  onToggleFavorite: (restaurant: Restaurant) => void;
-  onToggleBlacklist: (restaurant: Restaurant) => void;
-  onTagManagement: (restaurant: Restaurant) => void;
+  isFavorite?: (id: string) => boolean;
+  isBlacklisted?: (id: string) => boolean;
+  onToggleFavorite?: (restaurant: Restaurant) => void;
+  onToggleBlacklist?: (restaurant: Restaurant) => void;
+  onTagManagement?: (restaurant: Restaurant) => void;
 }
 
 export function RestaurantCard({
