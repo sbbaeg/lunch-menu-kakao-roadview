@@ -7,6 +7,7 @@ import { TagManagementDialog } from "@/components/TagManagementDialog";
 import { TaggingDialog } from "@/components/TaggingDialog";
 import { ResultPanel } from "@/components/ResultPanel";
 import { MapPanel } from "@/components/MapPanel"; 
+import { MainControlPanel } from "@/components/MainControlPanel";
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -882,11 +883,12 @@ export default function Home() {
 
     {/* 오른쪽 제어 패널 */}
     <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
-        <div className="w-full flex gap-2 justify-center">
-            <Button onClick={() => recommendProcess(false)} disabled={loading || !isMapReady} size="lg" className="px-6">검색</Button>
-            <Button onClick={() => recommendProcess(true)} disabled={loading || !isMapReady} size="lg" className="px-6">룰렛</Button>
-            <Button variant="outline" size="lg" onClick={() => setIsFilterOpen(true)}>필터</Button>
-        </div>
+        <MainControlPanel
+            isSearchDisabled={loading || !isMapReady}
+            onSearchClick={() => recommendProcess(false)}
+            onRouletteClick={() => recommendProcess(true)}
+            onFilterClick={() => setIsFilterOpen(true)}
+        />
         <ResultPanel
             isLoading={loading}
             restaurants={restaurantList}
