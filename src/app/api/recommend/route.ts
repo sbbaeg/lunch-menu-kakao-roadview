@@ -139,6 +139,14 @@ export async function GET(request: Request) {
             tagExcludedCount = countBeforeTagFilter - filteredCandidates.length;
         }
 
+        if (sort === 'accuracy') {
+            // 후보군을 무작위로 섞습니다. (Fisher-Yates shuffle)
+            for (let i = filteredCandidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [filteredCandidates[i], filteredCandidates[j]] = [filteredCandidates[j], filteredCandidates[i]];
+            }
+        }
+
         const finalResults: KakaoPlaceItem[] = [];
         for (const candidate of filteredCandidates) {
             if (finalResults.length >= size) break;
