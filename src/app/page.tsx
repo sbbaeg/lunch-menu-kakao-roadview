@@ -273,6 +273,8 @@ export default function Home() {
             apiUrl += `&fromFavorites=true`;
         }
 
+        apiUrl += `&_=${new Date().getTime()}`;
+
         const response = await fetch(apiUrl);
         const data: { documents?: RestaurantWithTags[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
 
@@ -941,7 +943,7 @@ export default function Home() {
                     onToggleTagLink={handleToggleTagLink}
                     onCreateAndLinkTag={handleCreateTag}
                 />
-                
+
                 <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>

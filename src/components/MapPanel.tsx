@@ -25,7 +25,7 @@ export function MapPanel({
   onAddressSearch,
   onMapReady,
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, displayMarkers, setCenter, drawDirections, displayRoadview } = useKakaoMap();
+  const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview } = useKakaoMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
@@ -39,7 +39,10 @@ export function MapPanel({
   }, [isMapReady, onMapReady]);
 
   useEffect(() => {
-    if (isMapReady) displayMarkers(restaurants);
+    if (isMapReady) {
+      clearOverlays();
+      displayMarkers(restaurants);
+    }
   }, [restaurants, isMapReady]);
 
   useEffect(() => {
