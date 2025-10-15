@@ -95,7 +95,10 @@ export async function GET(request: Request) {
                 for (let page = 1; page <= 3; page++) {
                     const response = await fetch(
                         `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(category.trim())}&y=${lat}&x=${lng}&radius=${radius}&sort=${kakaoSort}&size=15&page=${page}`,
-                        { headers: { Authorization: `KakaoAK ${process.env.KAKAO_REST_API_KEY}` } }
+                        {
+                            headers: { Authorization: `KakaoAK ${process.env.KAKAO_REST_API_KEY}` },
+                            cache: 'no-store' 
+                        }
                     );
                     const data: { documents?: KakaoPlaceItem[] } = await response.json();
                     if (data.documents) {

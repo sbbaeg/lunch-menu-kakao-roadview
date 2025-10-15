@@ -74,6 +74,12 @@ export function MapPanel({
     return () => clearTimeout(timerId);
   }, [isRoadviewVisible, mapInstance, roadviewInstance]);
 
+  useEffect(() => {
+    if (userLocation && !selectedRestaurant) { // 선택된 음식점이 없을 때만 (초기 검색 시)
+      setCenter(userLocation.lat, userLocation.lng);
+    }
+  }, [userLocation]);
+
   // ✅ '장소' 검색 로직이 추가된 handleSearch 함수
   const handleSearch = () => {
     if (!mapInstance || !searchAddress.trim()) return;
