@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
+import { fetchFullGoogleDetails } from '@/lib/googleMaps'; // ✅ Google 상세 정보 조회를 위해 import
 
 const prisma = new PrismaClient();
 
@@ -17,18 +18,43 @@ export async function GET(
             return NextResponse.json({ error: '잘못된 태그 ID입니다.' }, { status: 400 });
         }
 
+        // ✅ 태그 정보와 함께 구독자 수(_count)를 함께 조회합니다.
         const tag = await prisma.tag.findUnique({
             where: { id: tagId },
-            include: { user: { select: { id: true, name: true } } }
+            include: { 
+                user: { select: { id: true, name: true } },
+                _count: {
+                    select: { subscribers: true }
+                }
+            }
         });
 
-        if (!tag || !tag.isPublic) {
-            return NextResponse.json({ error: '존재하지 않거나 비공개된 태그입니다.' }, { status: 404 });
+        // 태그가 없거나, (로그인하지 않은 사용자가) 비공개 태그에 접근하려 할 때
+        if (!tag || (!tag.isPublic && tag.userId !== session?.user?.id)) {
+            return NextResponse.json({ error: '존재하지 않거나 접근 권한이 없는 태그입니다.' }, { status: 404 });
         }
 
-        const restaurants = await prisma.restaurant.findMany({
+        // 기본 맛집 목록 조회
+        const basicRestaurants = await prisma.restaurant.findMany({
             where: { taggedBy: { some: { tagId: tagId } } },
         });
+
+        // ✅ 각 맛집에 대해 Google 상세 정보를 포함한 전체 정보를 가져옵니다.
+        const enrichedRestaurants = await Promise.all(
+            basicRestaurants.map(restaurant => 
+                fetchFullGoogleDetails({
+                    id: restaurant.kakaoPlaceId,
+                    place_name: restaurant.placeName,
+                    category_name: restaurant.categoryName || '',
+                    road_address_name: restaurant.address || '',
+                    address_name: restaurant.address || '',
+                    x: String(restaurant.longitude),
+                    y: String(restaurant.latitude),
+                    place_url: `https://place.map.kakao.com/${restaurant.kakaoPlaceId}`,
+                    distance: '',
+                })
+            )
+        );
 
         let isSubscribed = false;
         if (session?.user?.id) {
@@ -42,8 +68,10 @@ export async function GET(
             id: tag.id,
             name: tag.name,
             creator: { id: tag.user.id, name: tag.user.name },
-            restaurants: restaurants,
+            restaurants: enrichedRestaurants, // ✅ 상세 정보가 포함된 맛집 목록으로 교체
             isSubscribed: isSubscribed,
+            subscriberCount: tag._count.subscribers, // ✅ 구독자 수 추가
+            restaurantCount: basicRestaurants.length, // ✅ 맛집 수 추가
         });
 
     } catch (error) {
@@ -52,10 +80,6 @@ export async function GET(
     }
 }
 
-
-/**
- * DELETE: 특정 태그를 삭제합니다. (기존 코드)
- */
 export async function DELETE(
     request: Request,
     { params }: { params: { id: string } }

@@ -10,6 +10,9 @@ import { MapPanel } from "@/components/MapPanel";  //지도
 import { MainControlPanel } from "@/components/MainControlPanel"; //오른쪽 버튼
 import { RouletteDialog } from "@/components/RouletteDialog"; //룰렛
 
+//태그 기능 강화중 추가한 외부 컴포넌트
+import { useFavorites } from "@/hooks/useFavorites";
+
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
 
@@ -91,6 +94,7 @@ const Wheel = dynamic(
 
 export default function Home() {
     const { data: session, status } = useSession();
+    const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
         undefined
     );
@@ -105,7 +109,6 @@ export default function Home() {
     >("accuracy");
     const [resultCount, setResultCount] = useState<number>(5);
     const [minRating, setMinRating] = useState<number>(4.0);
-    const [favorites, setFavorites] = useState<Restaurant[]>([]);
 
     const [displayedSortOrder, setDisplayedSortOrder] = useState<
         "accuracy" | "distance" | "rating"
@@ -183,38 +186,6 @@ export default function Home() {
 
     const [loading, setLoading] = useState(false);
     const [isMapReady, setIsMapReady] = useState(false);
-    
-    // 즐겨찾기 목록이 변경될 때마다 로컬 저장소에 저장     
-    useEffect(() => {
-        const loadFavorites = async () => {
-            // 로그인 상태일 때: 서버 API를 호출하여 DB에서 가져오기
-            if (status === 'authenticated') {
-                try {
-                    const response = await fetch('/api/favorites');
-                    if (response.ok) {
-                        const dbFavorites = await response.json();
-
-                        console.log("CCTV 1: 서버 응답 (raw)", dbFavorites);
-
-                        setFavorites(dbFavorites);
-                    }
-                } catch (error) {
-                    console.error('즐겨찾기 로딩 중 오류:', error);
-                }
-            } 
-            // 게스트 상태일 때: localStorage에서 가져오기
-            else if (status === 'unauthenticated') {
-                const localFavorites = localStorage.getItem('favoriteRestaurants');
-                if (localFavorites) {
-                    setFavorites(JSON.parse(localFavorites));
-                } else {
-                    setFavorites([]);
-                }
-            }
-        };
-
-        loadFavorites();
-    }, [status]);
 
     useEffect(() => {
         // 카카오톡 인앱 브라우저인지 확인
@@ -325,10 +296,7 @@ export default function Home() {
                         } 
                         // 일반 검색일 경우
                         else {
-                            const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
-                                ? restaurants
-                                : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
-                            setRestaurantList(finalRestaurants);
+                            setRestaurantList(restaurants);
                         }
                     }
                 } catch (error) {
@@ -376,39 +344,6 @@ export default function Home() {
             // 비로그인 상태이면 -> 로그인 안내창 띄우기
             setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
             // (추가 개선) alert 대신, 로그인 Dialog를 열어주는 것이 더 좋은 사용자 경험을 제공합니다.
-        }
-    };
-
-    const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
-
-    const toggleFavorite = async (place: Restaurant) => {
-        // 먼저 화면을 즉시 업데이트
-        const isCurrentlyFavorite = isFavorite(place.id);
-        const newFavorites = isCurrentlyFavorite
-            ? favorites.filter((fav) => fav.id !== place.id)
-            : [...favorites, place];
-        setFavorites(newFavorites);
-
-        // 로그인 상태이면 API를 호출하여 DB에 저장
-        if (status === 'authenticated') {
-            try {
-                const response = await fetch('/api/favorites', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(place),
-                });
-                if (!response.ok) {
-                    setFavorites(favorites); // 실패 시 화면 원상 복구
-                    setAlertInfo({ title: "오류", message: "즐겨찾기 처리에 실패했습니다." });
-                }
-            } catch (error) {
-                setFavorites(favorites); // 실패 시 화면 원상 복구
-                setAlertInfo({ title: "오류", message: "즐겨찾기 처리에 실패했습니다." });
-            }
-        } 
-        // 게스트 상태이면 localStorage에 저장
-        else {
-            localStorage.setItem('favoriteRestaurants', JSON.stringify(newFavorites));
         }
     };
 
@@ -616,9 +551,7 @@ export default function Home() {
         setRestaurantList(prevList => 
             prevList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
         );
-        setFavorites(prevList => 
-            prevList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
-        );
+        updateFavoriteInList(updatedRestaurant);
     };
 
     const handleToggleTagPublic = async (tagId: number, currentIsPublic: boolean) => {
