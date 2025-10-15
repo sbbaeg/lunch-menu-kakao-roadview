@@ -4,12 +4,6 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Share2, Star } from "lucide-react";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface TagHeaderProps {
     tagData: {
@@ -34,16 +28,7 @@ export function TagHeader({ tagData, onSubscribe, onShare }: TagHeaderProps) {
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                    <TooltipProvider delayDuration={100}>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <h1 className="text-2xl font-bold cursor-pointer">{tagData.name}</h1>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>by {tagData.creator.name}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    <h1 className="text-2xl font-bold">{tagData.name}</h1>
                     <p className="text-sm text-muted-foreground">
                         맛집 {tagData.restaurantCount}개 ・ 구독자 {tagData.subscriberCount}명
                     </p>

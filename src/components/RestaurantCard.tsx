@@ -8,7 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Restaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import Link from "next/link";
-import { RestaurantDetails } from "./RestaurantDetails"; // 방금 만든 컴포넌트 import
+import { RestaurantDetails } from "./RestaurantDetails";
+
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -25,7 +32,7 @@ export function RestaurantCard({
   restaurant,
   session,
   subscribedTagIds,
-  ...detailProps // RestaurantDetails에 전달할 나머지 props
+  ...detailProps
 }: RestaurantCardProps) {
   const details = restaurant.googleDetails;
 
@@ -51,22 +58,32 @@ export function RestaurantCard({
                 )}
               </div>
               
-              <div className="flex flex-wrap gap-1">
-                {restaurant.tags?.map(tag => {
-                  const isMyTag = tag.creatorId === session?.user?.id;
-                  const isSubscribedTag = subscribedTagIds.includes(tag.id);
-                  const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
-                  const icon = isSubscribedTag ? "★ " : "# ";
+              <TooltipProvider delayDuration={100}>
+                <div className="flex flex-wrap gap-1">
+                  {restaurant.tags?.map(tag => {
+                    const isMyTag = tag.creatorId === session?.user?.id;
+                    const isSubscribedTag = subscribedTagIds.includes(tag.id);
+                    const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
+                    const icon = isSubscribedTag ? "★ " : "# ";
 
-                  return (
-                    <Link key={tag.id} href={`/tags/${tag.id}`}>
-                      <Badge variant={badgeVariant} className="flex items-center">
-                        {icon}{tag.name}
-                      </Badge>
-                    </Link>
-                  );
-                })}
-              </div>
+                    return (
+                      <Tooltip key={tag.id}>
+                        <TooltipTrigger asChild>
+                          <Link href={`/tags/${tag.id}`} onClick={(e) => e.stopPropagation()}>
+                            <Badge variant={badgeVariant} className="flex items-center">
+                              {icon}{tag.name}
+                            </Badge>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>by {tag.creatorName || '알 수 없음'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </TooltipProvider>
+
             </CardContent>
           </div>
         </AccordionTrigger>
