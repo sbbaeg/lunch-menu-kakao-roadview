@@ -9,12 +9,14 @@ import { ResultPanel } from "@/components/ResultPanel"; //오른쪽 결과
 import { MapPanel } from "@/components/MapPanel";  //지도
 import { MainControlPanel } from "@/components/MainControlPanel"; //오른쪽 버튼
 import { RouletteDialog } from "@/components/RouletteDialog"; //룰렛
+import { SideMenuSheet } from "@/components/SideMenuSheet"; //사이드햄버거메뉴
 
 //논리구조 리펙토링
 import { useFavorites } from "@/hooks/useFavorites";
 import { useBlacklist } from "@/hooks/useBlacklist";
 import { useUserTags } from "@/hooks/useUserTags";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -437,188 +439,11 @@ export default function Home() {
         <main className="w-full min-h-screen">
             <Card className="w-full min-h-screen rounded-none border-none flex flex-col items-center p-4 md:p-8">
                 <div className="absolute top-4 right-4 z-50">
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button variant="outline" size="icon">
-                                <Menu className="h-5 w-5" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent>
-                            <SheetHeader>
-                                <SheetTitle>메뉴</SheetTitle>
-                            </SheetHeader>
-                            <div className="py-4">
-                                {/* 로딩 중일 때 보여줄 스켈레톤 UI */}
-                                {status === 'loading' && (
-                                    <div className="flex flex-col items-center gap-2 p-4">
-                                        <Skeleton className="h-20 w-20 rounded-full" />
-                                        <Skeleton className="h-6 w-24" />
-                                        <Skeleton className="h-10 w-full" />
-                                    </div>
-                                )}
-
-                                {/* 비로그인 상태일 때 보여줄 UI */}
-                                {status === 'unauthenticated' && (
-                                    <div className="flex flex-col items-center gap-2 p-4">
-                                        <Avatar className="h-20 w-20">
-                                            <AvatarFallback>👤</AvatarFallback>
-                                        </Avatar>
-                                        <p className="mt-2 font-semibold">게스트</p>
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                            <Button className="w-full mt-2">로그인</Button>
-                                            </DialogTrigger>
-                                            {/* 이전에 만들어둔 로그인 DialogContent를 여기에 붙여넣으면 됩니다. */}
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-center text-2xl font-bold">
-                                                        로그인
-                                                    </DialogTitle>
-                                                    <p className="text-sm text-muted-foreground pt-1 text-center">
-                                                        이전에 사용한 계정으로 빠르게 로그인하세요.
-                                                    </p>
-                                                </DialogHeader>
-                                                <div className="grid gap-4 py-4">
-                                                    {/* 1. 빠른 자동 로그인을 위한 버튼 */}
-                                                    <Button
-                                                        onClick={() => signIn('google')}
-                                                        variant="outline"
-                                                        className="w-full h-12 text-lg"
-                                                    >
-                                                        <Image src="/google_icon.png" alt="Google" width={24} height={24} className="mr-3" />
-                                                        Google로 빠른 로그인
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => signIn('kakao')}
-                                                        className="w-full h-12 text-lg bg-[#FEE500] text-black hover:bg-[#FEE500]/90"
-                                                    >
-                                                        <Image src="/kakao_icon.png" alt="Kakao" width={24} height={24} className="mr-3" />
-                                                        Kakao로 빠른 로그인
-                                                    </Button>
-                                                </div>
-                                                <div className="relative my-2">
-                                                    <div className="absolute inset-0 flex items-center">
-                                                        <span className="w-full border-t" />
-                                                    </div>
-                                                    <div className="relative flex justify-center text-xs uppercase">
-                                                        <span className="bg-background px-2 text-muted-foreground">
-                                                            또는
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="grid gap-4">
-                                                    {/* 2. 다른 계정 선택을 위한 버튼 */}
-                                                    <Button
-                                                        variant="secondary"
-                                                        onClick={() => signIn('google', undefined, { prompt: 'select_account' })}
-                                                        className="w-full h-12 text-lg"
-                                                    >
-                                                        다른 Google 계정 사용
-                                                    </Button>
-                                                    <Button
-                                                        variant="secondary"
-                                                        onClick={() => signIn('kakao', undefined, { prompt: 'select_account' })}
-                                                        className="w-full h-12 text-lg"
-                                                    >
-                                                        다른 Kakao 계정 사용
-                                                    </Button>
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </div>
-                                )}
-
-                                {/* 로그인 상태일 때 보여줄 UI */}
-                                {status === 'authenticated' && session?.user && (
-                                    <div className="flex flex-col items-center gap-2 p-4">
-                                        <Avatar className="h-20 w-20">
-                                            {/* 이제 session.user는 undefined가 아니라고 보장됩니다. */}
-                                            <AvatarImage src={session.user.image || ''} alt={session.user.name || ''} />
-                                            <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <p className="mt-2 font-semibold">{session.user.name}</p>
-                                        <Button variant="outline" onClick={() => signOut()} className="w-full mt-2">
-                                            로그아웃
-                                        </Button>
-                                    </div>
-                                )}
-                                <Separator className="my-4" />
-
-                                <div className="flex flex-col gap-2 px-4">
-                                    <Button 
-                                        variant="ghost" 
-                                        className="justify-start"
-                                        onClick={() => setIsFavoritesListOpen(true)}
-                                    >
-                                        즐겨찾기 목록
-                                    </Button>
-                                    <Button 
-                                        variant="ghost" 
-                                        className="justify-start"
-                                        onClick={handleBlacklistClick}
-                                    >
-                                        블랙리스트 관리
-                                    </Button>
-                                    <Button 
-                                        variant="ghost" 
-                                        className="justify-start"
-                                        onClick={() => setIsTagManagementOpen(true)}
-                                    >
-                                        태그 관리
-                                    </Button>
-
-                                    <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="ghost" className="justify-start">
-                                                도움말 및 정보
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>도움말 및 정보</DialogTitle>
-                                            </DialogHeader>
-                                            <div className="py-4 space-y-4 text-sm">
-                                                <div className="space-y-1">
-                                                    <h3 className="font-semibold">기본 기능</h3>
-                                                    <ul className="list-disc list-inside text-muted-foreground">
-                                                        <li><strong>검색/룰렛:</strong> 현재 위치나 지도 중앙을 기준으로 주변 음식점을 검색하거나 룰렛으로 추첨합니다.</li>
-                                                        <li><strong>필터:</strong> 카테고리, 거리, 별점 등 다양한 조건으로 검색 결과를 좁힐 수 있습니다.</li>
-                                                    </ul>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <h3 className="font-semibold">지도 기능</h3>
-                                                    <ul className="list-disc list-inside text-muted-foreground">
-                                                        <li><strong>지도 검색창:</strong> 특정 장소(예: 강남역)를 검색하여 지도를 해당 위치로 이동시킬 수 있습니다.</li>
-                                                        <li><strong>이 지역에서 재검색:</strong> 지도를 드래그하여 옮긴 후 버튼을 누르면, 현재 보이는 지도 중앙을 기준으로 다시 검색합니다.</li>
-                                                    </ul>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <h3 className="font-semibold">개인화 기능 (로그인)</h3>
-                                                    <ul className="list-disc list-inside text-muted-foreground">
-                                                        <li><strong>즐겨찾기:</strong> 마음에 드는 가게를 저장하고 필터에서 '즐겨찾기만' 선택해 볼 수 있습니다.</li>
-                                                        <li><strong>블랙리스트:</strong> 보고 싶지 않은 가게를 목록에서 숨깁니다.</li>
-                                                        <li><strong>태그:</strong> '#혼밥'처럼 나만의 태그를 만들고 가게에 붙여 관리할 수 있습니다.
-                                                            <ul className="list-['-_'] list-inside ml-4 mt-1 space-y-1">
-                                                                <li><Badge variant="outline" className="mr-1 cursor-default">#내 태그</Badge> : 내가 만든 태그</li>
-                                                                <li><Badge variant="default" className="mr-1 cursor-default">★ 구독 태그</Badge> : 내가 구독한 태그</li>
-                                                                <li><Badge variant="secondary" className="mr-1 cursor-default"># 공개 태그</Badge> : 다른 사람이 공개한 태그</li>
-                                                            </ul>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
-                                <Separator className="my-4" />
-
-                                <div className="px-4 flex items-center justify-between">
-                                    <span className="text-sm font-medium">테마 변경</span>
-                                    <ThemeToggle />
-                                </div>
-                            </div>
-                        </SheetContent>
-                    </Sheet>
+                    <SideMenuSheet
+                        onShowFavorites={() => setIsFavoritesListOpen(true)}
+                        onShowBlacklist={handleBlacklistClick}
+                        onShowTagManagement={() => setIsTagManagementOpen(true)}
+                    />
                 </div>
             <Card className="w-full max-w-6xl p-6 md:p-8">
                 <div className="flex flex-col md:flex-row gap-6">
