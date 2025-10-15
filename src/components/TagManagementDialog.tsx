@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // ✅ useRef, useEffect 추가
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,7 @@ interface TagManagementDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   userTags: Tag[];
   onDeleteTag: (tagId: number) => void;
-  onToggleTagPublic: (tagId: number, isPublic: boolean) => void;
+  onToggleTagPublic: (tagId: number) => void;
   onCreateTag: (tagName: string) => Promise<Tag | null>;
 }
 
@@ -42,7 +42,28 @@ export function TagManagementDialog({
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [subscribedTags, setSubscribedTags] = useState<SubscribedTag[]>([]);
 
-  // 구독 태그 목록 fetching 로직을 이 컴포넌트 내부로 가져옵니다.
+  // ✅ 2개의 스크롤 영역을 위한 ref 생성
+  const myTagsScrollRef = useRef<HTMLDivElement>(null);
+  const subscribedTagsScrollRef = useRef<HTMLDivElement>(null);
+
+  // ✅ 마우스 휠 문제 해결을 위한 useEffect 추가
+  useEffect(() => {
+    const refs = [myTagsScrollRef.current, subscribedTagsScrollRef.current];
+    const handleWheel = (event: WheelEvent) => {
+        event.stopPropagation();
+    };
+
+    refs.forEach(ref => {
+        if (ref) ref.addEventListener('wheel', handleWheel);
+    });
+
+    return () => {
+        refs.forEach(ref => {
+            if (ref) ref.removeEventListener('wheel', handleWheel);
+        });
+    };
+  }, [isOpen]); // 다이얼로그가 열릴 때마다 리스너 설정
+
   useEffect(() => {
     const fetchSubscribedTags = async () => {
       if (status === 'authenticated') {
@@ -65,11 +86,16 @@ export function TagManagementDialog({
   const handleCreateTag = async () => {
     if (!newTagName.trim() || isCreatingTag) return;
     setIsCreatingTag(true);
-    await onCreateTag(newTagName); // 부모의 생성 함수 호출
+    await onCreateTag(newTagName);
     setNewTagName("");
     setIsCreatingTag(false);
   };
+  
+  const filteredTags = newTagName.trim() === ''
+    ? userTags
+    : userTags.filter(tag => tag.name.toLowerCase().includes(newTagName.trim().toLowerCase()));
 
+  // ✅ 구독 취소 함수를 컴포넌트 내부로 이동
   const handleUnsubscribe = async (tagId: number) => {
     const originalSubscriptions = subscribedTags;
     setSubscribedTags(prev => prev.filter(tag => tag.id !== tagId));
@@ -77,25 +103,23 @@ export function TagManagementDialog({
         const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
         if (!response.ok) {
             setSubscribedTags(originalSubscriptions);
-            // alert('구독 취소에 실패했습니다.'); // alert 대신 다른 UI 처리 권장
+            alert("구독 취소에 실패했습니다.");
         }
     } catch (error) {
         setSubscribedTags(originalSubscriptions);
-        // alert('구독 취소 중 오류가 발생했습니다.');
+        alert("구독 취소 중 오류가 발생했습니다.");
     }
   };
-  
-  const filteredTags = newTagName.trim() === ''
-    ? userTags
-    : userTags.filter(tag => tag.name.toLowerCase().includes(newTagName.trim().toLowerCase()));
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      {/* ✅ 다이얼로그 크기 고정 및 flex 레이아웃 적용 */}
+      <DialogContent className="max-w-lg flex flex-col h-[85vh]">
         <DialogHeader>
           <DialogTitle className="text-xl">태그 관리</DialogTitle>
         </DialogHeader>
-        <div className="py-2">
+        {/* ✅ 전체 콘텐츠 영역을 flex로 구성 */}
+        <div className="py-2 flex flex-col flex-1 min-h-0">
           <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
           <div className="flex w-full items-center space-x-2 mb-4 p-1">
             <Input
@@ -110,7 +134,8 @@ export function TagManagementDialog({
               {isCreatingTag ? '추가 중...' : '추가'}
             </Button>
           </div>
-          <div className="h-[200px] overflow-y-auto pr-4">
+          {/* ✅ '내 태그' 목록 스크롤 영역 */}
+          <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={myTagsScrollRef}>
             {userTags.length > 0 ? (
               <ul className="space-y-2">
                 {filteredTags.map(tag => (
@@ -118,7 +143,7 @@ export function TagManagementDialog({
                     <span>{tag.name}</span>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center space-x-2">
-                        <Switch id={`public-switch-${tag.id}`} checked={tag.isPublic} onCheckedChange={() => onToggleTagPublic(tag.id, tag.isPublic)} />
+                        <Switch id={`public-switch-${tag.id}`} checked={tag.isPublic} onCheckedChange={() => onToggleTagPublic(tag.id)} />
                         <Label htmlFor={`public-switch-${tag.id}`} className="text-xs text-muted-foreground">{tag.isPublic ? '공개' : '비공개'}</Label>
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => onDeleteTag(tag.id)}>삭제</Button>
@@ -136,7 +161,8 @@ export function TagManagementDialog({
           <Separator className="my-4" />
 
           <h4 className="font-semibold mb-2 px-1">구독 중인 태그</h4>
-          <div className="h-[200px] overflow-y-auto pr-4">
+          {/* ✅ '구독 태그' 목록 스크롤 영역 */}
+          <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={subscribedTagsScrollRef}>
             {subscribedTags.length > 0 ? (
               <ul className="space-y-2">
                 {subscribedTags.map(tag => (
@@ -150,17 +176,6 @@ export function TagManagementDialog({
                 ))}
               </ul>
             ) : <p className="text-center text-muted-foreground pt-8">구독 중인 태그가 없습니다.</p>}
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <div className="space-y-3 px-1">
-            <h4 className="font-semibold">태그 종류 안내</h4>
-            <div className="flex items-center gap-x-4 gap-y-2 flex-wrap">
-              <div className="flex items-center gap-2"><Badge variant="default">★ 구독 태그</Badge><span className="text-xs text-muted-foreground">구독한 태그</span></div>
-              <div className="flex items-center gap-2"><Badge variant="outline"># 내가 만든 태그</Badge><span className="text-xs text-muted-foreground">내가 만든 태그</span></div>
-              <div className="flex items-center gap-2"><Badge variant="secondary"># 일반 태그</Badge><span className="text-xs text-muted-foreground">다른 사용자의 공개 태그</span></div>
-            </div>
           </div>
         </div>
       </DialogContent>
