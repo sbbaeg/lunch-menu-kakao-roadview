@@ -1,13 +1,12 @@
 "use client";
 //리펙토링한 컴포넌트
 import { FilterDialog, type FilterState } from "@/components/FilterDialog";
-import { RestaurantCard } from "@/components/RestaurantCard";
 import { FavoritesDialog } from "@/components/FavoritesDialog"; 
 import { BlacklistDialog } from "@/components/BlacklistDialog";
 import { TagManagementDialog } from "@/components/TagManagementDialog";
 import { TaggingDialog } from "@/components/TaggingDialog";
 import { ResultPanel } from "@/components/ResultPanel";
-
+import { MapPanel } from "@/components/MapPanel"; 
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -74,128 +73,12 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
 
-// page.tsx 파일 상단, import 구문 바로 아래
-
-// eslint-disable-next-line @typescript-eslint/no-namespace
-declare namespace kakao.maps {
-    class LatLng {
-        constructor(lat: number, lng: number);
-        getLat(): number;
-        getLng(): number;
-    }
-
-    class Map {
-        constructor(container: HTMLElement, options: { center: LatLng; level: number });
-        setCenter(latlng: LatLng): void;
-        relayout(): void;
-        getCenter(): LatLng;
-    }
-
-    class Marker {
-        constructor(options: { position: LatLng });
-        setMap(map: Map | null): void;
-    }
-
-    class Polyline {
-        constructor(options: {
-            path: LatLng[];
-            strokeColor: string;
-            strokeWeight: number;
-            strokeOpacity: number;
-        });
-        setMap(map: Map | null): void;
-    }
-    
-    class Roadview {
-        constructor(container: HTMLElement);
-        setPanoId(panoId: number, position: LatLng): void;
-        relayout(): void;
-    }
-
-    class RoadviewClient {
-        constructor();
-        getNearestPanoId(
-            position: LatLng,
-            radius: number,
-            callback: (panoId: number | null) => void
-        ): void;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-namespace
-    namespace event {
-        function addListener(target: kakao.maps.Map | kakao.maps.Marker, type: string, handler: () => void): void;
-        function removeListener(target: kakao.maps.Map | kakao.maps.Marker, type: string, handler: () => void): void;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-namespace
-    namespace services {
-        interface PlacesSearchResultItem {
-            id: string;
-            y: string;
-            x: string;
-            place_name: string;
-            road_address_name: string;
-            category_name: string;
-            place_url: string;
-            distance: string;
-        }
-
-        type PlacesSearchResult = PlacesSearchResultItem[];
-
-        interface Pagination {
-            totalCount: number;
-            hasNextPage: boolean;
-            hasPrevPage: boolean;
-            current: number;
-            nextPage(): void;
-            prevPage(): void;
-            gotoPage(page: number): void;
-        }
-
-        class Places {
-            constructor();
-            keywordSearch(
-                keyword: string,
-                callback: (
-                    data: PlacesSearchResult,
-                    status: Status,
-                    pagination: Pagination
-                ) => void,
-                options?: {
-                    location?: LatLng;
-                    radius?: number;
-                }
-            ): void;
-        }
-
-        enum Status {
-            OK = 'OK',
-            ZERO_RESULT = 'ZERO_RESULT',
-            ERROR = 'ERROR',
-        }
-    }
-}
-
-declare global {
-    interface Window {
-        kakao: {
-            maps: {
-                load: (callback: () => void) => void;
-                services: typeof kakao.maps.services;
-                event: typeof kakao.maps.event;
-            } & typeof kakao.maps;
-        };
-    }
-}
 
 // page.tsx 컴포넌트 내부에서만 사용하는 타입들
 interface RouletteOption {
     option: string;
     style?: { backgroundColor?: string; textColor?: string };
 }
-interface DirectionPoint {
-    lat: number;
-    lng: number;
-}
-
 
 const Wheel = dynamic(
     () => import("react-custom-roulette").then((mod) => mod.Wheel),
@@ -203,26 +86,6 @@ const Wheel = dynamic(
 );
 
 // --- 타입 정의 끝 ---
-
-const CATEGORIES = [
-    "한식",
-    "중식",
-    "일식",
-    "양식",
-    "아시아음식",
-    "분식",
-    "패스트푸드",
-    "치킨",
-    "피자",
-    "뷔페",
-    "카페",
-    "술집",
-];
-const DISTANCES = [
-    { value: "500", label: "가까워요", walkTime: "약 5분" },
-    { value: "800", label: "적당해요", walkTime: "약 10분" },
-    { value: "2000", label: "조금 멀어요", walkTime: "약 25분" },
-];
 
 export default function Home() {
     const { data: session, status } = useSession();
@@ -234,7 +97,7 @@ export default function Home() {
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [mustSpin, setMustSpin] = useState(false);
     const [prizeNumber, setPrizeNumber] = useState(0);
-    const [userLocation, setUserLocation] = useState<kakao.maps.LatLng | null>(null);
+    const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedDistance, setSelectedDistance] = useState<string>("800");
     const [sortOrder, setSortOrder] = useState<
@@ -318,21 +181,9 @@ export default function Home() {
         loadUserTags();
     }, [status]); // 로그인 상태가 바뀔 때마다 실행됩니다.
 
-    const [searchAddress, setSearchAddress] = useState("");
-    const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
-    const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
-
-    const mapContainer = useRef<HTMLDivElement | null>(null);
-    const mapInstance = useRef<kakao.maps.Map | null>(null); // 변경
-    const polylineInstance = useRef<kakao.maps.Polyline | null>(null); // 변경
     const [loading, setLoading] = useState(false);
     const [isMapReady, setIsMapReady] = useState(false);
-    const [isRoadviewVisible, setRoadviewVisible] = useState(false);
-    const roadviewContainer = useRef<HTMLDivElement | null>(null);
-    const roadviewInstance = useRef<kakao.maps.Roadview | null>(null); // 변경
-    const roadviewClient = useRef<kakao.maps.RoadviewClient | null>(null); // 변경
-    const markers = useRef<kakao.maps.Marker[]>([]); // 변경
-
+    
     // 즐겨찾기 목록이 변경될 때마다 로컬 저장소에 저장     
     useEffect(() => {
         const loadFavorites = async () => {
@@ -364,98 +215,7 @@ export default function Home() {
 
         loadFavorites();
     }, [status]);
-
-    useEffect(() => {
-        if (selectedItemId && userLocation) {
-            const selectedPlace = restaurantList.find(
-                (place) => place.id === selectedItemId
-            );
-            if (selectedPlace) {
-                updateViews(selectedPlace, userLocation);
-            }
-        }
-    }, [selectedItemId, restaurantList, userLocation]);
-
-    useEffect(() => {
-        const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
-        if (!KAKAO_JS_KEY) return;
-        const scriptId = "kakao-maps-script";
-        if (document.getElementById(scriptId)) {
-            if (window.kakao && window.kakao.maps) setIsMapReady(true);
-            return;
-        }
-        const script = document.createElement("script");
-        script.id = scriptId;
-        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services`;
-        script.async = true;
-        document.head.appendChild(script);
-        script.onload = () => {
-            window.kakao.maps.load(() => setIsMapReady(true));
-        };
-    }, []);
-
-    useEffect(() => {
-        if (isMapReady && mapContainer.current && !mapInstance.current) {
-            const mapOption = {
-                center: new window.kakao.maps.LatLng(36.3504, 127.3845),
-                level: 3,
-            };
-            mapInstance.current = new window.kakao.maps.Map(
-                mapContainer.current,
-                mapOption
-            );
-            if (roadviewContainer.current) {
-                roadviewInstance.current = new window.kakao.maps.Roadview(
-                    roadviewContainer.current
-                );
-                roadviewClient.current = new window.kakao.maps.RoadviewClient();
-            }
-        }
-    }, [isMapReady]);
-
-    useEffect(() => {
-        const timerId = setTimeout(() => {
-            if (isRoadviewVisible) {
-                roadviewInstance.current?.relayout();
-            }
-            mapInstance.current?.relayout();
-        }, 10);
-        return () => clearTimeout(timerId);
-    }, [isRoadviewVisible]);
-
-    useEffect(() => {
-        if (mapInstance.current) {
-            setTimeout(() => {
-                mapInstance.current?.relayout();
-            }, 100);
-        }
-    }, [selectedItemId]);
-
-    useEffect(() => {
-        if (sortOrder === "accuracy") setResultCount(5);
-        }, [sortOrder]);
-
-        useEffect(() => {
-        if (!isMapReady || !mapInstance.current) return;
-
-        const showButton = () => {
-            // GPS 기반 첫 검색 시에는 버튼이 나타나지 않도록 함
-            if (userLocation) {
-                setShowSearchAreaButton(true);
-            }
-        };
-
-        // 'idle' 이벤트는 지도의 드래그, 줌 등 모든 움직임이 끝났을 때 발생
-        window.kakao.maps.event.addListener(mapInstance.current, 'idle', showButton);
-
-        // 컴포넌트가 언마운트될 때 이벤트 리스너를 제거
-        return () => {
-            if (mapInstance.current) {
-                window.kakao.maps.event.removeListener(mapInstance.current, 'idle', showButton);
-            }
-        };
-    }, [isMapReady, userLocation]); // userLocation이 설정된 후에 리스너가 동작하도록 의존성 추가
-
+    
     useEffect(() => {
         // 카카오톡 인앱 브라우저인지 확인
         if (/KAKAOTALK/i.test(navigator.userAgent)) {
@@ -531,24 +291,6 @@ export default function Home() {
         return formattedRestaurants;
     };
 
-    const displayMarkers = (places: Restaurant[]) => {
-        if (!mapInstance.current) return;
-        markers.current.forEach((marker) => marker.setMap(null));
-        markers.current = [];
-        const newMarkers = places.map((place) => {
-            const placePosition = new window.kakao.maps.LatLng(
-                Number(place.y),
-                Number(place.x)
-            );
-            const marker = new window.kakao.maps.Marker({
-                position: placePosition,
-            });
-            marker.setMap(mapInstance.current);
-            return marker;
-        });
-        markers.current = newMarkers;
-    };
-
     const recommendProcess = (isRoulette: boolean) => {
     setLoading(true);
     setDisplayedSortOrder(sortOrder);
@@ -617,17 +359,14 @@ export default function Home() {
     } else if (searchInFavoritesOnly) {
         // '즐겨찾기에서만 검색'이고 룰렛이 아닌 경우
         setRestaurantList(results);
-        displayMarkers(results);
         setLoading(false); // 로딩 종료
     } else {
         // '일반 검색'이고 룰렛이 아닌 경우 (기존 로직)
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
-                const currentLocation = new window.kakao.maps.LatLng(latitude, longitude);
-                setUserLocation(currentLocation);
-                if (mapInstance.current) mapInstance.current.setCenter(currentLocation);
-                
+                setUserLocation({ lat: latitude, lng: longitude });
+
                 try {
                     const restaurants = await getNearbyRestaurants(latitude, longitude);
                     if (restaurants.length === 0) {
@@ -637,7 +376,6 @@ export default function Home() {
                             ? restaurants
                             : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
                         setRestaurantList(finalRestaurants);
-                        displayMarkers(finalRestaurants);
                     }
                 } catch (error) {
                     console.error("Error:", error);
@@ -665,67 +403,8 @@ export default function Home() {
     const clearMapAndResults = () => {
         setSelectedItemId(undefined);
         setRestaurantList([]);
-        setRoadviewVisible(false);
-        markers.current.forEach((marker) => {
-            marker.setMap(null);
-        });
-        markers.current = [];
-        if (polylineInstance.current) polylineInstance.current.setMap(null);
     };
-
-    const updateViews = async (
-        place: Restaurant,
-        currentLoc: kakao.maps.LatLng
-    ) => {
-        const placePosition = new window.kakao.maps.LatLng(
-            Number(place.y),
-            Number(place.x)
-        );
-        if (mapInstance.current) {
-            mapInstance.current.setCenter(placePosition);
-            if (polylineInstance.current) polylineInstance.current.setMap(null);
-            try {
-                const response = await fetch(
-                    `/api/directions?origin=${currentLoc.getLng()},${currentLoc.getLat()}&destination=${
-                        place.x
-                    },${place.y}`
-                );
-                const data = await response.json();
-                if (data.path && data.path.length > 0) {
-                    const linePath = data.path.map(
-                        (point: DirectionPoint) =>
-                            new window.kakao.maps.LatLng(point.lat, point.lng)
-                    );
-                    polylineInstance.current = new window.kakao.maps.Polyline({
-                        path: linePath,
-                        strokeWeight: 6,
-                        strokeColor: "#007BFF",
-                        strokeOpacity: 0.8,
-                    });
-                    polylineInstance.current.setMap(mapInstance.current);
-                }
-            } catch (error) {
-                console.error("Directions fetch failed:", error);
-            }
-        }
-        if (roadviewClient.current && roadviewInstance.current) {
-            roadviewClient.current.getNearestPanoId(
-                placePosition,
-                50,
-                (panoId) => {
-                    if (panoId) {
-                        roadviewInstance.current?.setPanoId(
-                            panoId,
-                            placePosition
-                        );
-                    } else {
-                        console.log("해당 위치에 로드뷰 정보가 없습니다.");
-                    }
-                }
-            );
-        }
-    };
-
+    
     const rouletteData: RouletteOption[] = rouletteItems.map((item, index) => {
         const colors = [
             "#FF6B6B",
@@ -752,18 +431,6 @@ export default function Home() {
             },
         };
     });
-
-    const getSortTitle = (sort: "accuracy" | "distance" | "rating"): string => {
-        switch (sort) {
-            case "distance":
-                return "가까운 순 결과";
-            case "rating":
-                return "별점 순 결과";
-            case "accuracy":
-            default:
-                return "랜덤 추천 결과";
-        }
-    };
 
     const handleApplyFilters = (newFilters: FilterState) => {
         setSelectedCategories(newFilters.categories);
@@ -876,6 +543,64 @@ export default function Home() {
             console.error("태그 생성 오류:", error);
             setAlertInfo({ title: "오류", message: "태그 생성 중 오류가 발생했습니다." });
         }
+    };
+
+    const handleSearchInArea = async (center: { lat: number; lng: number }) => {
+        setLoading(true);
+        clearMapAndResults();
+        try {
+            const restaurants = await getNearbyRestaurants(center.lat, center.lng);
+            if (restaurants.length === 0) {
+                setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
+            } else {
+                const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
+                    ? restaurants
+                    : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
+                setRestaurantList(finalRestaurants);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            setAlertInfo({ title: "오류", message: "음식점을 불러오는 데 실패했습니다." });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddressSearch = async (keyword: string, mode: 'place' | 'food', center: { lat: number; lng: number }) => {
+        if (!keyword.trim()) {
+            setAlertInfo({ title: "알림", message: "검색어를 입력해주세요." });
+            return;
+        }
+
+        if (mode === 'food') {
+            setLoading(true);
+            clearMapAndResults();
+            setDisplayedSortOrder(sortOrder);
+
+            try {
+                let apiUrl = `/api/recommend?lat=${center.lat}&lng=${center.lng}&query=${encodeURIComponent(keyword)}&radius=${selectedDistance}&sort=${sortOrder}&size=${resultCount}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`;
+                if (selectedTags.length > 0) {
+                    apiUrl += `&tags=${selectedTags.join(',')}`;
+                }
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                const formattedRestaurants = (data.documents || []).map((place: RestaurantWithTags) => ({
+                    // ... (이전 getNearbyRestaurants와 동일한 포맷팅 로직)
+                    id: place.id, kakaoPlaceId: place.id, placeName: place.place_name, categoryName: place.category_name, address: place.road_address_name, x: place.x, y: place.y, placeUrl: place.place_url, distance: place.distance, googleDetails: place.googleDetails, tags: place.tags
+                }));
+                setRestaurantList(formattedRestaurants);
+                setBlacklistExcludedCount(data.blacklistExcludedCount || 0);
+
+                if (formattedRestaurants.length === 0) {
+                    setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
+                }
+            } catch (error) {
+                setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });
+            } finally {
+                setLoading(false);
+            }
+        }
+        // 'place' 모드는 MapPanel이 자체적으로 처리하므로 page.tsx에서는 로직이 필요 없습니다.
     };
 
     const handleCreateTag = async (name: string) => {
@@ -1003,122 +728,6 @@ export default function Home() {
         } catch (error) {
             setUserTags(originalTags);
             setAlertInfo({ title: "오류", message: "태그 삭제 중 오류가 발생했습니다." });
-        }
-    };
-    
-    const handleAddressSearch = async () => {
-        if (!searchAddress.trim()) {
-            setAlertInfo({ title: "알림", message: "검색어를 입력해주세요." });
-            return;
-        }
-
-        if (!window.kakao || !window.kakao.maps.services || !mapInstance.current) {
-            setAlertInfo({ title: "오류", message: "지도 서비스가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요." });
-            return;
-        }
-
-        if (searchMode === 'place') {
-            const ps = new window.kakao.maps.services.Places();
-            ps.keywordSearch(searchAddress, (data, status) => {
-                if (status === window.kakao.maps.services.Status.OK) {
-                    const firstResult = data[0];
-                    const moveLatLon = new window.kakao.maps.LatLng(Number(firstResult.y), Number(firstResult.x));
-                    mapInstance.current?.setCenter(moveLatLon);
-                } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
-                    setAlertInfo({ title: "알림", message: "검색 결과가 존재하지 않습니다." });
-                } else {
-                    setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });
-                }
-            });
-        } else { // '음식점' 검색 모드
-            setLoading(true);
-            clearMapAndResults();
-            setDisplayedSortOrder(sortOrder);
-
-            const center = mapInstance.current.getCenter();
-            const lat = center.getLat();
-            const lng = center.getLng();
-
-            const query = searchAddress;
-            const radius = selectedDistance;
-            const sort = sortOrder;
-            const size = resultCount;
-
-            let apiUrl = `/api/recommend?lat=${lat}&lng=${lng}&query=${encodeURIComponent(query)}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`;
-
-            if (selectedTags.length > 0) {
-                apiUrl += `&tags=${selectedTags.join(',')}`;
-            }
-
-            try {
-                const response = await fetch(apiUrl);
-                const data: { documents?: RestaurantWithTags[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
-
-                const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
-                    id: place.id,
-                    kakaoPlaceId: place.id,
-                    placeName: place.place_name,
-                    categoryName: place.category_name,
-                    address: place.road_address_name,
-                    x: place.x,
-                    y: place.y,
-                    placeUrl: place.place_url,
-                    distance: place.distance,
-                    googleDetails: place.googleDetails,
-                    tags: place.tags,
-                }));
-
-                setBlacklistExcludedCount(data.blacklistExcludedCount || 0);
-                
-                if (formattedRestaurants.length === 0) {
-                    setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
-                } else {
-                    const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
-                        ? formattedRestaurants
-                        : [...formattedRestaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
-                    setRestaurantList(finalRestaurants);
-                    displayMarkers(finalRestaurants);
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                setAlertInfo({ title: "오류", message: "음식점을 불러오는 데 실패했습니다." });
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
-
-    const handleSearchInArea = async () => {
-        if (!mapInstance.current) return;
-
-        setShowSearchAreaButton(false); // 버튼을 누르면 다시 숨김
-        setLoading(true);
-        clearMapAndResults();
-
-        const center = mapInstance.current.getCenter();
-        const lat = center.getLat();
-        const lng = center.getLng();
-
-        try {
-            const restaurants = await getNearbyRestaurants(lat, lng);
-            if (restaurants.length === 0) {
-                setAlertInfo({ title: "오류", message: "주변에 조건에 맞는 음식점을 찾지 못했습니다." });
-            } else {
-                // 'accuracy'(랜덤) 정렬일 경우 결과를 섞어줌
-                const finalRestaurants =
-                    sortOrder === "distance" || sortOrder === "rating"
-                        ? restaurants
-                        : [...restaurants]
-                                .sort(() => 0.5 - Math.random())
-                                .slice(0, resultCount);
-                setRestaurantList(finalRestaurants);
-                displayMarkers(finalRestaurants);
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            setAlertInfo({ title: "오류", message: "음식점을 불러오는데 실패했습니다." });
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -1311,88 +920,13 @@ export default function Home() {
                 </div>
             <Card className="w-full max-w-6xl p-6 md:p-8">
 <div className="flex flex-col md:flex-row gap-6">
-    {/* 왼쪽 지도 패널 */}
-    <div className="w-full h-[800px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
-        
-        {/* 주소 검색 영역 */}
-        <div className="p-4 border-b bg-muted/40">
-            <div className="flex items-center gap-2">
-                <Input
-                    type="text"
-                    placeholder={searchMode === 'place' ? "예: 강남역 (장소로 이동)" : "예: 마라탕 (주변 음식점 검색)"}
-                    value={searchAddress}
-                    onChange={(e) => setSearchAddress(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddressSearch()}
-                    className="bg-background text-base h-11 flex-grow"
-                />
-                <div className="flex items-center justify-center space-x-2 shrink-0">
-                    <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'place' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>장소</Label>
-                    <Switch
-                        id="search-mode"
-                        checked={searchMode === 'food'}
-                        onCheckedChange={(checked) => setSearchMode(checked ? 'food' : 'place')}
-                    />
-                    <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'food' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>음식점</Label>
-                </div>
-                <Button
-                    size="lg"
-                    className="h-11 shrink-0"
-                    onClick={handleAddressSearch}
-                >
-                    검색
-                </Button>
-            </div>
-        </div>
-
-        {/* 지도와 '재검색' 버튼을 감싸는 컨테이너 */}
-        <div className="relative flex-1">
-            {/* '이 지역에서 재검색' 버튼 */}
-            {showSearchAreaButton && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 shadow-md">
-                    <Button
-                        size="lg"
-                        onClick={handleSearchInArea}
-                        className="bg-white text-black rounded-full hover:bg-gray-200 shadow-lg"
-                    >
-                        이 지역에서 재검색
-                    </Button>
-                </div>
-            )}
-
-            {/* 실제 지도가 렌더링되는 곳 */}
-            <div
-                ref={mapContainer}
-                className={`w-full h-full transition-opacity duration-300 ${
-                    isRoadviewVisible
-                        ? "opacity-0 invisible"
-                        : "opacity-100 visible"
-                }`}
-            ></div>
-            
-            {/* 로드뷰, API 정보 버튼 등 나머지 오버레이 UI */}
-            <div
-                ref={roadviewContainer}
-                className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${
-                    isRoadviewVisible
-                        ? "opacity-100 visible"
-                        : "opacity-0 invisible"
-                }`}
-            ></div>
-            {selectedItemId && (
-                <Button
-                    onClick={() =>
-                        setRoadviewVisible((prev) => !prev)
-                    }
-                    variant="secondary"
-                    className="absolute top-3 right-3 z-10 shadow-lg"
-                >
-                    {isRoadviewVisible
-                        ? "지도 보기"
-                        : "로드뷰 보기"}
-                </Button>
-            )}
-        </div>
-    </div>
+    <MapPanel
+        restaurants={restaurantList}
+        selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
+        userLocation={userLocation}
+        onSearchInArea={handleSearchInArea}
+        onAddressSearch={handleAddressSearch}
+    />
 
     {/* 오른쪽 제어 패널 */}
     <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
@@ -1468,17 +1002,10 @@ export default function Home() {
                                         setMustSpin(false);
                                         setTimeout(() => {
                                             setIsRouletteOpen(false);
-                                            if (userLocation) {
-                                                const winner =
-                                                    rouletteItems[prizeNumber];
-                                                setRestaurantList([winner]);
-                                                displayMarkers([winner]);
-                                                setSelectedItemId(winner.id);
-                                                updateViews(
-                                                    winner,
-                                                    userLocation
-                                                );
-                                            }
+                                            const winner = rouletteItems[prizeNumber];
+                                            setRestaurantList([winner]);
+                                            setSelectedItemId(winner.id);
+                                            // displayMarkers, updateViews 호출은 MapPanel이 알아서 처리하므로 삭제
                                         }, 2000);
                                     }}
                                 />
