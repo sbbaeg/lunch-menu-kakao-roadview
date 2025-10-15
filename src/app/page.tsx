@@ -12,6 +12,7 @@ import { RouletteDialog } from "@/components/RouletteDialog"; //룰렛
 
 //태그 기능 강화중 추가한 외부 컴포넌트
 import { useFavorites } from "@/hooks/useFavorites";
+import { useBlacklist } from "@/hooks/useBlacklist";
 
 
 import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
@@ -94,7 +95,10 @@ const Wheel = dynamic(
 
 export default function Home() {
     const { data: session, status } = useSession();
+
     const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
+    const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
+
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
         undefined
     );
@@ -125,7 +129,6 @@ export default function Home() {
 
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
 
-    const [blacklist, setBlacklist] = useState<Restaurant[]>([]); // 관리 목록을 담을 상태
     const [isBlacklistOpen, setIsBlacklistOpen] = useState(false); // 관리 팝업을 여닫을 상태
     const [isTagManagementOpen, setIsTagManagementOpen] = useState(false); // 태그 관리 팝업 상태
     const [blacklistExcludedCount, setBlacklistExcludedCount] = useState<number>(0);
@@ -140,28 +143,6 @@ export default function Home() {
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
     }, [favorites]);
-
-    // ✅ 로그인 상태가 변경될 때 블랙리스트를 불러오는 useEffect를 추가합니다.
-    useEffect(() => {
-        const loadBlacklist = async () => {
-            if (status === 'authenticated') {
-                try {
-                    const response = await fetch('/api/blacklist');
-                    if (response.ok) {
-                        const data = await response.json();
-                        setBlacklist(data);
-                    }
-                } catch (error) {
-                    console.error('블랙리스트 로딩 중 오류:', error);
-                }
-            } else {
-                // 로그아웃 시 블랙리스트 비우기
-                setBlacklist([]);
-            }
-        };
-
-        loadBlacklist();
-    }, [status]);
 
     useEffect(() => {
         const loadUserTags = async () => {
@@ -344,41 +325,6 @@ export default function Home() {
             // 비로그인 상태이면 -> 로그인 안내창 띄우기
             setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
             // (추가 개선) alert 대신, 로그인 Dialog를 열어주는 것이 더 좋은 사용자 경험을 제공합니다.
-        }
-    };
-
-    const isBlacklisted = (placeId: string) => blacklist.some((item) => item.id === placeId);
-
-    const toggleBlacklist = async (place: Restaurant) => {
-        if (status !== 'authenticated') {
-            setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
-            return;
-        }
-
-        // 낙관적 업데이트: API 응답을 기다리지 않고 UI를 먼저 변경
-        const isCurrentlyBlacklisted = isBlacklisted(place.id);
-        const newBlacklist = isCurrentlyBlacklisted
-            ? blacklist.filter((item) => item.id !== place.id)
-            : [...blacklist, place];
-        setBlacklist(newBlacklist);
-
-        // API 호출
-        try {
-            const response = await fetch('/api/blacklist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(place),
-            });
-
-            if (!response.ok) {
-                // 실패 시 UI를 원래대로 복구
-                setBlacklist(blacklist); 
-                setAlertInfo({ title: "오류", message: "블랙리스트 처리에 실패했습니다." });
-            }
-        } catch (error) {
-            // 실패 시 UI를 원래대로 복구
-            setBlacklist(blacklist);
-            setAlertInfo({ title: "오류", message: "블랙리스트 처리에 실패했습니다." });
         }
     };
 
