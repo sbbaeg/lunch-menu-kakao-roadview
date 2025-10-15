@@ -269,6 +269,10 @@ export default function Home() {
             apiUrl += `&tags=${selectedTags.join(',')}`;
         }
 
+        if (searchInFavoritesOnly) {
+            apiUrl += `&fromFavorites=true`;
+        }
+
         const response = await fetch(apiUrl);
         const data: { documents?: RestaurantWithTags[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
 
@@ -292,76 +296,11 @@ export default function Home() {
     };
 
     const recommendProcess = (isRoulette: boolean) => {
-    setLoading(true);
-    setDisplayedSortOrder(sortOrder);
-    setBlacklistExcludedCount(0); // 상태 초기화
-    clearMapAndResults();
+        setLoading(true);
+        setDisplayedSortOrder(sortOrder);
+        setBlacklistExcludedCount(0);
+        clearMapAndResults();
 
-    // ✅ results 변수를 함수 최상단에 선언합니다.
-    let results: Restaurant[] = [];
-
-    if (searchInFavoritesOnly) {
-        if (favorites.length === 0) {
-            setAlertInfo({ title: "알림", message: "즐겨찾기에 등록된 음식점이 없습니다." });
-            setLoading(false);
-            return;
-        }
-
-        // ✅ let/const 키워드를 삭제하고, 이미 선언된 results에 값을 할당합니다.
-        results = favorites.filter(place => {
-            const categoryMatch = selectedCategories.length === 0 || 
-                                  selectedCategories.some(cat => place.categoryName.includes(cat));
-            const ratingMatch = (place.googleDetails?.rating || 0) >= minRating;
-            return categoryMatch && ratingMatch;
-        });
-
-        if (results.length === 0) {
-            setAlertInfo({ title: "알림", message: "즐겨찾기 중에서 현재 필터 조건에 맞는 음식점이 없습니다." });
-            setLoading(false);
-            return;
-        }
-
-        // ✅ 정렬 및 개수 제한 로직을 이 안으로 이동시킵니다.
-        let sortedResults: Restaurant[] = [];
-        if (sortOrder === 'rating') {
-            sortedResults = [...results].sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
-        } else {
-            sortedResults = [...results].sort(() => 0.5 - Math.random());
-        }
-        
-        // isRoulette이 아닐 경우에만 개수 제한을 적용합니다.
-        if (!isRoulette) {
-            results = sortedResults.slice(0, resultCount);
-        } else {
-            results = sortedResults;
-        }
-
-    }
-
-    if (isRoulette) {
-        if (searchInFavoritesOnly && results.length < 2) {
-             setAlertInfo({ title: "알림", message: "룰렛을 돌리기에 즐겨찾기 수가 부족합니다. (2개 이상 필요)" });
-             setLoading(false);
-             return;
-        }
-        
-        // 일반 검색의 경우, results가 비어있으므로 restaurantList에서 가져옵니다.
-        const rouletteCandidates = searchInFavoritesOnly ? results : restaurantList.slice(0, resultCount);
-
-        if (rouletteCandidates.length < 2) {
-            setAlertInfo({ title: "알림", message: `주변에 추첨할 음식점이 ${resultCount}개 미만입니다.` });
-            setLoading(false);
-            return;
-        }
-        setRouletteItems(rouletteCandidates);
-        setIsRouletteOpen(true);
-        setLoading(false); // 로딩 종료
-    } else if (searchInFavoritesOnly) {
-        // '즐겨찾기에서만 검색'이고 룰렛이 아닌 경우
-        setRestaurantList(results);
-        setLoading(false); // 로딩 종료
-    } else {
-        // '일반 검색'이고 룰렛이 아닌 경우 (기존 로직)
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
@@ -369,13 +308,26 @@ export default function Home() {
 
                 try {
                     const restaurants = await getNearbyRestaurants(latitude, longitude);
+
                     if (restaurants.length === 0) {
                         setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
                     } else {
-                        const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
-                            ? restaurants
-                            : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
-                        setRestaurantList(finalRestaurants);
+                        // 룰렛일 경우
+                        if (isRoulette) {
+                            if (restaurants.length < 2) {
+                                setAlertInfo({ title: "알림", message: `주변에 추첨할 음식점이 ${resultCount}개 미만입니다.` });
+                            } else {
+                                setRouletteItems(restaurants);
+                                setIsRouletteOpen(true);
+                            }
+                        } 
+                        // 일반 검색일 경우
+                        else {
+                            const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
+                                ? restaurants
+                                : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
+                            setRestaurantList(finalRestaurants);
+                        }
                     }
                 } catch (error) {
                     console.error("Error:", error);
@@ -390,8 +342,7 @@ export default function Home() {
                 setLoading(false);
             }
         );
-    }
-};
+    };
 
     const handleSpinClick = () => {
         if (mustSpin) return;

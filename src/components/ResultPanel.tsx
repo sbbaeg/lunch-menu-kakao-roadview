@@ -42,7 +42,7 @@ export function ResultPanel({
 }: ResultPanelProps) {
   if (isLoading) {
     return (
-      <Card className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+      <Card className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 flex-1 min-h-0">
         <div className="w-full flex-1 flex flex-col min-h-0">
           <div className="h-full flex flex-col justify-center p-2">
             {[...Array(3)].map((_, index) => (

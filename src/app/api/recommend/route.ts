@@ -1,3 +1,5 @@
+// api/recommend/route.ts (수정)
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
@@ -9,8 +11,23 @@ export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
 
+// 두 지점 간의 거리를 미터(m) 단위로 계산하는 함수
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371e3; // 지구 반지름 (미터)
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
 export async function GET(request: Request) {
-    console.log("Checking KAKAO_REST_API_KEY:", process.env.KAKAO_REST_API_KEY);
     const { searchParams } = new URL(request.url);
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
@@ -21,6 +38,7 @@ export async function GET(request: Request) {
     const minRating = Number(searchParams.get('minRating') || '0');
     const openNow = searchParams.get('openNow') === 'true';
     const includeUnknown = searchParams.get('includeUnknown') === 'true';
+    const fromFavorites = searchParams.get('fromFavorites') === 'true';
     const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
 
     const tagsParam = searchParams.get('tags');
@@ -31,140 +49,139 @@ export async function GET(request: Request) {
     }
 
     const session = await getServerSession(authOptions);
-
+    let blacklistIds: string[] = [];
+    if (session?.user?.id) {
+        const blacklistEntries = await prisma.blacklist.findMany({
+            where: { userId: session.user.id },
+            select: { restaurant: { select: { kakaoPlaceId: true } } },
+        });
+        blacklistIds = blacklistEntries.map(entry => entry.restaurant.kakaoPlaceId);
+    }
+    
     try {
-        let blacklistIds: string[] = [];
-        if (session?.user?.id) {
-            const blacklistEntries = await prisma.blacklist.findMany({
+        let candidates: KakaoPlaceItem[] = [];
+
+        if (fromFavorites && session?.user?.id) {
+            // ✅ 1. DB에서 사용자의 모든 즐겨찾기 목록을 좌표 정보와 함께 가져옵니다.
+            const favoriteRestaurants = await prisma.favorite.findMany({
                 where: { userId: session.user.id },
-                select: { restaurant: { select: { kakaoPlaceId: true } } },
+                include: { restaurant: true },
             });
-            blacklistIds = blacklistEntries.map(entry => entry.restaurant.kakaoPlaceId);
+            
+            // ✅ 2. 현재 위치와의 거리를 계산하여 반경 내에 있는 즐겨찾기만 필터링합니다.
+            candidates = favoriteRestaurants
+                .map(({ restaurant }) => ({
+                    ...restaurant,
+                    calculatedDistance: calculateDistance(Number(lat), Number(lng), restaurant.latitude!, restaurant.longitude!),
+                }))
+                .filter(restaurant => restaurant.calculatedDistance <= Number(radius))
+                .map(restaurant => ({
+                    id: restaurant.kakaoPlaceId,
+                    place_name: restaurant.placeName,
+                    category_name: restaurant.categoryName || '',
+                    road_address_name: restaurant.address || '',
+                    address_name: restaurant.address || '',
+                    x: String(restaurant.longitude),
+                    y: String(restaurant.latitude),
+                    place_url: `https://place.map.kakao.com/${restaurant.kakaoPlaceId}`,
+                    distance: String(Math.round(restaurant.calculatedDistance)),
+                }));
+
+        } else {
+            // ✅ 기존의 일반 검색 로직 (카카오 API 호출)
+            const categories = query.split(',');
+            const fetchedIds = new Set<string>();
+            for (const category of categories) {
+                for (let page = 1; page <= 3; page++) {
+                    const response = await fetch(
+                        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(category.trim())}&y=${lat}&x=${lng}&radius=${radius}&sort=${kakaoSort}&size=15&page=${page}`,
+                        { headers: { Authorization: `KakaoAK ${process.env.KAKAO_REST_API_KEY}` } }
+                    );
+                    const data: { documents?: KakaoPlaceItem[] } = await response.json();
+                    if (data.documents) {
+                        for (const place of data.documents) {
+                            if (!fetchedIds.has(place.id)) {
+                                fetchedIds.add(place.id);
+                                candidates.push(place);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
+        // ✅ 이하 로직은 '즐겨찾기 검색'과 '일반 검색'의 공통 로직입니다.
+        let tagExcludedCount = 0;
         let taggedRestaurantIds: Set<string> | null = null;
         if (tagIds.length > 0) {
             const taggedRestaurants = await prisma.restaurant.findMany({
                 where: {
-                    taggedBy: {
-                        some: {
-                            tagId: { in: tagIds }
-                        }
-                    }
+                    taggedBy: { some: { tagId: { in: tagIds } } },
+                    // 즐겨찾기 검색 시, 후보군이 이미 즐겨찾기 목록이므로 추가 필터링 불필요.
+                    // 일반 검색 시에는 모든 레스토랑을 대상으로 검색.
+                    ...(fromFavorites ? { kakaoPlaceId: { in: candidates.map(c => c.id) } } : {})
                 },
                 select: { kakaoPlaceId: true }
             });
             taggedRestaurantIds = new Set(taggedRestaurants.map(r => r.kakaoPlaceId));
         }
 
-        const categories = query.split(',');
-        const fetchedIds = new Set<string>();
-        const candidates: KakaoPlaceItem[] = [];
-        
-        // 1. 카카오 API로 비용이 저렴한 기본 후보군을 넉넉히 확보 (최대 45개)
-        for (const category of categories) {
-            for (let page = 1; page <= 3; page++) {
-                const response = await fetch(
-                    `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(category.trim())}&y=${lat}&x=${lng}&radius=${radius}&sort=${kakaoSort}&size=15&page=${page}`,
-                    { headers: { Authorization: `KakaoAK ${process.env.KAKAO_REST_API_KEY}` } }
-                );
-                const data: { documents?: KakaoPlaceItem[] } = await response.json();
-                if (data.documents) {
-                    for (const place of data.documents) {
-                        if (!fetchedIds.has(place.id)) {
-                            fetchedIds.add(place.id);
-                            candidates.push(place);
-                        }
-                    }
-                }
-            }
-        }
-
-        // 2. 블랙리스트와 '태그 필터'를 함께 적용합니다.
-        let filteredCandidates = [...candidates]; 
-
-        // 블랙리스트 제외 수 계산
-        const countBeforeBlacklist = filteredCandidates.length;
-        filteredCandidates = filteredCandidates.filter(place => !blacklistIds.includes(place.id));
+        const countBeforeBlacklist = candidates.length;
+        let filteredCandidates = candidates.filter(place => !blacklistIds.includes(place.id));
         const blacklistExcludedCount = countBeforeBlacklist - filteredCandidates.length;
 
-        // 태그 필터 제외 수 계산 (태그 필터가 있을 경우에만)
-        let tagExcludedCount = 0;
         if (taggedRestaurantIds) {
             const countBeforeTagFilter = filteredCandidates.length;
             filteredCandidates = filteredCandidates.filter(place => taggedRestaurantIds!.has(place.id));
             tagExcludedCount = countBeforeTagFilter - filteredCandidates.length;
         }
 
-        // 3. 후보군을 하나씩 검증하며 최종 결과를 채워나감
         const finalResults: KakaoPlaceItem[] = [];
         for (const candidate of filteredCandidates) {
             if (finalResults.length >= size) break;
 
             const enriched = await fetchFullGoogleDetails(candidate);
-
             const ratingMatch = (enriched.googleDetails?.rating || 0) >= minRating;
-            if (!ratingMatch) continue; // 별점 필터 탈락 시 다음 후보로
+            if (!ratingMatch) continue;
 
             if (openNow) {
                 const hours = enriched.googleDetails?.opening_hours;
                 const isOpen = hours?.open_now === true || (includeUnknown && hours === undefined);
-                if (!isOpen) continue; // 영업 중 필터 탈락 시 다음 후보로
+                if (!isOpen) continue;
             }
-
-            // 모든 필터 통과 시 최종 결과에 추가
             finalResults.push(enriched);
         }
 
         let sortedResults: KakaoPlaceItem[] = [];
         if (sort === 'rating') {
             sortedResults = finalResults.sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
+        } else if (sort === 'distance' && fromFavorites) {
+            // 즐겨찾기 검색 시 거리순 정렬은 계산된 거리를 사용
+            sortedResults = finalResults.sort((a, b) => Number(a.distance) - Number(b.distance));
         } else {
             sortedResults = finalResults;
         }
 
+        // ... 이하 태그 정보 결합 및 최종 반환 로직은 기존과 동일 ...
         const resultIds = sortedResults.map(r => r.id);
-
         const restaurantsWithTags = await prisma.restaurant.findMany({
             where: { kakaoPlaceId: { in: resultIds } },
             include: {
                 taggedBy: {
                     include: {
-                        tag: { // ✅ 태그 정보와 함께
-                            include: {
-                                user: { // ✅ 생성한 유저 정보도 포함
-                                    select: { // 단, id와 name만 선택적으로 가져옴
-                                        id: true,
-                                        name: true,
-                                    }
-                                }
-                            }
-                        }
+                        tag: { include: { user: { select: { id: true, name: true, } } } }
                     }
                 }
             }
         });
-
         const finalDocuments: RestaurantWithTags[] = sortedResults.map(result => {
             const match = restaurantsWithTags.find(r => r.kakaoPlaceId === result.id);
             return {
                 ...result,
-                // ✅ 프론트엔드가 사용하기 편하도록 데이터를 재구성하여 반환
-                tags: match ? match.taggedBy.map(t => ({
-                    id: t.tag.id,
-                    name: t.tag.name,
-                    isPublic: t.tag.isPublic,
-                    creatorId: t.tag.user.id,
-                    creatorName: t.tag.user.name,
-                })) : []
+                tags: match ? match.taggedBy.map(t => ({ id: t.tag.id, name: t.tag.name, isPublic: t.tag.isPublic, creatorId: t.tag.user.id, creatorName: t.tag.user.name, })) : []
             };
         });
-
-        return NextResponse.json({
-            documents: finalDocuments,
-            blacklistExcludedCount: blacklistExcludedCount,
-            tagExcludedCount: tagExcludedCount
-        });
+        return NextResponse.json({ documents: finalDocuments, blacklistExcludedCount, tagExcludedCount });
 
     } catch (error) {
         console.error('[API Route Error]:', error);
