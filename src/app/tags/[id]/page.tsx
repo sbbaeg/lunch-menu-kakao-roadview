@@ -12,6 +12,9 @@ import { ArrowLeft, Share2, Star } from 'lucide-react';
 import { Restaurant } from '@/lib/types'; // 메인 페이지의 타입을 재사용합니다.
 import { TagHeader } from "@/components/TagHeader";
 import { MapPanel } from '@/components/MapPanel';
+import { Accordion } from '@/components/ui/accordion';
+import { RestaurantCard } from '@/components/RestaurantCard';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 
 // 페이지에서 사용할 데이터의 타입을 정의합니다.
 interface TagProfileData {
@@ -33,6 +36,8 @@ export default function TagProfilePage() {
     const { data: session, status } = useSession();
     const [tagData, setTagData] = useState<TagProfileData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedItemId, setSelectedItemId] = useState<string | undefined>();
+    const { subscribedTagIds } = useSubscriptions();
 
     const tagId = params.id;
 
@@ -134,19 +139,24 @@ export default function TagProfilePage() {
 
                     {/* 오른쪽 음식점 목록 패널 */}
                     <div className="w-full md:w-1/3 h-full overflow-y-auto">
-                        <div className="space-y-2">
+                        <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
+                            value={selectedItemId}
+                            onValueChange={setSelectedItemId}
+                        >
                             {tagData.restaurants.map(place => (
-                                <Card key={place.id} className="shadow-sm">
-                                    <CardHeader>
-                                        <CardTitle className="text-md">{place.placeName}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="text-sm text-muted-foreground">
-                                        <p>{place.categoryName?.split('>').pop()?.trim()}</p>
-                                        <p>{place.address}</p>
-                                    </CardContent>
-                                </Card>
+                                <RestaurantCard
+                                    key={place.id}
+                                    restaurant={place}
+                                    session={session}
+                                    subscribedTagIds={subscribedTagIds}
+                                    // 이 페이지에서는 즐겨찾기/블랙리스트 기능이 필요 없으므로
+                                    // 관련 props를 전달하지 않습니다.
+                                />
                             ))}
-                        </div>
+                        </Accordion>
                     </div>
                 </div>
             </div>

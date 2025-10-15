@@ -82,6 +82,13 @@ export function MapPanel({
     }
   }, [userLocation]);
 
+  useEffect(() => {
+    if (isMapReady && restaurants.length > 0 && !userLocation && !selectedRestaurant) {
+      const firstRestaurant = restaurants[0];
+      setCenter(Number(firstRestaurant.y), Number(firstRestaurant.x));
+    }
+  }, [isMapReady, restaurants, userLocation, selectedRestaurant]);
+
   // ✅ '장소' 검색 로직이 추가된 handleSearch 함수
   const handleSearch = () => {
     if (!mapInstance || !searchAddress.trim()) return;

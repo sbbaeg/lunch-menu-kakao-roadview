@@ -51,11 +51,11 @@ const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null
 interface RestaurantDetailsProps {
   restaurant: Restaurant;
   session: Session | null;
-  isFavorite: (id: string) => boolean;
-  isBlacklisted: (id: string) => boolean;
-  onToggleFavorite: (restaurant: Restaurant) => void;
-  onToggleBlacklist: (restaurant: Restaurant) => void;
-  onTagManagement: (restaurant: Restaurant) => void;
+  isFavorite?: (id: string) => boolean;
+  isBlacklisted?: (id: string) => boolean;
+  onToggleFavorite?: (restaurant: Restaurant) => void;
+  onToggleBlacklist?: (restaurant: Restaurant) => void;
+  onTagManagement?: (restaurant: Restaurant) => void;
 }
 
 export function RestaurantDetails({
@@ -79,7 +79,8 @@ export function RestaurantDetails({
           {restaurant.categoryName?.split('>').pop()?.trim()}
         </p>
         <div className="flex items-center">
-          {session?.user && (
+          {/* ✅ onTagManagement prop이 있을 때만 버튼들을 렌더링합니다. */}
+          {session?.user && onTagManagement && onToggleBlacklist && onToggleFavorite && isBlacklisted && isFavorite && (
             <>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onTagManagement(restaurant)} title="태그 관리">
                 <Tags className="text-gray-400" />
@@ -87,11 +88,11 @@ export function RestaurantDetails({
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleBlacklist(restaurant)} title={isBlacklisted(restaurant.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}>
                 <EyeOff className={isBlacklisted(restaurant.id) ? "fill-foreground" : "text-gray-400"} />
               </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleFavorite(restaurant)} title={isFavorite(restaurant.id) ? "즐겨찾기에서 제거" : "즐겨찾기에 추가"}>
+                <Heart className={isFavorite(restaurant.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
+              </Button>
             </>
           )}
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleFavorite(restaurant)} title={isFavorite(restaurant.id) ? "즐겨찾기에서 제거" : "즐겨찾기에 추가"}>
-            <Heart className={isFavorite(restaurant.id) ? "fill-red-500 text-red-500" : "text-gray-400"} />
-          </Button>
         </div>
       </div>
 
