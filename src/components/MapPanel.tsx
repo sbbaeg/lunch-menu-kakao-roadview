@@ -55,13 +55,21 @@ export function MapPanel({
     }
   }, [selectedRestaurant, userLocation]);
 
+  // 지도 드래그 시 '이 지역에서 재검색' 버튼 표시 로직
   useEffect(() => {
     if (!mapInstance) return;
-    const listener = window.kakao.maps.event.addListener(mapInstance, 'dragend', () => {
+
+    // 이벤트 핸들러 함수를 외부에서 정의
+    const handleDragEnd = () => {
       setShowSearchAreaButton(true);
-    });
+    };
+
+    // 정의된 함수를 리스너에 등록
+    window.kakao.maps.event.addListener(mapInstance, 'dragend', handleDragEnd);
+
+    // cleanup 함수에서는 등록했던 바로 그 함수를 해제
     return () => {
-      window.kakao.maps.event.removeListener(mapInstance, 'dragend', listener);
+      window.kakao.maps.event.removeListener(mapInstance, 'dragend', handleDragEnd);
     };
   }, [mapInstance]);
 
