@@ -1,3 +1,5 @@
+// components/MapPanel.tsx (수정)
+
 import { useState, useEffect } from 'react';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 import { Restaurant } from '@/lib/types';
@@ -12,6 +14,7 @@ interface MapPanelProps {
   userLocation: { lat: number; lng: number } | null;
   onSearchInArea: (center: { lat: number; lng: number }) => void;
   onAddressSearch: (keyword: string, mode: 'place' | 'food', center: { lat: number; lng: number }) => void;
+  onMapReady?: (isReady: boolean) => void;
 }
 
 export function MapPanel({
@@ -20,23 +23,20 @@ export function MapPanel({
   userLocation,
   onSearchInArea,
   onAddressSearch,
+  onMapReady,
 }: MapPanelProps) {
-  const { 
-    isMapReady, 
-    mapContainerRef, 
-    mapInstance, 
-    roadviewContainerRef, 
-    roadviewInstance, 
-    displayMarkers, 
-    setCenter, 
-    drawDirections, 
-    displayRoadview 
-  } = useKakaoMap();
+  const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, displayMarkers, setCenter, drawDirections, displayRoadview } = useKakaoMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
   const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
   const [isRoadviewVisible, setRoadviewVisible] = useState(false);
+
+  useEffect(() => {
+    if (onMapReady) {
+      onMapReady(isMapReady);
+    }
+  }, [isMapReady, onMapReady]);
 
   useEffect(() => {
     if (isMapReady) displayMarkers(restaurants);
@@ -50,24 +50,14 @@ export function MapPanel({
             { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) }
         );
         displayRoadview({ lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
-        // 선택된 음식점이 바뀌면 일단 지도를 보여주도록 설정
         setRoadviewVisible(false);
     }
   }, [selectedRestaurant, userLocation]);
 
-  // 지도 드래그 시 '이 지역에서 재검색' 버튼 표시 로직
   useEffect(() => {
     if (!mapInstance) return;
-
-    // 이벤트 핸들러 함수를 외부에서 정의
-    const handleDragEnd = () => {
-      setShowSearchAreaButton(true);
-    };
-
-    // 정의된 함수를 리스너에 등록
+    const handleDragEnd = () => { setShowSearchAreaButton(true); };
     window.kakao.maps.event.addListener(mapInstance, 'dragend', handleDragEnd);
-
-    // cleanup 함수에서는 등록했던 바로 그 함수를 해제
     return () => {
       window.kakao.maps.event.removeListener(mapInstance, 'dragend', handleDragEnd);
     };
@@ -75,19 +65,30 @@ export function MapPanel({
 
   useEffect(() => {
     const timerId = setTimeout(() => {
-        if (isRoadviewVisible) {
-            roadviewInstance?.relayout();
-        }
+        if (isRoadviewVisible) roadviewInstance?.relayout();
         mapInstance?.relayout();
-    }, 10); // DOM이 변경될 시간을 약간 줍니다.
+    }, 10);
     return () => clearTimeout(timerId);
   }, [isRoadviewVisible, mapInstance, roadviewInstance]);
 
-
+  // ✅ '장소' 검색 로직이 추가된 handleSearch 함수
   const handleSearch = () => {
-    if (!mapInstance) return;
-    const center = mapInstance.getCenter();
-    onAddressSearch(searchAddress, searchMode, { lat: center.getLat(), lng: center.getLng() });
+    if (!mapInstance || !searchAddress.trim()) return;
+
+    if (searchMode === 'place') {
+      const ps = new window.kakao.maps.services.Places();
+      ps.keywordSearch(searchAddress, (data, status) => {
+        if (status === window.kakao.maps.services.Status.OK) {
+          const firstPlace = data[0];
+          setCenter(Number(firstPlace.y), Number(firstPlace.x));
+        } else {
+          alert('검색 결과가 없습니다.');
+        }
+      });
+    } else { // 'food' 모드
+      const center = mapInstance.getCenter();
+      onAddressSearch(searchAddress, searchMode, { lat: center.getLat(), lng: center.getLng() });
+    }
   };
   
   const handleSearchAreaClick = () => {
@@ -97,10 +98,10 @@ export function MapPanel({
     onSearchInArea({ lat: center.getLat(), lng: center.getLng() });
   }
 
+  // ... (return JSX 부분은 변경 없음)
   return (
     <div className="w-full h-[800px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
       <div className="p-4 border-b bg-muted/40">
-        {/* ... (검색창 UI는 변경 없음) ... */}
          <div className="flex items-center gap-2">
           <Input
             type="text"

@@ -215,7 +215,7 @@ export default function Home() {
 
         loadFavorites();
     }, [status]);
-    
+
     useEffect(() => {
         // 카카오톡 인앱 브라우저인지 확인
         if (/KAKAOTALK/i.test(navigator.userAgent)) {
@@ -926,6 +926,7 @@ export default function Home() {
         userLocation={userLocation}
         onSearchInArea={handleSearchInArea}
         onAddressSearch={handleAddressSearch}
+        onMapReady={setIsMapReady}
     />
 
     {/* 오른쪽 제어 패널 */}
