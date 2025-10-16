@@ -180,7 +180,7 @@ export function TagManagementDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {/* ✅ 다이얼로그 너비를 넓히고, 내부를 flex 레이아웃으로 변경합니다. */}
-      <DialogContent className="max-w-4xl flex flex-col h-[85vh]">
+      <DialogContent className="w-[90vw] max-w-[1024px] flex flex-col h-[85vh]">
         <DialogHeader>
           <DialogTitle className="text-xl">태그 관리</DialogTitle>
         </DialogHeader>
