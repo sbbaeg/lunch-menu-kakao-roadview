@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
-import { Restaurant } from '@/lib/types';
+import { AppRestaurant } from '@/lib/types';
 
 const prisma = new PrismaClient();
 
@@ -23,7 +23,7 @@ export async function GET() {
         });
         
         // 프론트엔드에서 사용하는 Restaurant 타입으로 변환
-        const blacklistRestaurants: Restaurant[] = blacklistEntries.map(entry => ({
+        const blacklistRestaurants: AppRestaurant[] = blacklistEntries.map(entry => ({
             id: entry.restaurant.kakaoPlaceId,
             kakaoPlaceId: entry.restaurant.kakaoPlaceId,
             placeName: entry.restaurant.placeName,
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     try {
-        const place: Restaurant = await request.json();
+        const place: AppRestaurant = await request.json();
         const userId = session.user.id;
 
         // Restaurant 테이블에 해당 음식점이 없으면 생성

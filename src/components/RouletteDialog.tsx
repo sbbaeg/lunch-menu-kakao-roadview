@@ -2,7 +2,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Restaurant } from "@/lib/types";
+import { AppRestaurant } from "@/lib/types";
 
 // 룰렛 라이브러리는 클라이언트 사이드에서만 렌더링하도록 dynamic import 합니다.
 const Wheel = dynamic(
@@ -18,8 +18,8 @@ interface RouletteOption {
 interface RouletteDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    items: Restaurant[];
-    onResult: (winner: Restaurant) => void;
+    items: AppRestaurant[];
+    onResult: (winner: AppRestaurant) => void;
 }
 
 export function RouletteDialog({ isOpen, onOpenChange, items, onResult }: RouletteDialogProps) {

@@ -5,13 +5,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Restaurant } from "@/lib/types";
+import { AppRestaurant } from "@/lib/types";
 
 interface BlacklistDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  blacklist: Restaurant[];
-  onToggleBlacklist: (restaurant: Restaurant) => void;
+  blacklist: AppRestaurant[];
+  onToggleBlacklist: (restaurant: AppRestaurant) => void;
 }
 
 export function BlacklistDialog({

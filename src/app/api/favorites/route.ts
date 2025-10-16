@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient, Prisma } from '@prisma/client'; 
 import { authOptions } from '@/lib/auth';
-import { Restaurant, KakaoPlaceItem } from '@/lib/types'; 
+import { AppRestaurant, KakaoPlaceItem } from '@/lib/types'; 
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 
 const prisma = new PrismaClient();
@@ -71,7 +71,7 @@ export async function GET() {
             basicFavorites.map(place => fetchFullGoogleDetails(place))
         );
 
-        const favoriteRestaurants: Restaurant[] = enrichedFavorites.map((place, index) => {
+        const favoriteRestaurants: AppRestaurant[] = enrichedFavorites.map((place, index) => {
             const originalFavorite = favorites[index];
             return {
                 id: place.id,
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
     }
     try {
-        const place: Restaurant = await request.json(); 
+        const place: AppRestaurant = await request.json(); 
         const userId = session.user.id;
 
         let restaurant = await prisma.restaurant.findUnique({

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
-import { Restaurant } from '@/lib/types'; // Restaurant 타입을 가져옵니다.
+import { AppRestaurant } from '@/lib/types'; // Restaurant 타입을 가져옵니다.
 
 const prisma = new PrismaClient();
 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     try {
         const kakaoPlaceId = params.id;
-        const { tagId, restaurant } = await request.json() as { tagId: number, restaurant: Restaurant };
+        const { tagId, restaurant } = await request.json() as { tagId: number, restaurant: AppRestaurant };
 
         if (!tagId || !restaurant) {
             return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 });

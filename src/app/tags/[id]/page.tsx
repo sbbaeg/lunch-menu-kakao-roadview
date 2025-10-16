@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Share2, Star } from 'lucide-react';
-import { Restaurant } from '@/lib/types'; // 메인 페이지의 타입을 재사용합니다.
+import { AppRestaurant } from '@/lib/types'; // 메인 페이지의 타입을 재사용합니다.
 import { TagHeader } from "@/components/TagHeader";
 import { MapPanel } from '@/components/MapPanel';
 import { Accordion } from '@/components/ui/accordion';
@@ -24,7 +24,7 @@ interface TagProfileData {
         id: string;
         name: string | null;
     };
-    restaurants: Restaurant[];
+    restaurants: AppRestaurant[];
     isSubscribed: boolean;
     subscriberCount: number;
     restaurantCount: number; 

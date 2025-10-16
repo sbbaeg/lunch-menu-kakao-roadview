@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { PrismaClient, type Restaurant } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps'; // ✅ Google 상세 정보 조회를 위해 import
+import { AppRestaurant } from '@/lib/types';
+
 
 const prisma = new PrismaClient();
 
@@ -56,6 +58,21 @@ export async function GET(
             )
         );
 
+        const finalRestaurants: AppRestaurant[] = enrichedRestaurants.map(place => ({
+            id: place.id,
+            kakaoPlaceId: place.id,
+            placeName: place.place_name,
+            categoryName: place.category_name,
+            address: place.road_address_name,
+            x: place.x,
+            y: place.y,
+            placeUrl: place.place_url,
+            distance: '', // 이 페이지에서는 거리 정보가 없으므로 빈 문자열로 보냅니다.
+            googleDetails: place.googleDetails,
+            tags: [], // RestaurantCard가 tags prop을 기대하므로 빈 배열을 추가합니다.
+                      // (추후 이 부분도 DB에서 조회하여 채울 수 있습니다)
+        }));
+
         let isSubscribed = false;
         if (session?.user?.id) {
             const subscription = await prisma.tagSubscription.findUnique({
@@ -68,7 +85,7 @@ export async function GET(
             id: tag.id,
             name: tag.name,
             creator: { id: tag.user.id, name: tag.user.name },
-            restaurants: enrichedRestaurants, // ✅ 상세 정보가 포함된 맛집 목록으로 교체
+            restaurants: finalRestaurants, // ✅ 상세 정보가 포함된 맛집 목록으로 교체
             isSubscribed: isSubscribed,
             subscriberCount: tag._count.subscribers, // ✅ 구독자 수 추가
             restaurantCount: basicRestaurants.length, // ✅ 맛집 수 추가

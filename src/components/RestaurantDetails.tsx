@@ -13,7 +13,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Restaurant, GoogleOpeningHours } from "@/lib/types";
+import { AppRestaurant, GoogleOpeningHours } from "@/lib/types";
 import { Session } from "next-auth";
 import { EyeOff, Heart, Tags, ChevronDown } from "lucide-react";
 import Image from "next/image";
@@ -49,13 +49,13 @@ const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null
 };
 
 interface RestaurantDetailsProps {
-  restaurant: Restaurant;
+  restaurant: AppRestaurant;
   session: Session | null;
   isFavorite?: (id: string) => boolean;
   isBlacklisted?: (id: string) => boolean;
-  onToggleFavorite?: (restaurant: Restaurant) => void;
-  onToggleBlacklist?: (restaurant: Restaurant) => void;
-  onTagManagement?: (restaurant: Restaurant) => void;
+  onToggleFavorite?: (restaurant: AppRestaurant) => void;
+  onToggleBlacklist?: (restaurant: AppRestaurant) => void;
+  onTagManagement?: (restaurant: AppRestaurant) => void;
 }
 
 export function RestaurantDetails({

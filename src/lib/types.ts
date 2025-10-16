@@ -36,7 +36,6 @@ export interface KakaoPlaceItem {
   googleDetails?: GoogleDetails;
 }
 
-// ✅ 재사용 가능한 상세한 Tag 타입을 새로 정의합니다.
 export interface Tag {
     id: number;
     name: string;
@@ -51,7 +50,7 @@ export interface RestaurantWithTags extends KakaoPlaceItem {
 }
 
 // 우리 앱 내부에서 사용할 표준 데이터 타입 (camelCase)
-export interface Restaurant {
+export interface AppRestaurant {
   id: string; // kakaoPlaceId
   kakaoPlaceId: string;
   placeName: string;

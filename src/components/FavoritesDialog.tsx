@@ -5,23 +5,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Accordion } from "@/components/ui/accordion";
-import { Restaurant } from "@/lib/types";
+import { AppRestaurant } from "@/lib/types";
 import { RestaurantCard } from "./RestaurantCard"; // 이미 만들어 둔 RestaurantCard를 재사용합니다!
 import { Session } from "next-auth";
 
 interface FavoritesDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  favorites: Restaurant[];
+  favorites: AppRestaurant[];
   session: Session | null;
   subscribedTagIds: number[];
   selectedItemId: string | undefined;
   setSelectedItemId: (id: string | undefined) => void;
   isFavorite: (id: string) => boolean;
   isBlacklisted: (id: string) => boolean;
-  onToggleFavorite: (restaurant: Restaurant) => void;
-  onToggleBlacklist: (restaurant: Restaurant) => void;
-  onTagManagement: (restaurant: Restaurant) => void;
+  onToggleFavorite: (restaurant: AppRestaurant) => void;
+  onToggleBlacklist: (restaurant: AppRestaurant) => void;
+  onTagManagement: (restaurant: AppRestaurant) => void;
 }
 
 export function FavoritesDialog({
