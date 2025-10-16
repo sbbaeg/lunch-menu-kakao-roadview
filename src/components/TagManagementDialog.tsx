@@ -21,6 +21,14 @@ interface SubscribedTag {
     creatorName: string | null;
 }
 
+interface SearchedTag {
+    id: number;
+    name: string;
+    creatorName: string | null;
+    restaurantCount: number;
+    subscriberCount: number;
+}
+
 interface TagManagementDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -42,6 +50,10 @@ export function TagManagementDialog({
   const [newTagName, setNewTagName] = useState("");
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [subscribedTags, setSubscribedTags] = useState<SubscribedTag[]>([]);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchedTag[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // ✅ 2개의 스크롤 영역을 위한 ref 생성
   const myTagsScrollRef = useRef<HTMLDivElement>(null);
@@ -84,6 +96,24 @@ export function TagManagementDialog({
     }
   }, [isOpen, status]);
 
+  useEffect(() => {
+    // 0.5초 동안 추가 입력이 없으면 검색 실행 (디바운싱)
+    const debounceTimer = setTimeout(() => {
+        if (searchQuery.trim() !== "") {
+            setIsSearching(true);
+            fetch(`/api/tags/explore?query=${searchQuery.trim()}`)
+                .then(res => res.json())
+                .then(data => setSearchResults(data))
+                .catch(err => console.error("Tag search failed:", err))
+                .finally(() => setIsSearching(false));
+        } else {
+            setSearchResults([]);
+        }
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
   const handleCreateTag = async () => {
     if (!newTagName.trim() || isCreatingTag) return;
     setIsCreatingTag(true);
@@ -109,6 +139,34 @@ export function TagManagementDialog({
     } catch (error) {
         setSubscribedTags(originalSubscriptions);
         alert("구독 취소 중 오류가 발생했습니다.");
+    }
+  };
+
+  const fetchSubscribedTags = async () => {
+    if (status === 'authenticated') {
+      try {
+        const response = await fetch('/api/subscriptions');
+        if (response.ok) {
+          const data = await response.json();
+          setSubscribedTags(data);
+        }
+      } catch (error) {
+        console.error("구독 태그 로딩 실패:", error);
+      }
+    }
+  };
+
+  const handleSubscribe = async (tagId: number) => {
+    try {
+        const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
+        if (response.ok) {
+            // 구독 성공 시, 구독 목록을 다시 불러와서 UI를 갱신합니다.
+            fetchSubscribedTags(); 
+        } else {
+            alert("구독에 실패했습니다.");
+        }
+    } catch (error) {
+        alert("구독 중 오류가 발생했습니다.");
     }
   };
 
