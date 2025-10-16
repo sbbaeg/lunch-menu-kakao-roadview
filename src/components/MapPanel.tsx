@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
-import { Restaurant } from '@/lib/types';
+import { AppRestaurant } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 
 interface MapPanelProps {
-  restaurants: Restaurant[];
-  selectedRestaurant: Restaurant | null;
+  restaurants: AppRestaurant[];
+  selectedRestaurant: AppRestaurant | null;
   userLocation: { lat: number; lng: number } | null;
   onSearchInArea: (center: { lat: number; lng: number }) => void;
   onAddressSearch: (keyword: string, mode: 'place' | 'food', center: { lat: number; lng: number }) => void;

@@ -1,13 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Restaurant } from "@/lib/types";
+import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import { RestaurantCard } from "./RestaurantCard";
 
 interface ResultPanelProps {
   isLoading: boolean;
-  restaurants: Restaurant[];
+  restaurants: AppRestaurant[];
   blacklistExcludedCount: number;
   displayedSortOrder: "accuracy" | "distance" | "rating";
   selectedItemId: string | undefined;
@@ -17,9 +17,9 @@ interface ResultPanelProps {
   subscribedTagIds: number[];
   isFavorite: (id: string) => boolean;
   isBlacklisted: (id: string) => boolean;
-  onToggleFavorite: (restaurant: Restaurant) => void;
-  onToggleBlacklist: (restaurant: Restaurant) => void;
-  onTagManagement: (restaurant: Restaurant) => void;
+  onToggleFavorite: (restaurant: AppRestaurant) => void;
+  onToggleBlacklist: (restaurant: AppRestaurant) => void;
+  onTagManagement: (restaurant: AppRestaurant) => void;
 }
 
 const getSortTitle = (sort: "accuracy" | "distance" | "rating"): string => {

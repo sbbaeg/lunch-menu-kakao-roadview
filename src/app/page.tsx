@@ -19,7 +19,7 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 
 
 
-import { Restaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
+import { AppRestaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
 
 import { Tag } from '@/lib/types';
 
@@ -109,8 +109,8 @@ export default function Home() {
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
         undefined
     );
-    const [restaurantList, setRestaurantList] = useState<Restaurant[]>([]);
-    const [rouletteItems, setRouletteItems] = useState<Restaurant[]>([]);
+    const [restaurantList, setRestaurantList] = useState<AppRestaurant[]>([]);
+    const [rouletteItems, setRouletteItems] = useState<AppRestaurant[]>([]);
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -141,7 +141,7 @@ export default function Home() {
     const [blacklistExcludedCount, setBlacklistExcludedCount] = useState<number>(0);
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
 
-    const [taggingRestaurant, setTaggingRestaurant] = useState<Restaurant | null>(null); // 현재 태그를 편집할 음식점 정보
+    const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null); // 현재 태그를 편집할 음식점 정보
 
     const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -168,7 +168,7 @@ export default function Home() {
     const getNearbyRestaurants = async (
         latitude: number,
         longitude: number
-    ): Promise<Restaurant[]> => { // ✅ 반환 타입을 Restaurant[]으로 변경
+    ): Promise<AppRestaurant[]> => { // ✅ 반환 타입을 Restaurant[]으로 변경
         const query =
             selectedCategories.length > 0
                 ? selectedCategories.join(",")
@@ -195,7 +195,7 @@ export default function Home() {
         const response = await fetch(apiUrl);
         const data: { documents?: RestaurantWithTags[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
 
-        const formattedRestaurants: Restaurant[] = (data.documents || []).map(place => ({
+        const formattedRestaurants: AppRestaurant[] = (data.documents || []).map(place => ({
             id: place.id,
             kakaoPlaceId: place.id,
             placeName: place.place_name,
@@ -265,7 +265,7 @@ export default function Home() {
         setRestaurantList([]);
     };
 
-    const handleRouletteResult = (winner: Restaurant) => {
+    const handleRouletteResult = (winner: AppRestaurant) => {
         setRestaurantList([winner]);
         setSelectedItemId(winner.id);
     };
@@ -428,7 +428,7 @@ export default function Home() {
         }
     };
 
-    const handleTagsChange = (updatedRestaurant: Restaurant) => {
+    const handleTagsChange = (updatedRestaurant: AppRestaurant) => {
         setRestaurantList(prevList => 
             prevList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
         );

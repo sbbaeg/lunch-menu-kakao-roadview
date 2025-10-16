@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Restaurant, Tag } from "@/lib/types";
+import { AppRestaurant, Tag } from "@/lib/types";
 
 interface TaggingDialogProps {
-  restaurant: Restaurant | null;
+  restaurant: AppRestaurant | null;
   onOpenChange: (isOpen: boolean) => void;
   userTags: Tag[];
   onToggleTagLink: (tag: Tag) => void;

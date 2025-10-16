@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Restaurant } from "@/lib/types";
+import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import Link from "next/link";
 import { RestaurantDetails } from "./RestaurantDetails";
@@ -18,14 +18,14 @@ import {
 } from "@/components/ui/tooltip";
 
 interface RestaurantCardProps {
-  restaurant: Restaurant;
+  restaurant: AppRestaurant;
   session: Session | null;
   subscribedTagIds: number[];
   isFavorite?: (id: string) => boolean;
   isBlacklisted?: (id: string) => boolean;
-  onToggleFavorite?: (restaurant: Restaurant) => void;
-  onToggleBlacklist?: (restaurant: Restaurant) => void;
-  onTagManagement?: (restaurant: Restaurant) => void;
+  onToggleFavorite?: (restaurant: AppRestaurant) => void;
+  onToggleBlacklist?: (restaurant: AppRestaurant) => void;
+  onTagManagement?: (restaurant: AppRestaurant) => void;
 }
 
 export function RestaurantCard({
@@ -43,9 +43,11 @@ export function RestaurantCard({
           <div className="w-full">
             <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
               <CardTitle className="text-md">{restaurant.placeName}</CardTitle>
-              <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
-                {restaurant.distance}m
-              </span>
+              {restaurant.distance && (
+                  <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
+                      {restaurant.distance}m
+                  </span>
+              )}
             </CardHeader>
             <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
               <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Restaurant } from '@/lib/types';
+import { AppRestaurant } from '@/lib/types';
 
 export function useFavorites() {
     const { status } = useSession();
-    const [favorites, setFavorites] = useState<Restaurant[]>([]);
+    const [favorites, setFavorites] = useState<AppRestaurant[]>([]);
     
     // page.tsx에 있던 즐겨찾기 로딩 useEffect
     useEffect(() => {
@@ -36,7 +36,7 @@ export function useFavorites() {
     const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
 
     // page.tsx에 있던 toggleFavorite 함수
-    const toggleFavorite = async (place: Restaurant) => {
+    const toggleFavorite = async (place: AppRestaurant) => {
         const isCurrentlyFavorite = isFavorite(place.id);
         // 낙관적 업데이트를 위해 현재 상태를 미리 저장
         const originalFavorites = favorites;
@@ -66,7 +66,7 @@ export function useFavorites() {
         }
     };
 
-    const updateFavoriteInList = (updatedRestaurant: Restaurant) => {
+    const updateFavoriteInList = (updatedRestaurant: AppRestaurant) => {
         setFavorites(prevList => 
             prevList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
         );

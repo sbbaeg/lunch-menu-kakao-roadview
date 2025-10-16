@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Restaurant } from '@/lib/types';
+import { AppRestaurant } from '@/lib/types';
 
 export function useBlacklist() {
     const { status } = useSession();
-    const [blacklist, setBlacklist] = useState<Restaurant[]>([]);
+    const [blacklist, setBlacklist] = useState<AppRestaurant[]>([]);
 
     useEffect(() => {
         const loadBlacklist = async () => {
@@ -28,7 +28,7 @@ export function useBlacklist() {
 
     const isBlacklisted = (placeId: string) => blacklist.some((item) => item.id === placeId);
 
-    const toggleBlacklist = async (place: Restaurant) => {
+    const toggleBlacklist = async (place: AppRestaurant) => {
         if (status !== 'authenticated') {
             alert("로그인이 필요한 기능입니다.");
             return;

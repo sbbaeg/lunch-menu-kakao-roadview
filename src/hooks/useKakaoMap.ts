@@ -1,7 +1,7 @@
 // hooks/useKakaoMap.ts (수정)
 
 import { useState, useEffect, useRef } from 'react';
-import { Restaurant } from '@/lib/types';
+import { AppRestaurant } from '@/lib/types';
 
 // Kakao 타입 정의 (이전과 동일)
 declare namespace kakao.maps {
@@ -74,7 +74,7 @@ export function useKakaoMap() {
     }, [isMapReady, roadviewContainer.current]); // roadviewContainer.current가 설정된 후 실행되도록 의존성 추가
 
 
-    const displayMarkers = (places: Restaurant[]) => {
+    const displayMarkers = (places: AppRestaurant[]) => {
         // ... (이하 모든 함수 내용은 변경 없음)
         if (!mapInstance.current) return;
         markers.current.forEach((marker) => marker.setMap(null));
