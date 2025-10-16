@@ -153,7 +153,7 @@ export function SideMenuSheet({
                             블랙리스트 관리
                         </Button>
                         <Button variant="ghost" className="justify-start" onClick={onShowTagManagement}>
-                            태그 관리
+                            태그
                         </Button>
 
                         <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
