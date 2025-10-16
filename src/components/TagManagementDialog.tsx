@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react"; // ✅ useRef, useEffect 추가
+import { useState, useEffect, useRef } from "react"; 
+import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -140,7 +141,9 @@ export function TagManagementDialog({
               <ul className="space-y-2">
                 {filteredTags.map(tag => (
                   <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                    <span>{tag.name}</span>
+                    <Link href={`/tags/${tag.id}`} className="hover:underline">
+                        {tag.name}
+                    </Link>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center space-x-2">
                         <Switch id={`public-switch-${tag.id}`} checked={tag.isPublic} onCheckedChange={() => onToggleTagPublic(tag.id)} />

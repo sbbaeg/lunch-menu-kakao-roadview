@@ -129,8 +129,7 @@ export default function TagProfilePage() {
                         <MapPanel 
                             restaurants={tagData.restaurants}
                             hideControls={true}
-                            // 이 페이지에서는 아래 기능들이 필요 없으므로 빈 함수나 null을 전달합니다.
-                            selectedRestaurant={null}
+                            selectedRestaurant={tagData.restaurants.find(r => r.id === selectedItemId) || null}
                             userLocation={null}
                             onSearchInArea={() => {}}
                             onAddressSearch={() => {}}
