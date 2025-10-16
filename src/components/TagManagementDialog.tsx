@@ -170,10 +170,12 @@ export function TagManagementDialog({
               <ul className="space-y-2">
                 {subscribedTags.map(tag => (
                   <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                    <div>
-                      <span className="font-semibold">{tag.name}</span>
-                      <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
-                    </div>
+                    <Link href={`/tags/${tag.id}`} className="hover:underline">
+                        <div>
+                          <span className="font-semibold">{tag.name}</span>
+                          <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
+                        </div>
+                    </Link>
                     <Button variant="ghost" size="sm" onClick={() => handleUnsubscribe(tag.id)}>구독 취소</Button>
                   </li>
                 ))}
