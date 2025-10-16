@@ -48,17 +48,21 @@ export function MapPanel({
   }, [restaurants, isMapReady]);
 
   useEffect(() => {
-    if (selectedRestaurant && userLocation) {
+    if (selectedRestaurant) {
+        // 1. 사용자 위치와 상관없이, 선택된 음식점으로 지도 중심을 이동시킵니다.
         setCenter(Number(selectedRestaurant.y), Number(selectedRestaurant.x));
-        drawDirections(
-            { lat: userLocation.lat, lng: userLocation.lng },
-            { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) }
-        );
         displayRoadview({ lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
         setRoadviewVisible(false);
-    }
-  }, [selectedRestaurant, userLocation]);
 
+        // 2. 사용자 위치가 있을 때만 추가로 경로를 그립니다. (메인 페이지용)
+        if (userLocation) {
+            drawDirections(
+                { lat: userLocation.lat, lng: userLocation.lng },
+                { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) }
+            );
+        }
+    }
+}, [selectedRestaurant, userLocation]);
   useEffect(() => {
     if (!mapInstance) return;
     const handleDragEnd = () => { setShowSearchAreaButton(true); };
