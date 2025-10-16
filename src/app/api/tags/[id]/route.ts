@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Restaurant } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps'; // ✅ Google 상세 정보 조회를 위해 import
 
@@ -35,7 +35,7 @@ export async function GET(
         }
 
         // 기본 맛집 목록 조회
-        const basicRestaurants = await prisma.restaurant.findMany({
+        const basicRestaurants: Restaurant[] = await prisma.restaurant.findMany({
             where: { taggedBy: { some: { tagId: tagId } } },
         });
 
