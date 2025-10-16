@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tag } from "@/lib/types";
 import { useSession } from "next-auth/react";
+import { Users, Utensils } from "lucide-react";
 
 interface SubscribedTag {
     id: number;
@@ -170,76 +171,120 @@ export function TagManagementDialog({
     }
   };
 
+  const finalSearchResults = searchResults.filter(
+      (searchedTag) =>
+          !userTags.some((myTag) => myTag.id === searchedTag.id) &&
+          !subscribedTags.some((subTag) => subTag.id === searchedTag.id)
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      {/* ✅ 다이얼로그 크기 고정 및 flex 레이아웃 적용 */}
-      <DialogContent className="max-w-lg flex flex-col h-[85vh]">
+      {/* ✅ 다이얼로그 너비를 넓히고, 내부를 flex 레이아웃으로 변경합니다. */}
+      <DialogContent className="max-w-2xl flex flex-col h-[85vh]">
         <DialogHeader>
           <DialogTitle className="text-xl">태그 관리</DialogTitle>
         </DialogHeader>
-        {/* ✅ 전체 콘텐츠 영역을 flex로 구성 */}
-        <div className="py-2 flex flex-col flex-1 min-h-0">
-          <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
-          <div className="flex w-full items-center space-x-2 mb-4 p-1">
-            <Input
-              type="text"
-              placeholder="새 태그 생성 또는 검색"
-              value={newTagName}
-              onChange={(e) => setNewTagName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
-              disabled={isCreatingTag}
-            />
-            <Button onClick={handleCreateTag} disabled={isCreatingTag}>
-              {isCreatingTag ? '추가 중...' : '추가'}
-            </Button>
-          </div>
-          {/* ✅ '내 태그' 목록 스크롤 영역 */}
-          <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={myTagsScrollRef}>
-            {userTags.length > 0 ? (
-              <ul className="space-y-2">
-                {filteredTags.map(tag => (
-                  <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                    <Link href={`/tags/${tag.id}`} className="hover:underline">
-                        {tag.name}
-                    </Link>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch id={`public-switch-${tag.id}`} checked={tag.isPublic} onCheckedChange={() => onToggleTagPublic(tag.id)} />
-                        <Label htmlFor={`public-switch-${tag.id}`} className="text-xs text-muted-foreground">{tag.isPublic ? '공개' : '비공개'}</Label>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => onDeleteTag(tag.id)}>삭제</Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-center text-muted-foreground pt-8">
-                {newTagName.trim() === '' ? '생성된 태그가 없습니다.' : '일치하는 태그가 없습니다.'}
-              </p>
-            )}
-          </div>
+        {/* ✅ 전체 콘텐츠 영역을 가로로 나누는 flex 컨테이너를 추가합니다. */}
+        <div className="py-2 flex flex-col md:flex-row gap-6 flex-1 min-h-0">
 
-          <Separator className="my-4" />
+            {/* 👈 왼쪽: 내 태그 및 구독 태그 관리 */}
+            <div className="w-full md:w-1/2 flex flex-col">
+                <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
+                <div className="flex w-full items-center space-x-2 mb-4 p-1">
+                    <Input
+                        type="text"
+                        placeholder="새 태그 생성 또는 검색"
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
+                        disabled={isCreatingTag}
+                    />
+                    <Button onClick={handleCreateTag} disabled={isCreatingTag}>
+                        {isCreatingTag ? '추가 중...' : '추가'}
+                    </Button>
+                </div>
+                <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={myTagsScrollRef}>
+                    {userTags.length > 0 ? (
+                        <ul className="space-y-2">
+                            {filteredTags.map(tag => (
+                                <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                    <Link href={`/tags/${tag.id}`} className="hover:underline">
+                                        {tag.name}
+                                    </Link>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center space-x-2">
+                                            <Switch id={`public-switch-${tag.id}`} checked={tag.isPublic} onCheckedChange={() => onToggleTagPublic(tag.id)} />
+                                            <Label htmlFor={`public-switch-${tag.id}`} className="text-xs text-muted-foreground">{tag.isPublic ? '공개' : '비공개'}</Label>
+                                        </div>
+                                        <Button variant="ghost" size="sm" onClick={() => onDeleteTag(tag.id)}>삭제</Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-center text-muted-foreground pt-8">
+                            {newTagName.trim() === '' ? '생성된 태그가 없습니다.' : '일치하는 태그가 없습니다.'}
+                        </p>
+                    )}
+                </div>
 
-          <h4 className="font-semibold mb-2 px-1">구독 중인 태그</h4>
-          {/* ✅ '구독 태그' 목록 스크롤 영역 */}
-          <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={subscribedTagsScrollRef}>
-            {subscribedTags.length > 0 ? (
-              <ul className="space-y-2">
-                {subscribedTags.map(tag => (
-                  <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                    <Link href={`/tags/${tag.id}`} className="hover:underline">
-                        <div>
-                          <span className="font-semibold">{tag.name}</span>
-                          <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
-                        </div>
-                    </Link>
-                    <Button variant="ghost" size="sm" onClick={() => handleUnsubscribe(tag.id)}>구독 취소</Button>
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="text-center text-muted-foreground pt-8">구독 중인 태그가 없습니다.</p>}
-          </div>
+                <Separator className="my-4" />
+
+                <h4 className="font-semibold mb-2 px-1">구독 중인 태그</h4>
+                <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={subscribedTagsScrollRef}>
+                    {subscribedTags.length > 0 ? (
+                        <ul className="space-y-2">
+                            {subscribedTags.map(tag => (
+                                <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                    <Link href={`/tags/${tag.id}`} className="hover:underline">
+                                        <div>
+                                            <span className="font-semibold">{tag.name}</span>
+                                            <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
+                                        </div>
+                                    </Link>
+                                    <Button variant="ghost" size="sm" onClick={() => handleUnsubscribe(tag.id)}>구독 취소</Button>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-center text-muted-foreground pt-8">구독 중인 태그가 없습니다.</p>}
+                </div>
+            </div>
+
+            {/* 세로 구분선 */}
+            <Separator orientation="vertical" className="hidden md:block" />
+            <Separator className="md:hidden" />
+
+            {/* 👉 오른쪽: 태그 탐색 */}
+            <div className="w-full md:w-1/2 flex flex-col">
+                <h4 className="font-semibold mb-2 px-1">태그 탐색</h4>
+                <div className="p-1 mb-4">
+                    <Input
+                        type="text"
+                        placeholder="다른 사람의 공개 태그 검색"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <div className="flex-1 overflow-y-auto pr-4 min-h-0">
+                    {isSearching && <p className="text-center text-muted-foreground pt-8">검색 중...</p>}
+                    {!isSearching && searchQuery && finalSearchResults.length === 0 && <p className="text-center text-muted-foreground pt-8">검색 결과가 없습니다.</p>}
+                    <ul className="space-y-2">
+                        {finalSearchResults.map(tag => (
+                            <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                <div>
+                                    <p className="font-semibold">{tag.name}</p>
+                                    <div className="text-xs text-muted-foreground flex items-center gap-4 mt-1">
+                                        <span>by {tag.creatorName}</span>
+                                        <div className="flex items-center gap-1"><Utensils className="h-3 w-3" /> {tag.restaurantCount}</div>
+                                        <div className="flex items-center gap-1"><Users className="h-3 w-3" /> {tag.subscriberCount}</div>
+                                    </div>
+                                </div>
+                                <Button variant="outline" size="sm" onClick={() => handleSubscribe(tag.id)}>구독</Button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
         </div>
       </DialogContent>
     </Dialog>
