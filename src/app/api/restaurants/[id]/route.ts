@@ -1,7 +1,7 @@
 // src/app/api/restaurants/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getGooglePlaceDetails } from '@/lib/googleMaps';
+import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 
 const prisma = new PrismaClient();
 
@@ -31,19 +31,35 @@ export async function GET(
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
     }
 
-    // 기존 Restaurant 타입을 AppRestaurant 타입과 유사하게 변환
     const restaurantWithTags = {
         ...restaurant,
         tags: restaurant.taggedBy.map(t => t.tag)
     };
 
-    // 구글 상세 정보 추가
-    const googleDetails = await getGooglePlaceDetails(restaurant.kakaoPlaceId);
-    const finalRestaurantData = {
-        ...restaurantWithTags,
-        googleDetails,
+    // fetchFullGoogleDetails가 요구하는 형태로 객체 생성
+    const kakaoPlaceItem = {
+        id: restaurant.kakaoPlaceId,
+        place_name: restaurant.placeName,
+        y: String(restaurant.latitude),
+        x: String(restaurant.longitude),
+        // 아래는 필수값이지만 현재 로직에선 사용되지 않는 필드들
+        place_url: '',
+        category_name: restaurant.categoryName || '',
+        distance: '',
+        phone: '',
+        address_name: '',
+        road_address_name: restaurant.address || '',
+        category_group_code: '',
+        category_group_name: '',
     };
 
+    // 생성한 객체로 함수 호출
+    const restaurantWithGoogleDetails = await fetchFullGoogleDetails(kakaoPlaceItem);
+
+    const finalRestaurantData = {
+        ...restaurantWithTags,
+        googleDetails: restaurantWithGoogleDetails.googleDetails,
+    };
 
     return NextResponse.json(finalRestaurantData);
   } catch (error) {
