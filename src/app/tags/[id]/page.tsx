@@ -137,7 +137,7 @@ export default function TagProfilePage() {
                     </div>
 
                     {/* 오른쪽 음식점 목록 패널 */}
-                    <div className="w-full md:w-1/3 h-full overflow-y-auto">
+                    <div className="w-full md:w-1/3 md:h-full flex-1 min-h-0 overflow-y-auto">
                         <Accordion
                             type="single"
                             collapsible
