@@ -9,15 +9,15 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = parseInt(params.id, 10);
+  const kakaoPlaceId = params.id;
 
-  if (isNaN(id)) {
+  if (!kakaoPlaceId) {
     return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
   }
 
   try {
     const restaurant = await prisma.restaurant.findUnique({
-      where: { id },
+      where: { kakaoPlaceId },
       include: {
         taggedBy: {
           include: {

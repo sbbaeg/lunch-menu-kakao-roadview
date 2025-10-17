@@ -1,22 +1,14 @@
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Accordion,  AccordionContent,  AccordionItem,  AccordionTrigger,} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+  Carousel,  CarouselContent,  CarouselItem,  CarouselNext,  CarouselPrevious,} from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AppRestaurant, GoogleOpeningHours } from "@/lib/types";
 import { Session } from "next-auth";
 import { EyeOff, Heart, Tags, ChevronDown } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link"; // Link import 추가
 
 // StarRating 컴포넌트를 이 파일로 옮겨옵니다.
 const StarRating = ({ rating, reviewCount, isTrigger = false }: { rating: number, reviewCount?: number, isTrigger?: boolean }) => {
@@ -79,7 +71,6 @@ export function RestaurantDetails({
           {restaurant.categoryName?.split('>').pop()?.trim()}
         </p>
         <div className="flex items-center">
-          {/* ✅ onTagManagement prop이 있을 때만 버튼들을 렌더링합니다. */}
           {session?.user && onTagManagement && onToggleBlacklist && onToggleFavorite && isBlacklisted && isFavorite && (
             <>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onTagManagement(restaurant)} title="태그 관리">
@@ -161,6 +152,15 @@ export function RestaurantDetails({
           </Carousel>
         </div>
       )}
+
+      {/* 상세보기 버튼 추가 */}
+      <div className="pt-2">
+        <Link href={`/restaurants/${restaurant.id}`} passHref>
+          <Button asChild size="sm" className="w-full font-bold">
+            <a>상세보기</a>
+          </Button>
+        </Link>
+      </div>
 
       <div className="flex gap-2 pt-2">
         <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
