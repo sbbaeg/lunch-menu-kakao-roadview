@@ -1,10 +1,10 @@
-// src/components/RestaurantDetails.tsx (테스트용 임시 코드)
+// src/components/RestaurantDetails.tsx (테스트 2단계)
 "use client";
 
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
+import { RestaurantActionButtons } from "./RestaurantActionButtons"; // ActionButtons만 복원
 
-// 실제 props 타입은 유지하여 다른 파일과의 연결을 끊지 않습니다.
 interface RestaurantDetailsProps {
   restaurant: AppRestaurant;
   session: Session | null;
@@ -17,8 +17,17 @@ interface RestaurantDetailsProps {
 
 export function RestaurantDetails(props: RestaurantDetailsProps) {
   return (
-    <div className="px-4 pb-4 text-sm border-t">
-      <p className="py-4">디버깅 테스트 중입니다...</p>
+    <div
+      className="px-4 pb-4 text-sm space-y-3 border-t"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between pt-2">
+        <p className="text-xs text-gray-500">
+          {props.restaurant.categoryName?.split('>').pop()?.trim()}
+        </p>
+        <RestaurantActionButtons {...props} />
+      </div>
+      <p>Action Buttons 복원 완료. 오류가 발생하지 않으면 다음 테스트를 진행합니다.</p>
     </div>
   );
 }
