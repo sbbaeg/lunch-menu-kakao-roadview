@@ -182,7 +182,7 @@ export function TagManagementDialog({
       {/* ✅ 다이얼로그 너비를 넓히고, 내부를 flex 레이아웃으로 변경합니다. */}
       <DialogContent className="w-[90vw] max-w-[1024px] flex flex-col h-[85vh]">
         <DialogHeader>
-          <DialogTitle className="text-xl">태그 관리</DialogTitle>
+          <DialogTitle className="text-xl">태그</DialogTitle>
         </DialogHeader>
         {/* ✅ 전체 콘텐츠 영역을 가로로 나누는 flex 컨테이너를 추가합니다. */}
         <div className="py-2 flex flex-col md:flex-row gap-6 flex-1 min-h-0 overflow-y-auto">
