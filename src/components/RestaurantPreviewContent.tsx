@@ -75,10 +75,9 @@ export function RestaurantPreviewContent({ restaurant }: RestaurantPreviewConten
                         <CarouselItem key={index}>
                         <Dialog>
                             <DialogTrigger asChild>
-                            <button className="w-full focus:outline-none">
-                                <Image src={photoUrl} alt={`${restaurant.placeName} photo ${index + 1}`} width={400} height={225} className="object-cover aspect-video rounded-md" />
-                            </button>
-                            </DialogTrigger>
+                                                  <button className="w-full focus:outline-none relative aspect-video">
+                                                    <Image src={photoUrl} alt={`${restaurant.placeName} photo ${index + 1}`} fill className="object-cover rounded-md" />
+                                                  </button>                            </DialogTrigger>
                             <DialogContent className="max-w-3xl h-[80vh] p-2">
                             <Image src={photoUrl} alt={`${restaurant.placeName} photo ${index + 1}`} fill style={{ objectFit: "contain" }} />
                             </DialogContent>
