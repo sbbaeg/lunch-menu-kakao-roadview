@@ -141,6 +141,7 @@ export default function RestaurantPage() {
                                 userLocation={null}
                                 onSearchInArea={() => {}}
                                 onAddressSearch={() => {}}
+                                showSearchBar={false}
                             />
                         </div>
                         <div className="w-full">

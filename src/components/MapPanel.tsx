@@ -1,7 +1,6 @@
-// components/MapPanel.tsx (수정)
+// hooks/useKakaoMap.ts (수정)
 
-import { useState, useEffect } from 'react';
-import { useKakaoMap } from '@/hooks/useKakaoMap';
+import { useState, useEffect, useRef } from 'react';
 import { AppRestaurant } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +15,7 @@ interface MapPanelProps {
   onAddressSearch: (keyword: string, mode: 'place' | 'food', center: { lat: number; lng: number }) => void;
   onMapReady?: (isReady: boolean) => void;
   hideControls?: boolean;
+  showSearchBar?: boolean; // 검색창 표시 여부 prop 추가
 }
 
 export function MapPanel({
@@ -26,6 +26,7 @@ export function MapPanel({
   onAddressSearch,
   onMapReady,
   hideControls = false,
+  showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
   const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview } = useKakaoMap();
   
@@ -49,12 +50,9 @@ export function MapPanel({
 
   useEffect(() => {
     if (isMapReady && selectedRestaurant) {
-        // 1. 사용자 위치와 상관없이, 선택된 음식점으로 지도 중심을 이동시킵니다.
         setCenter(Number(selectedRestaurant.y), Number(selectedRestaurant.x));
         displayRoadview({ lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
         setRoadviewVisible(false);
-
-        // 2. 사용자 위치가 있을 때만 추가로 경로를 그립니다. (메인 페이지용)
         if (userLocation) {
             drawDirections(
                 { lat: userLocation.lat, lng: userLocation.lng },
@@ -63,6 +61,7 @@ export function MapPanel({
         }
     }
 }, [selectedRestaurant, userLocation, isMapReady]);
+
   useEffect(() => {
     if (!mapInstance) return;
     const handleDragEnd = () => { setShowSearchAreaButton(true); };
@@ -81,7 +80,7 @@ export function MapPanel({
   }, [isRoadviewVisible, mapInstance, roadviewInstance]);
 
   useEffect(() => {
-    if (userLocation && !selectedRestaurant) { // 선택된 음식점이 없을 때만 (초기 검색 시)
+    if (userLocation && !selectedRestaurant) {
       setCenter(userLocation.lat, userLocation.lng);
     }
   }, [userLocation]);
@@ -93,10 +92,8 @@ export function MapPanel({
     }
   }, [isMapReady, restaurants, userLocation, selectedRestaurant]);
 
-  // ✅ '장소' 검색 로직이 추가된 handleSearch 함수
   const handleSearch = () => {
     if (!mapInstance || !searchAddress.trim()) return;
-
     if (searchMode === 'place') {
       const ps = new window.kakao.maps.services.Places();
       ps.keywordSearch(searchAddress, (data, status) => {
@@ -107,7 +104,7 @@ export function MapPanel({
           alert('검색 결과가 없습니다.');
         }
       });
-    } else { // 'food' 모드
+    } else {
       const center = mapInstance.getCenter();
       onAddressSearch(searchAddress, searchMode, { lat: center.getLat(), lng: center.getLng() });
     }
@@ -121,8 +118,8 @@ export function MapPanel({
   }
 
   return (
-    <div className="w-full h-full md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
-      {!hideControls && (
+    <div className="w-full h-full rounded-lg border shadow-sm flex flex-col overflow-hidden">
+      {showSearchBar && (
         <div className="p-4 border-b bg-muted/40">
           <div className="flex items-center gap-2">
             <Input
@@ -144,7 +141,7 @@ export function MapPanel({
       )}
 
       <div className="relative flex-1">
-        {showSearchAreaButton && !hideControls && ( // '이 지역에서 재검색' 버튼도 컨트롤 UI의 일부
+        {showSearchAreaButton && !hideControls && showSearchBar && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 shadow-md">
             <Button size="lg" onClick={handleSearchAreaClick} className="bg-white text-black rounded-full hover:bg-gray-200 shadow-lg">
               이 지역에서 재검색
@@ -155,7 +152,7 @@ export function MapPanel({
         <div ref={mapContainerRef} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? "opacity-0 invisible" : "opacity-100 visible"}`} />
         <div ref={roadviewContainerRef} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? "opacity-100 visible" : "opacity-0 invisible"}`} />
 
-        {selectedRestaurant && !hideControls && ( // 로드뷰 버튼도 컨트롤 UI의 일부
+        {!hideControls && selectedRestaurant && (
             <Button onClick={() => setRoadviewVisible((prev) => !prev)} variant="secondary" className="absolute top-3 right-3 z-10 shadow-lg">
                 {isRoadviewVisible ? "지도 보기" : "로드뷰 보기"}
             </Button>

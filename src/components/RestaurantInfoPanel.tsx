@@ -52,7 +52,7 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
         {details?.photos && details.photos.length > 0 && (
             <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-2">사진</p>
-                <Carousel className="w-full">
+                <Carousel className="w-full max-w-md">
                     <CarouselContent>
                     {details.photos.map((photoUrl, index) => (
                         <CarouselItem key={index}>
