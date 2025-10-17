@@ -1,4 +1,4 @@
-// src/components/RestaurantDetails.tsx (테스트 3단계)
+// src/components/RestaurantDetails.tsx
 "use client";
 
 import { AppRestaurant } from "@/lib/types";
@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
-import { RestaurantPreviewContent } from "./RestaurantPreviewContent"; // 테스트용 컴포넌트 import
+import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
 
 interface RestaurantDetailsProps {
   restaurant: AppRestaurant;
@@ -53,7 +53,6 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
         <RestaurantActionButtons {...props} />
       </div>
 
-      {/* 테스트용 RestaurantPreviewContent 렌더링 */}
       <RestaurantPreviewContent restaurant={restaurant} />
 
       <div className="pt-2">
