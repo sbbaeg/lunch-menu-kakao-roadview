@@ -36,7 +36,7 @@ export default function TagProfilePage() {
     const { data: session, status } = useSession();
     const [tagData, setTagData] = useState<TagProfileData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [selectedItemId, setSelectedItemId] = useState<string | undefined>();
+    const [selectedItemId, setSelectedItemId] = useState<string>("");
     const { subscribedTagIds } = useSubscriptions();
 
     const tagId = params.id;
