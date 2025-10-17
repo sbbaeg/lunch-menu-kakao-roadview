@@ -123,7 +123,7 @@ export default function TagProfilePage() {
                 />
 
                 {/* 본문: 지도와 음식점 목록 */}
-                <div className="flex flex-col md:flex-row gap-6" style={{ height: 'calc(100vh - 150px)' }}>
+                <div className="flex flex-col md:flex-row gap-6 h-[800px]">
                     {/* 왼쪽 지도 패널 */}
                     <div className="w-full h-3/5 md:h-full md:w-2/3">
                         <MapPanel 
