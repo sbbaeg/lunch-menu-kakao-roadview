@@ -8,6 +8,7 @@ import { StarRating } from "./ui/StarRating";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
+import { Loader2 } from "lucide-react";
 
 const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null => {
     if (!openingHours?.weekday_text) return null;
@@ -19,9 +20,11 @@ const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null
 
 interface RestaurantPreviewContentProps {
     restaurant: AppRestaurant;
+    isNavigating: boolean;
+    onViewDetails: () => Promise<void>;
 }
 
-export function RestaurantPreviewContent({ restaurant }: RestaurantPreviewContentProps) {
+export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetails }: RestaurantPreviewContentProps) {
     const details = restaurant.googleDetails;
 
     return (
@@ -91,6 +94,15 @@ export function RestaurantPreviewContent({ restaurant }: RestaurantPreviewConten
                 </Carousel>
                 </div>
             )}
+
+            <div className="pt-2">
+                <Button size="sm" className="w-full font-bold" onClick={onViewDetails} disabled={isNavigating}>
+                    <span className="flex items-center justify-center">
+                        {isNavigating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        상세보기
+                    </span>
+                </Button>
+            </div>
 
             <div className="flex gap-2 pt-2">
                 <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">

@@ -8,11 +8,10 @@ import { AppRestaurant } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MapPanel } from '@/components/MapPanel';
 import { RestaurantInfoPanel } from '@/components/RestaurantInfoPanel';
-import { TaggingDialog } from '@/components/TaggingDialog'; // TaggingDialog 추가
-
-// 메인 페이지에서 사용하던 훅들을 모두 import
+import { TaggingDialog } from '@/components/TaggingDialog';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useBlacklist } from '@/hooks/useBlacklist';
 import { useUserTags } from '@/hooks/useUserTags';
@@ -24,7 +23,6 @@ export default function RestaurantPage() {
   const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 메인 페이지와 동일하게 훅들을 사용
   const { isFavorite, toggleFavorite } = useFavorites();
   const { isBlacklisted, toggleBlacklist } = useBlacklist();
   const { userTags, createTag } = useUserTags();
@@ -34,7 +32,6 @@ export default function RestaurantPage() {
 
   useEffect(() => {
     if (!id) return;
-
     const fetchRestaurant = async () => {
       try {
         setLoading(true);
@@ -52,11 +49,10 @@ export default function RestaurantPage() {
         setLoading(false);
       }
     };
-
     fetchRestaurant();
   }, [id, router]);
 
-  // 태그 관련 핸들러 함수들 (메인 페이지 로직 재사용)
+  // Tag handlers
   const handleTagsChange = (updatedRestaurant: AppRestaurant) => {
     setRestaurant(updatedRestaurant);
   };
@@ -100,7 +96,6 @@ export default function RestaurantPage() {
         body: JSON.stringify({ tagId: tag.id, restaurant: taggingRestaurant }),
       });
       if (!response.ok) {
-        // 실패 시 롤백 (UI)
         handleTagsChange(taggingRestaurant);
         setTaggingRestaurant(taggingRestaurant);
         alert("태그 변경에 실패했습니다.");
@@ -112,23 +107,11 @@ export default function RestaurantPage() {
     }
   };
 
-
   if (loading) {
     return (
         <main className="w-full min-h-screen p-4 md:p-8">
-            <div className="mb-6">
-                <Skeleton className="h-10 w-28 mb-4" />
-                <Skeleton className="h-12 w-1/2" />
-            </div>
-            <div className="flex flex-col lg:flex-row gap-8">
-                <div className="w-full lg:w-1/2"><Skeleton className="h-[500px] w-full" /></div>
-                <div className="w-full lg:w-1/2 space-y-6">
-                    <Skeleton className="h-8 w-1/4" />
-                    <Skeleton className="h-6 w-full" />
-                    <Skeleton className="h-6 w-2/3" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-            </div>
+            <Skeleton className="h-10 w-28 mb-4" />
+            <Card><CardHeader><Skeleton className="h-12 w-1/2" /></CardHeader><CardContent><div className="flex flex-col md:flex-row gap-8"><div className="w-full md:w-1/2"><Skeleton className="h-[500px] w-full" /></div><div className="w-full md:w-1/2 space-y-6"><Skeleton className="h-8 w-1/4" /><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-2/3" /><Skeleton className="h-10 w-full" /></div></div></CardContent></Card>
         </main>
     );
   }
@@ -139,55 +122,58 @@ export default function RestaurantPage() {
 
   return (
     <main className="w-full min-h-screen p-4 md:p-8">
-      <header className="mb-6">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          뒤로가기
-        </Button>
-        <h1 className="text-4xl font-bold">{restaurant.placeName}</h1>
-      </header>
+        <Card>
+            <CardHeader>
+                <Button variant="ghost" onClick={() => router.back()} className="mb-4 w-fit p-0 h-auto">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    뒤로가기
+                </Button>
+                <h1 className="text-4xl font-bold">{restaurant.placeName}</h1>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col md:flex-row gap-8">
+                    {/* Left Column */}
+                    <div className="w-full md:w-1/2 flex flex-col gap-8">
+                        <div className="aspect-video w-full">
+                            <MapPanel 
+                                restaurants={[restaurant]}
+                                selectedRestaurant={restaurant}
+                                userLocation={null}
+                                onSearchInArea={() => {}}
+                                onAddressSearch={() => {}}
+                            />
+                        </div>
+                        <div className="w-full">
+                            <h2 className="text-3xl font-bold mb-4">사용자 리뷰</h2>
+                            <div className="p-8 border rounded-lg text-center text-gray-500">
+                                <p>리뷰 기능은 현재 준비 중입니다.</p>
+                            </div>
+                        </div>
+                    </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="w-full lg:w-1/2">
-            <div className="h-[500px] w-full mb-8">
-                 <MapPanel 
-                    restaurants={[restaurant]}
-                    selectedRestaurant={restaurant}
-                    userLocation={null}
-                    onSearchInArea={() => {}}
-                    onAddressSearch={() => {}}
-                    hideControls={true}
-                />
-            </div>
-        </div>
+                    {/* Right Column */}
+                    <div className="w-full md:w-1/2">
+                        <RestaurantInfoPanel 
+                            restaurant={restaurant} 
+                            session={session}
+                            isFavorite={isFavorite}
+                            isBlacklisted={isBlacklisted}
+                            onToggleFavorite={toggleFavorite}
+                            onToggleBlacklist={toggleBlacklist}
+                            onTagManagement={setTaggingRestaurant}
+                        />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
 
-        <div className="w-full lg:w-1/2">
-            <RestaurantInfoPanel 
-                restaurant={restaurant} 
-                session={session}
-                isFavorite={isFavorite}
-                isBlacklisted={isBlacklisted}
-                onToggleFavorite={toggleFavorite}
-                onToggleBlacklist={toggleBlacklist}
-                onTagManagement={setTaggingRestaurant}
-            />
-        </div>
-      </div>
-
-      <div className="mt-12">
-        <h2 className="text-3xl font-bold mb-4">사용자 리뷰</h2>
-        <div className="p-8 border rounded-lg text-center text-gray-500">
-          <p>리뷰 기능은 현재 준비 중입니다.</p>
-        </div>
-      </div>
-
-      <TaggingDialog
-        restaurant={taggingRestaurant}
-        onOpenChange={() => setTaggingRestaurant(null)}
-        userTags={userTags}
-        onToggleTagLink={handleToggleTagLink}
-        onCreateAndLinkTag={handleCreateAndLinkTag}
-      />
+        <TaggingDialog
+            restaurant={taggingRestaurant}
+            onOpenChange={() => setTaggingRestaurant(null)}
+            userTags={userTags}
+            onToggleTagLink={handleToggleTagLink}
+            onCreateAndLinkTag={handleCreateAndLinkTag}
+        />
     </main>
   );
 }

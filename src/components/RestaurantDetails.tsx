@@ -5,8 +5,6 @@ import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
 
@@ -53,16 +51,12 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
         <RestaurantActionButtons {...props} />
       </div>
 
-      <RestaurantPreviewContent restaurant={restaurant} />
-
-      <div className="pt-2">
-        <Button size="sm" className="w-full font-bold" onClick={handleViewDetails} disabled={isNavigating}>
-          <span className="flex items-center justify-center">
-            {isNavigating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            상세보기
-          </span>
-        </Button>
-      </div>
+      {/* 상세보기 버튼 관련 로직을 props로 전달 */}
+      <RestaurantPreviewContent 
+        restaurant={restaurant} 
+        isNavigating={isNavigating}
+        onViewDetails={handleViewDetails}
+      />
     </div>
   );
 }
