@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MapPanel } from '@/components/MapPanel';
-import { RestaurantDetails } from '@/components/RestaurantDetails'; // 상세 정보 컴포넌트를 새로 만들거나 기존 것을 재활용
+import { RestaurantInfoPanel } from '@/components/RestaurantInfoPanel'; // 새로 만든 컴포넌트 import
 
 export default function RestaurantPage() {
   const params = useParams();
@@ -26,7 +26,6 @@ export default function RestaurantPage() {
         setLoading(true);
         const response = await fetch(`/api/restaurants/${id}`);
         if (!response.ok) {
-          // 데이터 가져오기 실패 시 홈페이지로 리디렉션
           router.push('/');
           return;
         }
@@ -48,7 +47,7 @@ export default function RestaurantPage() {
   }
 
   if (!restaurant) {
-    return null; // 로딩 후에도 데이터가 없으면 아무것도 렌더링하지 않음 (이미 리디렉션됨)
+    return null;
   }
 
   return (
@@ -74,30 +73,11 @@ export default function RestaurantPage() {
                     hideControls={true}
                 />
             </div>
-            {/* 나중에 사진 갤러리가 들어올 자리 */}
         </div>
 
         {/* Right Column */}
         <div className="w-full lg:w-1/2">
-            {/* RestaurantDetails 컴포넌트를 사용하여 정보 표시 */}
-            {/* 이 컴포넌트는 RestaurantCard의 내용을 재활용하여 만들 수 있습니다. */}
-            <div className="space-y-6">
-                <div>
-                    <h2 className="text-2xl font-semibold mb-3">정보</h2>
-                    <p><strong>카테고리:</strong> {restaurant.categoryName}</p>
-                    <p><strong>주소:</strong> {restaurant.address}</p>
-                    <p><strong>구글 평점:</strong> {restaurant.googleDetails?.rating ?? 'N/A'} / 5</p>
-                </div>
-                 <div>
-                    <h2 className="text-2xl font-semibold mb-3">태그</h2>
-                    <div className="flex flex-wrap gap-2">
-                        {restaurant.tags?.map(tag => (
-                            <span key={tag.id} className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">#{tag.name}</span>
-                        ))}
-                    </div>
-                </div>
-                {/* 나중에 핵심 기능 버튼(즐겨찾기 등)이 들어올 자리 */}
-            </div>
+            <RestaurantInfoPanel restaurant={restaurant} />
         </div>
       </div>
 
