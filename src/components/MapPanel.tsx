@@ -121,7 +121,7 @@ export function MapPanel({
   }
 
   return (
-    <div className="w-full h-[800px] md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
+    <div className="w-full h-full md:flex-grow rounded-lg border shadow-sm flex flex-col overflow-hidden">
       {!hideControls && (
         <div className="p-4 border-b bg-muted/40">
           <div className="flex items-center gap-2">
