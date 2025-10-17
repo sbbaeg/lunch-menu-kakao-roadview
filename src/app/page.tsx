@@ -548,7 +548,7 @@ export default function Home() {
                 />
 
                 <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="max-w-lg">
                         <AlertDialogHeader>
                             <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
                         </AlertDialogHeader>

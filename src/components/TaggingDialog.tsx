@@ -48,7 +48,7 @@ export function TaggingDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>태그 관리: {restaurant?.placeName}</DialogTitle>
         </DialogHeader>
