@@ -1,9 +1,14 @@
-// src/components/RestaurantDetails.tsx (테스트 2단계)
+// src/components/RestaurantDetails.tsx (테스트 3단계)
 "use client";
 
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
-import { RestaurantActionButtons } from "./RestaurantActionButtons"; // ActionButtons만 복원
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { RestaurantActionButtons } from "./RestaurantActionButtons";
+import { RestaurantPreviewContent } from "./RestaurantPreviewContent"; // 테스트용 컴포넌트 import
 
 interface RestaurantDetailsProps {
   restaurant: AppRestaurant;
@@ -16,6 +21,26 @@ interface RestaurantDetailsProps {
 }
 
 export function RestaurantDetails(props: RestaurantDetailsProps) {
+  const { restaurant } = props;
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const handleViewDetails = async () => {
+    setIsNavigating(true);
+    try {
+      await fetch('/api/restaurants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(restaurant),
+      });
+      router.push(`/restaurants/${restaurant.id}`);
+    } catch (error) {
+      console.error("Failed to navigate to details page:", error);
+      alert("상세 페이지로 이동하는 데 실패했습니다.");
+      setIsNavigating(false);
+    }
+  };
+
   return (
     <div
       className="px-4 pb-4 text-sm space-y-3 border-t"
@@ -23,11 +48,22 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
     >
       <div className="flex items-center justify-between pt-2">
         <p className="text-xs text-gray-500">
-          {props.restaurant.categoryName?.split('>').pop()?.trim()}
+          {restaurant.categoryName?.split('>').pop()?.trim()}
         </p>
         <RestaurantActionButtons {...props} />
       </div>
-      <p>Action Buttons 복원 완료. 오류가 발생하지 않으면 다음 테스트를 진행합니다.</p>
+
+      {/* 테스트용 RestaurantPreviewContent 렌더링 */}
+      <RestaurantPreviewContent restaurant={restaurant} />
+
+      <div className="pt-2">
+        <Button size="sm" className="w-full font-bold" onClick={handleViewDetails} disabled={isNavigating}>
+          <span className="flex items-center justify-center">
+            {isNavigating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            상세보기
+          </span>
+        </Button>
+      </div>
     </div>
   );
 }
