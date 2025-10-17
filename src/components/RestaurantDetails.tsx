@@ -62,8 +62,10 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
       {/* 상세보기 버튼 */}
       <div className="pt-2">
         <Button size="sm" className="w-full font-bold" onClick={handleViewDetails} disabled={isNavigating}>
-          {isNavigating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          상세보기
+          <span className="flex items-center justify-center">
+            {isNavigating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            상세보기
+          </span>
         </Button>
       </div>
     </div>
