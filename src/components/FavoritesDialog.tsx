@@ -15,8 +15,8 @@ interface FavoritesDialogProps {
   favorites: AppRestaurant[];
   session: Session | null;
   subscribedTagIds: number[];
-  selectedItemId: string | undefined;
-  setSelectedItemId: (id: string | undefined) => void;
+  selectedItemId: string;
+  setSelectedItemId: (id: string) => void;
   isFavorite: (id: string) => boolean;
   isBlacklisted: (id: string) => boolean;
   onToggleFavorite: (restaurant: AppRestaurant) => void;

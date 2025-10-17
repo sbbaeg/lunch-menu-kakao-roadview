@@ -259,7 +259,7 @@ export default function Home() {
     };
 
     const clearMapAndResults = () => {
-        setSelectedItemId(undefined);
+        setSelectedItemId("");
         setRestaurantList([]);
     };
 
