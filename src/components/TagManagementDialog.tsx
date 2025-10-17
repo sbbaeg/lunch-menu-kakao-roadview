@@ -185,7 +185,7 @@ export function TagManagementDialog({
           <DialogTitle className="text-xl">태그 관리</DialogTitle>
         </DialogHeader>
         {/* ✅ 전체 콘텐츠 영역을 가로로 나누는 flex 컨테이너를 추가합니다. */}
-        <div className="py-2 flex flex-col md:flex-row gap-6 flex-1 min-h-0">
+        <div className="py-2 flex flex-col md:flex-row gap-6 flex-1 min-h-0 overflow-y-auto">
 
             {/* 👈 왼쪽: 내 태그 및 구독 태그 관리 */}
             <div className="w-full md:w-1/2 flex flex-col">
@@ -271,14 +271,16 @@ export function TagManagementDialog({
                     <ul className="space-y-2">
                         {finalSearchResults.map(tag => (
                             <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                                <div>
-                                    <p className="font-semibold">{tag.name}</p>
-                                    <div className="text-xs text-muted-foreground flex items-center gap-4 mt-1">
-                                        <span>by {tag.creatorName}</span>
-                                        <div className="flex items-center gap-1"><Utensils className="h-3 w-3" /> {tag.restaurantCount}</div>
-                                        <div className="flex items-center gap-1"><Users className="h-3 w-3" /> {tag.subscriberCount}</div>
+                                <Link href={`/tags/${tag.id}`}>
+                                    <div>
+                                        <p className="font-semibold hover:underline">{tag.name}</p>
+                                        <div className="text-xs text-muted-foreground flex items-center gap-4 mt-1">
+                                            <span>by {tag.creatorName}</span>
+                                            <div className="flex items-center gap-1"><Utensils className="h-3 w-3" /> {tag.restaurantCount}</div>
+                                            <div className="flex items-center gap-1"><Users className="h-3 w-3" /> {tag.subscriberCount}</div>
+                                        </div>
                                     </div>
-                                </div>
+                                </Link>
                                 <Button variant="outline" size="sm" onClick={() => handleSubscribe(tag.id)}>구독</Button>
                             </li>
                         ))}
