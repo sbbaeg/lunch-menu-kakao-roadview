@@ -265,7 +265,7 @@ export function TagManagementDialog({
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="flex-1 overflow-y-auto pr-4 min-h-0">
+                <div className="flex-1 overflow-y-auto pr-4 min-h-0 min-h-[200px]">
                     {isSearching && <p className="text-center text-muted-foreground pt-8">검색 중...</p>}
                     {!isSearching && searchQuery && finalSearchResults.length === 0 && <p className="text-center text-muted-foreground pt-8">검색 결과가 없습니다.</p>}
                     <ul className="space-y-2">
