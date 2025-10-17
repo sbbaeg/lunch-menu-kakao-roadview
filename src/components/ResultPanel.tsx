@@ -10,8 +10,8 @@ interface ResultPanelProps {
   restaurants: AppRestaurant[];
   blacklistExcludedCount: number;
   displayedSortOrder: "accuracy" | "distance" | "rating";
-  selectedItemId: string | undefined;
-  setSelectedItemId: (id: string | undefined) => void;
+  selectedItemId: string;
+  setSelectedItemId: (id: string) => void;
   // --- RestaurantCard에 전달할 Props ---
   session: Session | null;
   subscribedTagIds: number[];
