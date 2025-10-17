@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { StarRating } from "./ui/StarRating";
 
-// Helper function for opening hours
 const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null => {
     if (!openingHours?.weekday_text) return null;
     const today = new Date().getDay();
@@ -40,7 +39,6 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
         <RestaurantActionButtons {...props} />
       </div>
 
-      {/* Core Info - 사용자 요청 레이아웃 적용 */}
       <div className="space-y-4">
         <div>
             <p className="text-sm font-semibold text-muted-foreground">카테고리</p>
@@ -51,18 +49,18 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
             <p>{restaurant.address}</p>
         </div>
 
-        {/* Photos - 주소와 별점 사이로 이동 및 크기 확대 */}
         {details?.photos && details.photos.length > 0 && (
             <div>
-                <Carousel className="w-full max-w-lg mx-auto">
+                <p className="text-sm font-semibold text-muted-foreground mb-2">사진</p>
+                <Carousel className="w-full">
                     <CarouselContent>
                     {details.photos.map((photoUrl, index) => (
                         <CarouselItem key={index}>
                         <Dialog>
                             <DialogTrigger asChild>
-                            <button className="w-full focus:outline-none">
-                                <Image src={photoUrl} alt={`${restaurant.placeName} photo ${index + 1}`} width={500} height={281} className="object-cover aspect-video rounded-md" />
-                            </button>
+                              <button className="w-full focus:outline-none relative aspect-video">
+                                <Image src={photoUrl} alt={`${restaurant.placeName} photo ${index + 1}`} fill className="object-cover rounded-md" />
+                              </button>
                             </DialogTrigger>
                             <DialogContent className="max-w-4xl h-[90vh] p-2">
                             <Image src={photoUrl} alt={`${restaurant.placeName} photo ${index + 1}`} fill style={{ objectFit: "contain" }} />
@@ -100,7 +98,6 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
         }
       </div>
 
-      {/* Tags */}
       {restaurant.tags && restaurant.tags.length > 0 && (
         <div>
           <h2 className="text-2xl font-semibold mb-3">태그</h2>
@@ -112,19 +109,22 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
         </div>
       )}
 
-      {/* External Links */}
       <div className="flex gap-2 pt-4">
         <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
           <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold flex items-center justify-center">
-            <Image src="/kakaomap_icon.png" alt="카카오맵 로고" width={16} height={16} className="mr-2" />
-            카카오맵
+            <span className="flex items-center justify-center">
+                <Image src="/kakaomap_icon.png" alt="카카오맵 로고" width={16} height={16} className="mr-2" />
+                카카오맵
+            </span>
           </Button>
         </a>
         {details?.url && (
           <a href={details.url} target="_blank" rel="noopener noreferrer" className="flex-1">
             <Button variant="outline" size="sm" className="w-full font-bold flex items-center justify-center">
-              <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
-              구글맵
+                <span className="flex items-center justify-center">
+                    <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
+                    구글맵
+                </span>
             </Button>
           </a>
         )}
