@@ -128,11 +128,11 @@ export default function TagProfilePage() {
                     <div className="w-full h-3/5 md:h-full md:w-2/3">
                         <MapPanel 
                             restaurants={tagData.restaurants}
-                            hideControls={true}
                             selectedRestaurant={tagData.restaurants.find(r => r.id === selectedItemId) || null}
                             userLocation={null}
                             onSearchInArea={() => {}}
                             onAddressSearch={() => {}}
+                            showSearchBar={false}
                         />
                     </div>
 
