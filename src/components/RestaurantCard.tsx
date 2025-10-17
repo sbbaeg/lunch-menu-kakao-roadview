@@ -1,15 +1,8 @@
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import Link from "next/link";
-import { RestaurantDetails } from "./RestaurantDetails";
-
 import {
     Tooltip,
     TooltipContent,
@@ -17,82 +10,74 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// RestaurantDetails에 전달되던 props들은 더 이상 필요하지 않습니다.
 interface RestaurantCardProps {
   restaurant: AppRestaurant;
   session: Session | null;
   subscribedTagIds: number[];
-  isFavorite?: (id: string) => boolean;
-  isBlacklisted?: (id: string) => boolean;
-  onToggleFavorite?: (restaurant: AppRestaurant) => void;
-  onToggleBlacklist?: (restaurant: AppRestaurant) => void;
-  onTagManagement?: (restaurant: AppRestaurant) => void;
 }
 
 export function RestaurantCard({
   restaurant,
   session,
   subscribedTagIds,
-  ...detailProps
 }: RestaurantCardProps) {
   const details = restaurant.googleDetails;
 
+  // Accordion 관련 컴포넌트를 제거하고 Link 컴포넌트로 전체를 감쌉니다.
   return (
-    <AccordionItem value={restaurant.id} key={restaurant.id} className="border-none group">
-      <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
-        <AccordionTrigger className="text-left hover:no-underline p-0 [&_svg]:hidden">
-          <div className="w-full">
-            <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-md">{restaurant.placeName}</CardTitle>
-              {restaurant.distance && (
-                  <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
-                      {restaurant.distance}m
-                  </span>
-              )}
-            </CardHeader>
-            <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
-              <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
-                <span>{restaurant.categoryName?.split(">").pop()?.trim()}</span>
-                {details?.rating && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-yellow-400">★</span>
-                    <span>{details.rating.toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
-              
-              <TooltipProvider delayDuration={100}>
-                <div className="flex flex-wrap gap-1">
-                  {restaurant.tags?.map(tag => {
-                    const isMyTag = tag.creatorId === session?.user?.id;
-                    const isSubscribedTag = subscribedTagIds.includes(tag.id);
-                    const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
-                    const icon = isSubscribedTag ? "★ " : "# ";
-
-                    return (
-                      <Tooltip key={tag.id}>
-                        <TooltipTrigger asChild>
-                          <Link href={`/tags/${tag.id}`} onClick={(e) => e.stopPropagation()}>
-                            <Badge variant={badgeVariant} className="flex items-center">
-                              {icon}{tag.name}
-                            </Badge>
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>by {tag.creatorName || '알 수 없음'}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
+    <Link href={`/restaurants/${restaurant.id}`} className="block border-none group" key={restaurant.id}>
+      <Card className="mb-2 shadow-sm transition-colors hover:bg-accent">
+        <div className="w-full p-0">
+          <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-md">{restaurant.placeName}</CardTitle>
+            {restaurant.distance && (
+                <span className="text-xs text-gray-600 whitespace-nowrap dark:text-gray-400">
+                    {restaurant.distance}m
+                </span>
+            )}
+          </CardHeader>
+          <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
+            <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
+              <span>{restaurant.categoryName?.split(">").pop()?.trim()}</span>
+              {details?.rating && (
+                <div className="flex items-center gap-1">
+                  <span className="text-yellow-400">★</span>
+                  <span>{details.rating.toFixed(1)}</span>
                 </div>
-              </TooltipProvider>
+              )}
+            </div>
+            
+            <TooltipProvider delayDuration={100}>
+              <div className="flex flex-wrap gap-1">
+                {restaurant.tags?.map(tag => {
+                  const isMyTag = tag.creatorId === session?.user?.id;
+                  const isSubscribedTag = subscribedTagIds.includes(tag.id);
+                  const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
+                  const icon = isSubscribedTag ? "★ " : "# ";
 
-            </CardContent>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent>
-          <RestaurantDetails restaurant={restaurant} session={session} {...detailProps} />
-        </AccordionContent>
+                  return (
+                    <Tooltip key={tag.id}>
+                      <TooltipTrigger asChild>
+                        {/* 태그 클릭 시 페이지 이동이 중첩되지 않도록 stopPropagation을 유지합니다. */}
+                        <Link href={`/tags/${tag.id}`} onClick={(e) => e.stopPropagation()}>
+                          <Badge variant={badgeVariant} className="flex items-center">
+                            {icon}{tag.name}
+                          </Badge>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>by {tag.creatorName || '알 수 없음'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
+
+          </CardContent>
+        </div>
       </Card>
-    </AccordionItem>
+    </Link>
   );
 }
