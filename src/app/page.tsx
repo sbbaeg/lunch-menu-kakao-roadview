@@ -447,14 +447,16 @@ export default function Home() {
                 </div>
             <Card className="w-full max-w-6xl p-6 md:p-8">
                 <div className="flex flex-col md:flex-row gap-6">
-                    <MapPanel
-                        restaurants={restaurantList}
-                        selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
-                        userLocation={userLocation}
-                        onSearchInArea={handleSearchInArea}
-                        onAddressSearch={handleAddressSearch}
-                        onMapReady={setIsMapReady}
-                    />
+                    <div className="w-full md:w-3/5 h-[400px] md:h-auto">
+                        <MapPanel
+                            restaurants={restaurantList}
+                            selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
+                            userLocation={userLocation}
+                            onSearchInArea={handleSearchInArea}
+                            onAddressSearch={handleAddressSearch}
+                            onMapReady={setIsMapReady}
+                        />
+                    </div>
 
                     {/* 오른쪽 제어 패널 */}
                     <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
