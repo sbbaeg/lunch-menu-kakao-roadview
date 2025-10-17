@@ -125,7 +125,7 @@ export default function TagProfilePage() {
                 {/* 본문: 지도와 음식점 목록 */}
                 <div className="flex flex-col md:flex-row gap-6" style={{ height: 'calc(100vh - 150px)' }}>
                     {/* 왼쪽 지도 패널 */}
-                    <div className="w-full h-[400px] md:h-full md:w-2/3">
+                    <div className="w-full h-3/5 md:h-full md:w-2/3">
                         <MapPanel 
                             restaurants={tagData.restaurants}
                             hideControls={true}
@@ -137,7 +137,7 @@ export default function TagProfilePage() {
                     </div>
 
                     {/* 오른쪽 음식점 목록 패널 */}
-                    <div className="w-full md:w-1/3 md:h-full flex-1 min-h-0 overflow-y-auto">
+                    <div className="w-full h-2/5 md:w-1/3 md:h-full overflow-y-auto">
                         <Accordion
                             type="single"
                             collapsible
