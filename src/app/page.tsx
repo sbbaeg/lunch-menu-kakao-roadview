@@ -106,9 +106,7 @@ export default function Home() {
     const { subscribedTagIds } = useSubscriptions();
 
 
-    const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
-        undefined
-    );
+    const [selectedItemId, setSelectedItemId] = useState<string>("");
     const [restaurantList, setRestaurantList] = useState<AppRestaurant[]>([]);
     const [rouletteItems, setRouletteItems] = useState<AppRestaurant[]>([]);
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
