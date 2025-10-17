@@ -6,11 +6,12 @@ import {
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AppRestaurant, GoogleOpeningHours } from "@/lib/types";
 import { Session } from "next-auth";
-import { EyeOff, Heart, Tags, ChevronDown } from "lucide-react";
+import { EyeOff, Heart, Tags, ChevronDown, Loader2 } from "lucide-react"; // Loader2 아이콘 추가
 import Image from "next/image";
-import Link from "next/link"; // Link import 추가
+import Link from "next/link";
+import { useRouter } from 'next/navigation'; // useRouter 추가
+import { useState } from 'react'; // useState 추가
 
-// StarRating 컴포넌트를 이 파일로 옮겨옵니다.
 const StarRating = ({ rating, reviewCount, isTrigger = false }: { rating: number, reviewCount?: number, isTrigger?: boolean }) => {
     const fullStars = Math.floor(rating);
     const halfStar = rating % 1 >= 0.5;
@@ -31,7 +32,6 @@ const StarRating = ({ rating, reviewCount, isTrigger = false }: { rating: number
     );
 };
 
-// getTodaysOpeningHours 함수도 이 파일로 옮겨옵니다.
 const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null => {
     if (!openingHours?.weekday_text) return null;
     const today = new Date().getDay();
@@ -60,6 +60,30 @@ export function RestaurantDetails({
   onTagManagement,
 }: RestaurantDetailsProps) {
   const details = restaurant.googleDetails;
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const handleViewDetails = async () => {
+    setIsNavigating(true);
+    try {
+      // 1. 식당 정보를 DB에 저장/업데이트 요청
+      await fetch('/api/restaurants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(restaurant),
+      });
+
+      // 2. 성공 시 상세 페이지로 이동
+      router.push(`/restaurants/${restaurant.id}`);
+    } catch (error) {
+      console.error("Failed to navigate to details page:", error);
+      alert("상세 페이지로 이동하는 데 실패했습니다.");
+      setIsNavigating(false);
+    }
+    // 페이지 이동이 시작되면 이 컴포넌트는 사라지므로, setIsNavigating(false)는 에러 시에만 필요합니다.
+  };
 
   return (
     <div
@@ -153,13 +177,12 @@ export function RestaurantDetails({
         </div>
       )}
 
-      {/* 상세보기 버튼 추가 */}
+      {/* Link를 Button onClick 핸들러로 변경 */}
       <div className="pt-2">
-        <Link href={`/restaurants/${restaurant.id}`} passHref>
-          <Button asChild size="sm" className="w-full font-bold">
-            <a>상세보기</a>
-          </Button>
-        </Link>
+        <Button size="sm" className="w-full font-bold" onClick={handleViewDetails} disabled={isNavigating}>
+          {isNavigating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          상세보기
+        </Button>
       </div>
 
       <div className="flex gap-2 pt-2">
