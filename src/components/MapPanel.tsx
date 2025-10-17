@@ -1,6 +1,7 @@
-// hooks/useKakaoMap.ts (수정)
+// src/components/MapPanel.tsx
 
 import { useState, useEffect, useRef } from 'react';
+import { useKakaoMap } from '@/hooks/useKakaoMap';
 import { AppRestaurant } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
