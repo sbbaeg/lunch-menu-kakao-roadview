@@ -53,7 +53,6 @@ export async function GET(
         place_url: `https://place.map.kakao.com/${restaurant.kakaoPlaceId}`,
         category_name: restaurant.categoryName || '',
         distance: '', // 상세 페이지에서는 거리 정보가 필요 없음
-        phone: '',
         address_name: restaurant.address || '',
         road_address_name: restaurant.address || '',
         category_group_code: '',
