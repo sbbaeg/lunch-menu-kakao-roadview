@@ -189,7 +189,7 @@ export default function RestaurantPage() {
                             />
                         </div>
                         <div className="w-full">
-                            <h2 className="text-3xl font-bold mb-4">사용자 리뷰</h2>
+                            
                             {restaurant.dbId ? (
                                 <ReviewSection restaurantId={restaurant.dbId} />
                             ) : (

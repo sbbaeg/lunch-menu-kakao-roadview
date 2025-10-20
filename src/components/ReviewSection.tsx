@@ -84,25 +84,23 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
     }
   }, [reviews, sortOrder]);
 
-  const bestReviews = useMemo(() => 
-    [...reviews]
+  const bestReviewIds = useMemo(() => {
+    const ids = [...reviews]
       .sort((a, b) => b.upvotes - a.upvotes)
       .slice(0, 3)
       .filter(r => r.upvotes > 0)
-  , [reviews]);
+      .map(r => r.id);
+    return new Set(ids);
+  }, [reviews]);
 
   const myReview = useMemo(() => {
     if (session?.user) {
-      return sortedReviews.find(r => r.userId === session.user.id) || null;
+      return reviews.find(r => r.userId === session.user.id) || null;
     }
     return null;
-  }, [sortedReviews, session]);
+  }, [reviews, session]);
 
-  const otherReviews = sortedReviews.filter(r => 
-    r.id !== myReview?.id && !bestReviews.some(br => br.id === r.id)
-  );
-
-  const showReviewForm = status === 'authenticated' && (!myReview || editingReview?.id === myReview.id);
+  const showNewReviewForm = status === 'authenticated' && !myReview && !editingReview;
 
   if (isLoading) {
     return <div>리뷰를 불러오는 중...</div>;
@@ -110,36 +108,17 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
 
   return (
     <div className="space-y-8">
-      {/* Best Reviews */}
-      {bestReviews.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold">베스트 리뷰 ✨</h3>
-          <div className="space-y-2">
-            {bestReviews.map(review => (
-              <ReviewCard key={`best-${review.id}`} review={review} onVote={handleVote} onDelete={handleDelete} onEdit={setEditingReview} />
-            ))}
-          </div>
-        </div>
+      {/* Show form when editing or creating a new review */}
+      {(editingReview || showNewReviewForm) && (
+        <ReviewForm 
+          restaurantId={restaurantId} 
+          existingReview={editingReview}
+          onReviewSubmit={() => { setEditingReview(null); fetchReviews(); }}
+          onCancelEdit={() => setEditingReview(null)}
+        />
       )}
 
-      {/* My Review / Edit Form */}
-      {session && myReview && (
-        <div className="space-y-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-          <h3 className="text-xl font-bold">내 리뷰</h3>
-          {editingReview?.id === myReview.id ? (
-            <ReviewForm 
-              restaurantId={restaurantId} 
-              existingReview={myReview}
-              onReviewSubmit={() => { setEditingReview(null); fetchReviews(); }}
-              onCancelEdit={() => setEditingReview(null)}
-            />
-          ) : (
-            <ReviewCard review={myReview} onVote={handleVote} onDelete={handleDelete} onEdit={setEditingReview} />
-          )}
-        </div>
-      )}
-
-      {/* All other reviews */}
+      {/* Unified Review List */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-bold">전체 리뷰 ({reviews.length}개)</h3>
@@ -156,23 +135,25 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
           </Select>
         </div>
         <Separator />
-        {otherReviews.length > 0 ? (
+        {sortedReviews.length > 0 ? (
           <div className="space-y-2">
-            {otherReviews.map(review => (
-              <ReviewCard key={review.id} review={review} onVote={handleVote} onDelete={handleDelete} onEdit={setEditingReview} />
+            {sortedReviews.map(review => (
+              <ReviewCard 
+                key={review.id} 
+                review={review} 
+                isBestReview={bestReviewIds.has(review.id)}
+                onVote={handleVote} 
+                onDelete={handleDelete} 
+                onEdit={setEditingReview} 
+              />
             ))}
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            <p>아직 다른 리뷰가 없습니다. 첫 리뷰를 작성해보세요!</p>
+            <p>아직 작성된 리뷰가 없습니다.</p>
           </div>
         )}
       </div>
-
-      {/* New Review Form */}
-      {status === 'authenticated' && !myReview && (
-        <ReviewForm restaurantId={restaurantId} onReviewSubmit={fetchReviews} />
-      )}
     </div>
   );
 }
