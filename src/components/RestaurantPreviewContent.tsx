@@ -95,8 +95,8 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
                 </div>
             )}
 
-            <div className="pt-2">
-                <Button size="sm" className="w-full font-bold" onClick={onViewDetails} disabled={isNavigating}>
+            <div className="pt-2 flex justify-center">
+                <Button size="sm" className="font-bold px-8" onClick={onViewDetails} disabled={isNavigating}>
                     <span className="flex items-center justify-center">
                         {isNavigating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         상세보기
@@ -104,9 +104,9 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
                 </Button>
             </div>
 
-            <div className="flex gap-2 pt-2">
-                <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold">
+            <div className="flex justify-center gap-2 pt-2">
+                <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <Button className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold">
                         <span className="flex items-center justify-center">
                             <Image src="/kakaomap_icon.png" alt="카카오맵 로고" width={16} height={16} className="mr-2" />
                             카카오맵
@@ -114,8 +114,8 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
                     </Button>
                 </a>
                 {details?.url && (
-                    <a href={details.url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm" className="w-full font-bold">
+                    <a href={details.url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                        <Button variant="outline" className="w-full font-bold">
                             <span className="flex items-center justify-center">
                                 <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
                                 구글맵

@@ -34,8 +34,10 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div>
         <h2 className="text-2xl font-semibold">상세 정보</h2>
+      </div>
+      <div className="flex justify-start">
         <RestaurantActionButtons {...props} />
       </div>
 

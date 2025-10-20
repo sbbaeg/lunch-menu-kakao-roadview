@@ -22,12 +22,13 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // 관계 설정
-  accounts   Account[]
-  sessions   Session[]
-  favorites  Favorite[]
-  blacklist  Blacklist[]
-  tags       Tag[] 
-  tagSubscriptions  TagSubscription[]
+  accounts         Account[]
+  sessions         Session[]
+  favorites        Favorite[]
+  blacklist        Blacklist[]
+  tags             Tag[]
+  tagSubscriptions TagSubscription[]
+  reviews          Review[] // 추가된 관계
 }
 
 // 2. 음식점 정보 모델
@@ -45,7 +46,8 @@ model Restaurant {
   // 관계 설정
   favorites  Favorite[]
   blacklist  Blacklist[]
-  taggedBy  TagsOnRestaurants[]
+  taggedBy   TagsOnRestaurants[]
+  reviews    Review[] // 추가된 관계
 }
 
 // 3. 즐겨찾기 연결 모델 (User와 Restaurant 연결)
@@ -70,6 +72,24 @@ model Blacklist {
   restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@id([userId, restaurantId]) // 복합 기본 키
+}
+
+// 7. 리뷰 모델 (새로 추가)
+model Review {
+  id           Int      @id @default(autoincrement())
+  rating       Int // 1-5점
+  text         String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // 한 명의 유저는 한 식당에 하나의 리뷰만 작성 가능
+  @@unique([userId, restaurantId])
 }
 
 

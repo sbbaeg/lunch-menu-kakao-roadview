@@ -69,12 +69,17 @@ export function RouletteDialog({ isOpen, onOpenChange, items, onResult }: Roulet
                 </DialogHeader>
                 <div className="flex flex-col justify-center items-center space-y-6">
                     {rouletteData.length > 0 && (
-                        <Wheel
-                            mustStartSpinning={mustSpin}
-                            prizeNumber={prizeNumber}
-                            data={rouletteData}
-                            onStopSpinning={handleStopSpinning}
-                        />
+                        <div className="w-full aspect-square max-w-[450px] p-4">
+                            <Wheel
+                                mustStartSpinning={mustSpin}
+                                prizeNumber={prizeNumber}
+                                data={rouletteData}
+                                onStopSpinning={handleStopSpinning}
+                                outerBorderWidth={3}
+                                radiusLineWidth={3}
+                                fontSize={14}
+                            />
+                        </div>
                     )}
                     <Button
                         onClick={handleSpinClick}
