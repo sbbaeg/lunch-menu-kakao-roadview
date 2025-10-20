@@ -91,9 +91,12 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
       .filter(r => r.upvotes > 0)
   , [reviews]);
 
-  const myReview = useMemo(() =>
-    session?.user ? sortedReviews.find(r => r.userId === session.user.id) : null
-  , [sortedReviews, session]);
+  const myReview = useMemo(() => {
+    if (session?.user) {
+      return sortedReviews.find(r => r.userId === session.user.id) || null;
+    }
+    return null;
+  }, [sortedReviews, session]);
 
   const otherReviews = sortedReviews.filter(r => 
     r.id !== myReview?.id && !bestReviews.some(br => br.id === r.id)
