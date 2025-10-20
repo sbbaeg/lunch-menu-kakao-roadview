@@ -69,7 +69,7 @@ export function RouletteDialog({ isOpen, onOpenChange, items, onResult }: Roulet
                 </DialogHeader>
                 <div className="flex flex-col justify-center items-center space-y-6">
                     {rouletteData.length > 0 && (
-                        <div className="w-full">
+                        <div className="w-full flex justify-center">
                             <Wheel
                                 mustStartSpinning={mustSpin}
                                 prizeNumber={prizeNumber}
