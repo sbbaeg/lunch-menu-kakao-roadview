@@ -52,12 +52,22 @@ export function RestaurantCard({
             <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
               <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
                 <span>{restaurant.categoryName?.split(">").pop()?.trim()}</span>
-                {details?.rating && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-yellow-400">★</span>
-                    <span>{details.rating.toFixed(1)}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {/* App Rating */}
+                  {restaurant.appReview && restaurant.appReview.reviewCount > 0 && (
+                    <div className="flex items-center gap-1" title={`앱 평점 (${restaurant.appReview.reviewCount}개)`}>
+                      <span className="text-blue-400">★</span>
+                      <span>{restaurant.appReview.averageRating.toFixed(1)}</span>
+                    </div>
+                  )}
+                  {/* Google Rating */}
+                  {details?.rating && (
+                    <div className="flex items-center gap-1" title="구글 평점">
+                      <span className="text-yellow-400">★</span>
+                      <span>{details.rating.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               
               <TooltipProvider delayDuration={100}>

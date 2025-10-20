@@ -84,6 +84,13 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
             </div>
         }
 
+        {restaurant.appReview && restaurant.appReview.reviewCount > 0 && (
+            <div>
+                <p className="text-sm font-semibold text-muted-foreground">앱 평점</p>
+                <StarRating rating={restaurant.appReview.averageRating} reviewCount={restaurant.appReview.reviewCount} />
+            </div>
+        )}
+
         {details?.opening_hours && (
             <div>
                 <p className="text-sm font-semibold text-muted-foreground">영업</p>

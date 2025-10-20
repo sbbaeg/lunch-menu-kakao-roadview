@@ -173,25 +173,51 @@ export async function GET(request: Request) {
             sortedResults = finalResults;
         }
 
-        // ... 이하 태그 정보 결합 및 최종 반환 로직은 기존과 동일 ...
         const resultIds = sortedResults.map(r => r.id);
-        const restaurantsWithTags = await prisma.restaurant.findMany({
+
+        // DB에서 태그 정보와 레스토랑 ID를 가져옵니다.
+        const dbRestaurants = await prisma.restaurant.findMany({
             where: { kakaoPlaceId: { in: resultIds } },
             include: {
                 taggedBy: {
                     include: {
-                        tag: { include: { user: { select: { id: true, name: true, } } } }
+                        tag: { include: { user: { select: { id: true, name: true } } } }
                     }
                 }
             }
         });
+        const dbRestaurantMap = new Map(dbRestaurants.map(r => [r.kakaoPlaceId, r]));
+
+        // 리뷰 평점 및 개수 집계
+        const reviewAggregations = await prisma.review.groupBy({
+            by: ['restaurantId'],
+            where: {
+                restaurantId: { in: dbRestaurants.map(r => r.id) },
+            },
+            _avg: {
+                rating: true,
+            },
+            _count: {
+                id: true,
+            },
+        });
+        const reviewAggsMap = new Map(reviewAggregations.map(agg => [agg.restaurantId, agg]));
+
+        // 최종 데이터 조합
         const finalDocuments: RestaurantWithTags[] = sortedResults.map(result => {
-            const match = restaurantsWithTags.find(r => r.kakaoPlaceId === result.id);
+            const dbRestaurant = dbRestaurantMap.get(result.id);
+            const reviewAggs = dbRestaurant ? reviewAggsMap.get(dbRestaurant.id) : null;
+
             return {
                 ...result,
-                tags: match ? match.taggedBy.map(t => ({ id: t.tag.id, name: t.tag.name, isPublic: t.tag.isPublic, creatorId: t.tag.user.id, creatorName: t.tag.user.name, })) : []
+                tags: dbRestaurant ? dbRestaurant.taggedBy.map(t => ({ id: t.tag.id, name: t.tag.name, isPublic: t.tag.isPublic, creatorId: t.tag.user.id, creatorName: t.tag.user.name })) : [],
+                appReview: reviewAggs ? {
+                    averageRating: reviewAggs._avg.rating || 0,
+                    reviewCount: reviewAggs._count.id,
+                } : undefined,
             };
         });
+
         return NextResponse.json({ documents: finalDocuments, blacklistExcludedCount, tagExcludedCount });
 
     } catch (error) {
