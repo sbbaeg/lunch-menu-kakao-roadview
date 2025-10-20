@@ -210,7 +210,6 @@ export default function RestaurantPage() {
                             onToggleFavorite={toggleFavorite}
                             onToggleBlacklist={toggleBlacklist}
                             onTagManagement={setTaggingRestaurant}
-                            showTextLabels={true}
                         />
                     </div>
                 </div>
