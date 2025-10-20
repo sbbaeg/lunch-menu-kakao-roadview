@@ -61,7 +61,7 @@ export function RouletteDialog({ isOpen, onOpenChange, items, onResult }: Roulet
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md p-6">
+            <DialogContent className="p-6 w-full max-w-xl">
                 <DialogHeader>
                     <DialogTitle className="text-center text-2xl mb-4">
                         룰렛을 돌려 오늘 점심을 선택하세요!
@@ -69,7 +69,7 @@ export function RouletteDialog({ isOpen, onOpenChange, items, onResult }: Roulet
                 </DialogHeader>
                 <div className="flex flex-col justify-center items-center space-y-6">
                     {rouletteData.length > 0 && (
-                        <div className="w-full max-w-[400px]">
+                        <div className="w-full">
                             <Wheel
                                 mustStartSpinning={mustSpin}
                                 prizeNumber={prizeNumber}
