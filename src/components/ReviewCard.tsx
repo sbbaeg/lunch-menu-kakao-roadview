@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { AppReview } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/StarRating";
 import { ThumbsUp, ThumbsDown, Edit, Trash2 } from 'lucide-react';
@@ -14,12 +15,13 @@ import { VoteType } from '@prisma/client';
 
 interface ReviewCardProps {
   review: AppReview;
+  isBestReview?: boolean;
   onVote: (reviewId: number, voteType: VoteType) => Promise<void>;
   onDelete: (reviewId: number) => Promise<void>;
   onEdit: (review: AppReview) => void;
 }
 
-export function ReviewCard({ review, onVote, onDelete, onEdit }: ReviewCardProps) {
+export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onEdit }: ReviewCardProps) {
   const { data: session } = useSession();
   const isAuthor = session?.user?.id === review.userId;
 
@@ -61,7 +63,12 @@ export function ReviewCard({ review, onVote, onDelete, onEdit }: ReviewCardProps
   };
 
   return (
-    <div className="p-4 border-b last:border-b-0">
+    <div className={`p-4 border-b last:border-b-0 relative rounded-md ${isBestReview ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}>
+      {isBestReview && (
+        <Badge variant="destructive" className="absolute -top-2 -left-2 -rotate-12 z-10">
+          BEST
+        </Badge>
+      )}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <Avatar>
