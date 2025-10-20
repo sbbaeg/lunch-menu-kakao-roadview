@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { AppRestaurant } from '@/lib/types';
+import { AppRestaurant, Tag } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,17 +17,42 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useBlacklist } from '@/hooks/useBlacklist';
 import { useUserTags } from '@/hooks/useUserTags';
 
+// Imports for Side Menu and Dialogs
+import { SideMenuSheet } from '@/components/SideMenuSheet';
+import { FavoritesDialog } from '@/components/FavoritesDialog';
+import { BlacklistDialog } from '@/components/BlacklistDialog';
+import { TagManagementDialog } from '@/components/TagManagementDialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useSubscriptions } from '@/hooks/useSubscriptions';
+
 export default function RestaurantPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { isFavorite, toggleFavorite } = useFavorites();
-  const { isBlacklisted, toggleBlacklist } = useBlacklist();
-  const { userTags, createTag } = useUserTags();
+  // Hooks for data
+  const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
+  const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
+  const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
+  const { subscribedTagIds } = useSubscriptions();
+
+  // State for dialogs
   const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
+  const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
+  const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
+  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
 
   const id = params.id as string;
 
@@ -43,6 +68,7 @@ export default function RestaurantPage() {
         }
         const data = await response.json();
         setRestaurant(data);
+        setSelectedItemId(data.id);
       } catch (error) {
         console.error('Error fetching restaurant:', error);
         router.push('/');
@@ -53,9 +79,18 @@ export default function RestaurantPage() {
     fetchRestaurant();
   }, [id, router]);
 
+  const handleBlacklistClick = () => {
+    if (status === 'authenticated') {
+        setIsBlacklistOpen(true);
+    } else {
+        setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
+    }
+  };
+
   // Tag handlers
   const handleTagsChange = (updatedRestaurant: AppRestaurant) => {
     setRestaurant(updatedRestaurant);
+    updateFavoriteInList(updatedRestaurant);
   };
 
   const handleCreateAndLinkTag = async (name: string) => {
@@ -80,30 +115,31 @@ export default function RestaurantPage() {
     }
   };
 
-  const handleToggleTagLink = async (tag: any) => {
+  const handleToggleTagLink = async (tag: Tag) => {
     if (!session?.user || !taggingRestaurant) return;
+    const originalRestaurant = taggingRestaurant;
     const isCurrentlyTagged = taggingRestaurant.tags?.some(t => t.id === tag.id);
     const newTags = isCurrentlyTagged
       ? taggingRestaurant.tags?.filter(t => t.id !== tag.id)
       : [...(taggingRestaurant.tags || []), tag];
-    const updatedRestaurant = { ...taggingRestaurant, tags: newTags };
+    const updatedRestaurant = { ...originalRestaurant, tags: newTags };
     handleTagsChange(updatedRestaurant);
     setTaggingRestaurant(updatedRestaurant);
 
     try {
-      const response = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
+      const response = await fetch(`/api/restaurants/${originalRestaurant.id}/tags`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tagId: tag.id, restaurant: taggingRestaurant }),
+        body: JSON.stringify({ tagId: tag.id, restaurant: originalRestaurant }),
       });
       if (!response.ok) {
-        handleTagsChange(taggingRestaurant);
-        setTaggingRestaurant(taggingRestaurant);
+        handleTagsChange(originalRestaurant);
+        setTaggingRestaurant(originalRestaurant);
         alert("태그 변경에 실패했습니다.");
       }
     } catch (error) {
-        handleTagsChange(taggingRestaurant);
-        setTaggingRestaurant(taggingRestaurant);
+        handleTagsChange(originalRestaurant);
+        setTaggingRestaurant(originalRestaurant);
         alert("태그 변경 중 네트워크 오류가 발생했습니다.");
     }
   };
@@ -122,7 +158,14 @@ export default function RestaurantPage() {
   }
 
   return (
-    <main className="w-full min-h-screen p-4 md:p-8">
+    <main className="w-full min-h-screen p-4 md:p-8 relative">
+        <div className="absolute top-4 right-4 z-50">
+            <SideMenuSheet
+                onShowFavorites={() => setIsFavoritesListOpen(true)}
+                onShowBlacklist={handleBlacklistClick}
+                onShowTagManagement={() => setIsTagManagementOpen(true)}
+            />
+        </div>
         <Card>
             <CardHeader>
                 <Button variant="ghost" onClick={() => router.back()} className="mb-4 w-fit p-0 h-auto">
@@ -167,11 +210,43 @@ export default function RestaurantPage() {
                             onToggleFavorite={toggleFavorite}
                             onToggleBlacklist={toggleBlacklist}
                             onTagManagement={setTaggingRestaurant}
+                            showTextLabels={true}
                         />
                     </div>
                 </div>
             </CardContent>
         </Card>
+
+        <TagManagementDialog
+            isOpen={isTagManagementOpen}
+            onOpenChange={setIsTagManagementOpen}
+            userTags={userTags}
+            onCreateTag={createTag}
+            onDeleteTag={deleteTag}
+            onToggleTagPublic={toggleTagPublic}
+        />
+
+        <FavoritesDialog
+            isOpen={isFavoritesListOpen}
+            onOpenChange={setIsFavoritesListOpen}
+            favorites={favorites}
+            session={session}
+            subscribedTagIds={subscribedTagIds}
+            selectedItemId={selectedItemId}
+            setSelectedItemId={setSelectedItemId}
+            isFavorite={isFavorite}
+            isBlacklisted={isBlacklisted}
+            onToggleFavorite={toggleFavorite}
+            onToggleBlacklist={toggleBlacklist}
+            onTagManagement={setTaggingRestaurant}
+        />
+
+        <BlacklistDialog
+            isOpen={isBlacklistOpen}
+            onOpenChange={setIsBlacklistOpen}
+            blacklist={blacklist}
+            onToggleBlacklist={toggleBlacklist}
+        />
 
         <TaggingDialog
             restaurant={taggingRestaurant}
@@ -180,6 +255,20 @@ export default function RestaurantPage() {
             onToggleTagLink={handleToggleTagLink}
             onCreateAndLinkTag={handleCreateAndLinkTag}
         />
+
+        <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
+            <AlertDialogContent className="max-w-lg">
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
+                </AlertDialogHeader>
+                <AlertDialogDescription>
+                    {alertInfo?.message}
+                </AlertDialogDescription>
+                <AlertDialogFooter>
+                    <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </main>
   );
 }

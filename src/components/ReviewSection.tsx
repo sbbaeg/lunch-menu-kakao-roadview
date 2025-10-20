@@ -139,11 +139,6 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
         </div>
       )}
 
-      {/* New Review Form */}
-      {status === 'authenticated' && !myReview && (
-        <ReviewForm restaurantId={restaurantId} onReviewSubmit={fetchReviews} />
-      )}
-
       {/* All other reviews */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -173,6 +168,11 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
           </div>
         )}
       </div>
+
+      {/* New Review Form */}
+      {status === 'authenticated' && !myReview && (
+        <ReviewForm restaurantId={restaurantId} onReviewSubmit={fetchReviews} />
+      )}
     </div>
   );
 }
