@@ -2,19 +2,38 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Share2, Star } from 'lucide-react';
-import { AppRestaurant } from '@/lib/types'; // 메인 페이지의 타입을 재사용합니다.
+import { AppRestaurant, Tag } from '@/lib/types'; 
 import { TagHeader } from "@/components/TagHeader";
 import { MapPanel } from '@/components/MapPanel';
 import { Accordion } from '@/components/ui/accordion';
 import { RestaurantCard } from '@/components/RestaurantCard';
+
+// Hooks
+import { useFavorites } from '@/hooks/useFavorites';
+import { useBlacklist } from '@/hooks/useBlacklist';
+import { useUserTags } from '@/hooks/useUserTags';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+
+// Components for Side Menu
+import { SideMenuSheet } from '@/components/SideMenuSheet';
+import { FavoritesDialog } from '@/components/FavoritesDialog';
+import { BlacklistDialog } from '@/components/BlacklistDialog';
+import { TagManagementDialog } from '@/components/TagManagementDialog';
+import { TaggingDialog } from '@/components/TaggingDialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 // 페이지에서 사용할 데이터의 타입을 정의합니다.
 interface TagProfileData {
@@ -37,11 +56,22 @@ export default function TagProfilePage() {
     const [tagData, setTagData] = useState<TagProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedItemId, setSelectedItemId] = useState<string>("");
+
+    // Hooks for side menu functionality
+    const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
+    const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
+    const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
+
+    // State for dialogs
+    const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
+    const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
+    const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
+    const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
+    const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
 
     const tagId = params.id;
 
-    // 1. 태그 프로필 데이터를 불러오는 useEffect
     useEffect(() => {
         const fetchData = async () => {
             if (!tagId) return;
@@ -52,7 +82,6 @@ export default function TagProfilePage() {
                     const data = await response.json();
                     setTagData(data);
                 } else {
-                    // 존재하지 않는 태그일 경우 홈으로 리다이렉트
                     router.push('/');
                 }
             } catch (error) {
@@ -65,12 +94,19 @@ export default function TagProfilePage() {
         fetchData();
     }, [tagId, router]);
 
+    const handleBlacklistClick = () => {
+        if (status === 'authenticated') {
+            setIsBlacklistOpen(true);
+        } else {
+            setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
+        }
+    };
+
     const handleSubscribe = async () => {
         if (status !== 'authenticated' || !tagData) return;
         
-        // 낙관적 업데이트
         const originalData = { ...tagData };
-        setTagData(prev => prev ? { ...prev, isSubscribed: !prev.isSubscribed } : null);
+        setTagData(prev => prev ? { ...prev, isSubscribed: !prev.isSubscribed, subscriberCount: prev.isSubscribed ? prev.subscriberCount - 1 : prev.subscriberCount + 1 } : null);
 
         try {
             const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
@@ -92,7 +128,70 @@ export default function TagProfilePage() {
         }
     };
 
-    // 로딩 중일 때 스켈레톤 UI 표시
+    const handleTagsChange = (updatedRestaurant: AppRestaurant) => {
+        setTagData(prevData => {
+            if (!prevData) return null;
+            return {
+                ...prevData,
+                restaurants: prevData.restaurants.map(r => 
+                    r.id === updatedRestaurant.id ? updatedRestaurant : r
+                )
+            };
+        });
+        updateFavoriteInList(updatedRestaurant);
+    };
+
+    const handleCreateAndLinkTag = async (name: string) => {
+        if (!name.trim() || !taggingRestaurant) return;
+        const newTag = await createTag(name);
+        if (newTag) {
+            const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tagId: newTag.id, restaurant: taggingRestaurant }),
+            });
+            if (linkResponse.ok) {
+                const updatedRestaurant = {
+                    ...taggingRestaurant,
+                    tags: [...(taggingRestaurant.tags || []), newTag],
+                };
+                handleTagsChange(updatedRestaurant);
+                setTaggingRestaurant(updatedRestaurant);
+            } else {
+                setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
+            }
+        }
+    };
+
+    const handleToggleTagLink = async (tag: Tag) => {
+        if (!session?.user || !taggingRestaurant) return;
+        const originalRestaurant = taggingRestaurant;
+        const isCurrentlyTagged = originalRestaurant.tags?.some(t => t.id === tag.id);
+        const newTags = isCurrentlyTagged
+            ? originalRestaurant.tags?.filter(t => t.id !== tag.id)
+            : [...(originalRestaurant.tags || []), tag];
+        const updatedRestaurant = { ...originalRestaurant, tags: newTags };
+        handleTagsChange(updatedRestaurant);
+        setTaggingRestaurant(updatedRestaurant);
+
+        try {
+            const response = await fetch(`/api/restaurants/${originalRestaurant.id}/tags`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tagId: tag.id, restaurant: originalRestaurant }),
+            });
+            if (!response.ok) {
+                handleTagsChange(originalRestaurant);
+                setTaggingRestaurant(originalRestaurant);
+                setAlertInfo({ title: "오류", message: "태그 변경에 실패했습니다." });
+            }
+        } catch (error) {
+            handleTagsChange(originalRestaurant);
+            setTaggingRestaurant(originalRestaurant);
+            setAlertInfo({ title: "오류", message: "태그 변경 중 네트워크 오류가 발생했습니다." });
+        }
+    };
+
     if (loading) {
         return (
             <main className="w-full min-h-screen p-4 md:p-8">
@@ -105,10 +204,17 @@ export default function TagProfilePage() {
         );
     }
 
-    if (!tagData) return null; // 데이터가 없는 경우 (보통 리다이렉트됨)
+    if (!tagData) return null;
 
     return (
-        <main className="w-full min-h-screen">
+        <main className="w-full min-h-screen relative">
+            <div className="absolute top-4 right-4 z-50">
+                <SideMenuSheet
+                    onShowFavorites={() => setIsFavoritesListOpen(true)}
+                    onShowBlacklist={handleBlacklistClick}
+                    onShowTagManagement={() => setIsTagManagementOpen(true)}
+                />
+            </div>
             <div className="p-4 md:p-8">
                 <TagHeader
                     tagData={{
@@ -122,9 +228,7 @@ export default function TagProfilePage() {
                     onShare={handleShare}
                 />
 
-                {/* 본문: 지도와 음식점 목록 */}
                 <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-150px)]">
-                    {/* 왼쪽 지도 패널 */}
                     <div className="w-full h-3/5 md:h-full md:w-2/3">
                         <MapPanel 
                             restaurants={tagData.restaurants}
@@ -136,7 +240,6 @@ export default function TagProfilePage() {
                         />
                     </div>
 
-                    {/* 오른쪽 음식점 목록 패널 */}
                     <div className="w-full h-2/5 md:w-1/3 md:h-full overflow-y-auto">
                         <Accordion
                             type="single"
@@ -151,14 +254,67 @@ export default function TagProfilePage() {
                                     restaurant={place}
                                     session={session}
                                     subscribedTagIds={subscribedTagIds}
-                                    // 이 페이지에서는 즐겨찾기/블랙리스트 기능이 필요 없으므로
-                                    // 관련 props를 전달하지 않습니다.
+                                    isFavorite={isFavorite}
+                                    isBlacklisted={isBlacklisted}
+                                    onToggleFavorite={toggleFavorite}
+                                    onToggleBlacklist={toggleBlacklist}
+                                    onTagManagement={setTaggingRestaurant}
                                 />
                             ))}
                         </Accordion>
                     </div>
                 </div>
             </div>
+
+            {/* Dialogs */}
+            <TagManagementDialog
+                isOpen={isTagManagementOpen}
+                onOpenChange={setIsTagManagementOpen}
+                userTags={userTags}
+                onCreateTag={createTag}
+                onDeleteTag={deleteTag}
+                onToggleTagPublic={toggleTagPublic}
+            />
+            <FavoritesDialog
+                isOpen={isFavoritesListOpen}
+                onOpenChange={setIsFavoritesListOpen}
+                favorites={favorites}
+                session={session}
+                subscribedTagIds={subscribedTagIds}
+                selectedItemId={selectedItemId}
+                setSelectedItemId={setSelectedItemId}
+                isFavorite={isFavorite}
+                isBlacklisted={isBlacklisted}
+                onToggleFavorite={toggleFavorite}
+                onToggleBlacklist={toggleBlacklist}
+                onTagManagement={setTaggingRestaurant}
+            />
+            <BlacklistDialog
+                isOpen={isBlacklistOpen}
+                onOpenChange={setIsBlacklistOpen}
+                blacklist={blacklist}
+                onToggleBlacklist={toggleBlacklist}
+            />
+            <TaggingDialog
+                restaurant={taggingRestaurant}
+                onOpenChange={() => setTaggingRestaurant(null)}
+                userTags={userTags}
+                onToggleTagLink={handleToggleTagLink}
+                onCreateAndLinkTag={handleCreateAndLinkTag}
+            />
+            <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
+                <AlertDialogContent className="max-w-lg">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogDescription>
+                        {alertInfo?.message}
+                    </AlertDialogDescription>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </main>
     );
 }

@@ -168,9 +168,10 @@ export function SideMenuSheet({
                                     안녕하세요! 이 앱은 여러분의 점심 고민을 해결해드리기 위해 만들어졌어요. 아래 가이드를 보고 100% 활용해보세요!
                                 </p>
                                 <Tabs defaultValue="quickstart" className="w-full flex flex-col flex-1 min-h-0 pt-4" ref={scrollRef}>
-                                    <TabsList className="grid w-full grid-cols-3 mx-6 w-auto">
+                                    <TabsList className="grid w-full grid-cols-4 mx-6 w-auto">
                                         <TabsTrigger value="quickstart">간단 사용법</TabsTrigger>
                                         <TabsTrigger value="personal">개인화 기능</TabsTrigger>
+                                        <TabsTrigger value="reviews">리뷰/별점</TabsTrigger>
                                         <TabsTrigger value="map">지도 활용</TabsTrigger>
                                     </TabsList>
 
@@ -202,6 +203,27 @@ export function SideMenuSheet({
                                                     <li><Badge variant="default" className="mr-1 cursor-default">★ 구독 태그</Badge> : 다른 사람이 만든 태그를 구독한 것입니다.</li>
                                                     <li><Badge variant="secondary" className="mr-1 cursor-default"># 공개 태그</Badge> : 다른 사용자가 공개한 태그입니다.</li>
                                                 </ul>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="reviews" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
+                                        <h3 className="font-semibold text-lg mb-4">⭐ 리뷰와 별점 시스템</h3>
+                                        <div className="space-y-4 text-muted-foreground">
+                                            <div>
+                                                <h4 className="font-semibold text-foreground mb-1">리뷰 작성 및 관리</h4>
+                                                <p>상세 정보 페이지 하단에서 별점과 함께 리뷰를 작성하거나, 내가 쓴 리뷰를 수정/삭제할 수 있습니다.</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-foreground mb-1">리뷰 투표</h4>
+                                                <p>다른 사람의 유용한 리뷰에 '추천' (👍) 또는 '비추천' (👎)을 눌러 의견을 표현해보세요.</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-foreground mb-1">베스트 리뷰</h4>
+                                                <p>많은 추천을 받은 리뷰는 'BEST' 딱지와 함께 노란색 배경으로 강조되며, 목록 최상단에 고정되어 더 쉽게 찾아볼 수 있습니다.</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-foreground mb-1">두 종류의 별점</h4>
+                                                <p>'구글 별점'은 구글 지도에 등록된 평점이며, '앱 별점'은 이 앱의 사용자들이 직접 매긴 평점의 평균입니다. 두 평점을 비교하며 더 나은 선택을 해보세요.</p>
                                             </div>
                                         </div>
                                     </TabsContent>
