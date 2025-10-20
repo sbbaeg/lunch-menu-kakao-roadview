@@ -69,21 +69,6 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
     }
   };
 
-  const sortedReviews = useMemo(() => {
-    const reviewsCopy = [...reviews];
-    switch (sortOrder) {
-      case 'rating_desc':
-        return reviewsCopy.sort((a, b) => b.rating - a.rating);
-      case 'rating_asc':
-        return reviewsCopy.sort((a, b) => a.rating - b.rating);
-      case 'helpful_desc':
-        return reviewsCopy.sort((a, b) => b.upvotes - a.upvotes);
-      case 'latest':
-      default:
-        return reviewsCopy.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-  }, [reviews, sortOrder]);
-
   const bestReviewIds = useMemo(() => {
     const ids = [...reviews]
       .sort((a, b) => b.upvotes - a.upvotes)
@@ -92,6 +77,31 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
       .map(r => r.id);
     return new Set(ids);
   }, [reviews]);
+
+  const displayReviews = useMemo(() => {
+    const best = reviews.filter(r => bestReviewIds.has(r.id));
+    const others = reviews.filter(r => !bestReviewIds.has(r.id));
+
+    best.sort((a, b) => b.upvotes - a.upvotes);
+
+    switch (sortOrder) {
+      case 'rating_desc':
+        others.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'rating_asc':
+        others.sort((a, b) => a.rating - b.rating);
+        break;
+      case 'helpful_desc':
+        others.sort((a, b) => b.upvotes - a.upvotes);
+        break;
+      case 'latest':
+      default:
+        others.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+    }
+
+    return [...best, ...others];
+  }, [reviews, sortOrder, bestReviewIds]);
 
   const myReview = useMemo(() => {
     if (session?.user) {
@@ -135,9 +145,9 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
           </Select>
         </div>
         <Separator />
-        {sortedReviews.length > 0 ? (
+        {displayReviews.length > 0 ? (
           <div className="space-y-2">
-            {sortedReviews.map(review => (
+            {displayReviews.map(review => (
               <ReviewCard 
                 key={review.id} 
                 review={review} 
