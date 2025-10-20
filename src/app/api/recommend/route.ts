@@ -28,6 +28,10 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export async function GET(request: Request) {
+    console.log("Checking environment variables...");
+    console.log("GOOGLE_API_KEY available:", !!process.env.GOOGLE_API_KEY);
+    console.log("KAKAO_REST_API_KEY available:", !!process.env.KAKAO_REST_API_KEY);
+
     const { searchParams } = new URL(request.url);
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
