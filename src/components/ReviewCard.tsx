@@ -98,7 +98,6 @@ export function ReviewCard({ review, onVote, onDelete, onEdit }: ReviewCardProps
           disabled={!session || isAuthor || isVoting}
           className={`gap-1 ${localUserVote === 'UPVOTE' ? 'bg-primary/10 border-primary text-primary' : ''}`}>
           <ThumbsUp className="h-4 w-4" />
-          <span>추천</span>
           <span>{localUpvotes}</span>
         </Button>
         <Button
@@ -108,7 +107,6 @@ export function ReviewCard({ review, onVote, onDelete, onEdit }: ReviewCardProps
           disabled={!session || isAuthor || isVoting}
           className={`gap-1 ${localUserVote === 'DOWNVOTE' ? 'bg-destructive/10 border-destructive text-destructive' : ''}`}>
           <ThumbsDown className="h-4 w-4" />
-          <span>비추천</span>
           <span>{localDownvotes}</span>
         </Button>
       </div>

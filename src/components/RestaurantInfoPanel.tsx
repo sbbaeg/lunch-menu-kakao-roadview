@@ -38,7 +38,7 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
         <h2 className="text-2xl font-semibold">상세 정보</h2>
       </div>
       <div className="flex justify-start">
-        <RestaurantActionButtons {...props} />
+        <RestaurantActionButtons {...props} showTextLabels={true} />
       </div>
 
       <div className="space-y-4">
@@ -46,6 +46,34 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
             <p className="text-sm font-semibold text-muted-foreground">카테고리</p>
             <p>{restaurant.categoryName}</p>
         </div>
+        {restaurant.tags && restaurant.tags.length > 0 && (
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground">태그</p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {restaurant.tags.map(tag => (
+                <span key={tag.id} className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">#{tag.name}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(details?.rating || (restaurant.appReview && restaurant.appReview.reviewCount > 0)) && (
+            <div className="flex space-x-8">
+                {details?.rating && 
+                    <div>
+                        <p className="text-sm font-semibold text-muted-foreground">구글 별점</p>
+                        <StarRating rating={details.rating} reviewCount={details.reviews?.length || 0} />
+                    </div>
+                }
+                {restaurant.appReview && restaurant.appReview.reviewCount > 0 && (
+                    <div>
+                        <p className="text-sm font-semibold text-muted-foreground">앱 별점</p>
+                        <StarRating rating={restaurant.appReview.averageRating} reviewCount={restaurant.appReview.reviewCount} />
+                    </div>
+                )}
+            </div>
+        )}
+
         <div>
             <p className="text-sm font-semibold text-muted-foreground">주소</p>
             <p>{restaurant.address}</p>
@@ -77,20 +105,6 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
             </div>
         )}
 
-        {details?.rating && 
-            <div>
-                <p className="text-sm font-semibold text-muted-foreground">구글 평점</p>
-                <StarRating rating={details.rating} reviewCount={details.reviews?.length || 0} />
-            </div>
-        }
-
-        {restaurant.appReview && restaurant.appReview.reviewCount > 0 && (
-            <div>
-                <p className="text-sm font-semibold text-muted-foreground">앱 평점</p>
-                <StarRating rating={restaurant.appReview.averageRating} reviewCount={restaurant.appReview.reviewCount} />
-            </div>
-        )}
-
         {details?.opening_hours && (
             <div>
                 <p className="text-sm font-semibold text-muted-foreground">영업</p>
@@ -106,17 +120,6 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
             </div>
         }
       </div>
-
-      {restaurant.tags && restaurant.tags.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-semibold mb-3">태그</h2>
-          <div className="flex flex-wrap gap-2">
-            {restaurant.tags.map(tag => (
-              <span key={tag.id} className="bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">#{tag.name}</span>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="flex gap-2 pt-4">
         <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
