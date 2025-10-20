@@ -11,6 +11,11 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
+
 // 1. 사용자 계정 모델 (NextAuth.js와 연동)
 model User {
   id            String    @id @default(cuid())
@@ -28,7 +33,8 @@ model User {
   blacklist        Blacklist[]
   tags             Tag[]
   tagSubscriptions TagSubscription[]
-  reviews          Review[] // 추가된 관계
+  reviews          Review[]
+  reviewVotes      ReviewVote[]
 }
 
 // 2. 음식점 정보 모델
@@ -47,7 +53,7 @@ model Restaurant {
   favorites  Favorite[]
   blacklist  Blacklist[]
   taggedBy   TagsOnRestaurants[]
-  reviews    Review[] // 추가된 관계
+  reviews    Review[]
 }
 
 // 3. 즐겨찾기 연결 모델 (User와 Restaurant 연결)
@@ -74,7 +80,7 @@ model Blacklist {
   @@id([userId, restaurantId]) // 복합 기본 키
 }
 
-// 7. 리뷰 모델 (새로 추가)
+// 7. 리뷰 모델
 model Review {
   id           Int      @id @default(autoincrement())
   rating       Int // 1-5점
@@ -88,8 +94,22 @@ model Review {
   restaurantId Int
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
+  votes        ReviewVote[]
+
   // 한 명의 유저는 한 식당에 하나의 리뷰만 작성 가능
   @@unique([userId, restaurantId])
+}
+
+// 8. 리뷰 투표 모델
+model ReviewVote {
+  userId   String
+  reviewId Int
+  type     VoteType
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@id([userId, reviewId])
 }
 
 

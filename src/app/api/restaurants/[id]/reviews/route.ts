@@ -11,28 +11,52 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  // restaurantId는 데이터베이스의 auto-increment ID입니다.
   const restaurantId = parseInt(params.id, 10);
-
   if (isNaN(restaurantId)) {
     return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
   }
 
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+
   try {
-    const reviews = await prisma.review.findMany({
+    const reviewsFromDb = await prisma.review.findMany({
       where: { restaurantId },
       include: {
-        user: {
-          select: { // 리뷰 작성자의 정보 중, 이름과 이미지만 선택적으로 가져옵니다.
+        user: { // 리뷰 작성자 정보
+          select: {
             name: true,
             image: true,
           },
         },
+        votes: { // 모든 투표 정보
+          select: {
+            userId: true,
+            type: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc', // 최신순으로 정렬
+        createdAt: 'desc',
       },
     });
+
+    // 데이터 가공: 추천/비추천 수 및 현재 사용자 투표 상태 추가
+    const reviews = reviewsFromDb.map(review => {
+      const upvotes = review.votes.filter(v => v.type === 'UPVOTE').length;
+      const downvotes = review.votes.filter(v => v.type === 'DOWNVOTE').length;
+      const currentUserVote = userId ? review.votes.find(v => v.userId === userId)?.type || null : null;
+
+      const { votes, ...reviewData } = review;
+
+      return {
+        ...reviewData,
+        upvotes,
+        downvotes,
+        currentUserVote,
+      };
+    });
+
     return NextResponse.json(reviews);
   } catch (error) {
     console.error('Failed to fetch reviews:', error);

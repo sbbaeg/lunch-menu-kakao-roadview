@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MapPanel } from '@/components/MapPanel';
 import { RestaurantInfoPanel } from '@/components/RestaurantInfoPanel';
+import { ReviewSection } from '@/components/ReviewSection';
 import { TaggingDialog } from '@/components/TaggingDialog';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useBlacklist } from '@/hooks/useBlacklist';
@@ -146,9 +147,13 @@ export default function RestaurantPage() {
                         </div>
                         <div className="w-full">
                             <h2 className="text-3xl font-bold mb-4">사용자 리뷰</h2>
-                            <div className="p-8 border rounded-lg text-center text-gray-500">
-                                <p>리뷰 기능은 현재 준비 중입니다.</p>
-                            </div>
+                            {restaurant.dbId ? (
+                                <ReviewSection restaurantId={restaurant.dbId} />
+                            ) : (
+                                <div className="p-8 border rounded-lg text-center text-gray-500">
+                                    <p>리뷰를 불러올 수 없습니다.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
