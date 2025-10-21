@@ -5,8 +5,13 @@ import { AppRestaurant } from '@/lib/types';
 export function useFavorites() {
     const { status } = useSession();
     const [favorites, setFavorites] = useState<AppRestaurant[]>([]);
-    
-    // page.tsx에 있던 즐겨찾기 로딩 useEffect
+
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     useEffect(() => {
         const loadFavorites = async () => {
             if (status === 'authenticated') {
@@ -28,9 +33,10 @@ export function useFavorites() {
                 }
             }
         };
-
-        loadFavorites();
-    }, [status]);
+        if (isMounted) {
+            loadFavorites();
+        }
+    }, [status, isMounted]);
 
     // page.tsx에 있던 isFavorite 함수
     const isFavorite = (placeId: string) => favorites.some((fav) => fav.id === placeId);
