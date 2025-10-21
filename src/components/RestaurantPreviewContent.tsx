@@ -1,6 +1,6 @@
 // src/components/RestaurantPreviewContent.tsx
 "use client";
-
+import { useState, useEffect } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AppRestaurant, GoogleOpeningHours } from "@/lib/types";
 import Image from "next/image";
@@ -26,6 +26,11 @@ interface RestaurantPreviewContentProps {
 
 export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetails }: RestaurantPreviewContentProps) {
     const details = restaurant.googleDetails;
+
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     return (
         <div className="space-y-3">
@@ -60,7 +65,7 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
                 </Accordion>
             )}
 
-            {details?.opening_hours && (
+            {isMounted && details?.opening_hours && (
                 <div className="flex flex-col">
                 <p><strong>영업:</strong> <span className={details.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{details.opening_hours.open_now ? "영업 중" : "영업 종료"}</span></p>
                 <p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(details.opening_hours)})</p>

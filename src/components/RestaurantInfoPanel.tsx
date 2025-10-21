@@ -1,6 +1,6 @@
 // src/components/RestaurantInfoPanel.tsx
 "use client";
-
+import { useState, useEffect } from 'react';
 import { AppRestaurant, GoogleOpeningHours } from "@/lib/types";
 import { Session } from "next-auth";
 import Image from "next/image";
@@ -31,6 +31,11 @@ interface RestaurantInfoPanelProps {
 export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
   const { restaurant } = props;
   const details = restaurant.googleDetails;
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -103,7 +108,7 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
             </div>
         )}
 
-        {details?.opening_hours && (
+        {isMounted && details?.opening_hours && (
             <div>
                 <p className="text-sm font-semibold text-muted-foreground">영업</p>
                 <p><span className={details.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{details.opening_hours.open_now ? "영업 중" : "영업 종료"}</span></p>
