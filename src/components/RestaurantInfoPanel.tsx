@@ -41,7 +41,14 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
     <div className="space-y-6">
 
       <div className="flex justify-start">
-        <RestaurantActionButtons {...props} showTextLabels={true} />
+        {props.session?.user &&
+          props.isFavorite &&
+          props.isBlacklisted &&
+          props.onToggleFavorite &&
+          props.onToggleBlacklist &&
+          props.onTagManagement && (
+            <RestaurantActionButtons {...props} showTextLabels={true} />
+          )}
       </div>
 
       <div className="space-y-4">
