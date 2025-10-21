@@ -1,6 +1,6 @@
 // src/components/RestaurantActionButtons.tsx
 "use client";
-
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
@@ -20,8 +20,14 @@ interface RestaurantActionButtonsProps {
 export function RestaurantActionButtons({ 
     restaurant, session, showTextLabels = false, isFavorite, isBlacklisted, onToggleFavorite, onToggleBlacklist, onTagManagement 
 }: RestaurantActionButtonsProps) {
-  if (!session?.user || !onTagManagement || !onToggleBlacklist || !onToggleFavorite || !isBlacklisted || !isFavorite) {
-    return null; // 필요한 props가 없으면 렌더링하지 않음
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted || !session?.user || !onTagManagement || !onToggleBlacklist || !onToggleFavorite || !isBlacklisted || !isFavorite) {
+    return null; 
   }
 
   const buttonSizeClass = showTextLabels ? "px-3 py-1 h-auto" : "h-8 w-8";
