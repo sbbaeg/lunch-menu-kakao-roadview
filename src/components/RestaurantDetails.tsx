@@ -48,7 +48,12 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
         <p className="text-xs text-gray-500">
           {restaurant.categoryName?.split('>').pop()?.trim()}
         </p>
-        <RestaurantActionButtons {...props} />
+        {props.session?.user &&
+          props.isFavorite &&
+          props.isBlacklisted &&
+          props.onToggleFavorite &&
+          props.onToggleBlacklist &&
+          props.onTagManagement && <RestaurantActionButtons {...props} />}
       </div>
 
       {/* 상세보기 버튼 관련 로직을 props로 전달 */}

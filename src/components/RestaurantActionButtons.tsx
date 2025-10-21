@@ -20,31 +20,22 @@ interface RestaurantActionButtonsProps {
 export function RestaurantActionButtons({ 
     restaurant, session, showTextLabels = false, isFavorite, isBlacklisted, onToggleFavorite, onToggleBlacklist, onTagManagement 
 }: RestaurantActionButtonsProps) {
-
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted || !session?.user || !onTagManagement || !onToggleBlacklist || !onToggleFavorite || !isBlacklisted || !isFavorite) {
-    return null; 
-  }
-
+  // All props are now guaranteed to be defined by the parent component
   const buttonSizeClass = showTextLabels ? "px-3 py-1 h-auto" : "h-8 w-8";
   const iconMarginClass = showTextLabels ? "mr-2" : "";
 
   return (
     <div className="flex items-center gap-1">
-        <Button variant="ghost" size={showTextLabels ? "default" : "icon"} className={buttonSizeClass} onClick={() => onTagManagement(restaurant)} title="태그 관리">
+        <Button variant="ghost" size={showTextLabels ? "default" : "icon"} className={buttonSizeClass} onClick={() => onTagManagement!(restaurant)} title="태그 관리">
             <Tags className={`h-5 w-5 text-gray-400 ${iconMarginClass}`} />
             {showTextLabels && <span>태그</span>}
         </Button>
-        <Button variant="ghost" size={showTextLabels ? "default" : "icon"} className={buttonSizeClass} onClick={() => onToggleBlacklist(restaurant)} title={isBlacklisted(restaurant.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}>
-            <EyeOff className={`h-5 w-5 ${isBlacklisted(restaurant.id) ? "fill-foreground" : "text-gray-400"} ${iconMarginClass}`} />
+        <Button variant="ghost" size={showTextLabels ? "default" : "icon"} className={buttonSizeClass} onClick={() => onToggleBlacklist!(restaurant)} title={isBlacklisted!(restaurant.id) ? "블랙리스트에서 제거" : "블랙리스트에 추가"}>
+            <EyeOff className={`h-5 w-5 ${isBlacklisted!(restaurant.id) ? "fill-foreground" : "text-gray-400"} ${iconMarginClass}`} />
             {showTextLabels && <span>블랙리스트</span>}
         </Button>
-        <Button variant="ghost" size={showTextLabels ? "default" : "icon"} className={buttonSizeClass} onClick={() => onToggleFavorite(restaurant)} title={isFavorite(restaurant.id) ? "즐겨찾기에서 제거" : "즐겨찾기에 추가"}>
-            <Heart className={`h-5 w-5 ${isFavorite(restaurant.id) ? "fill-red-500 text-red-500" : "text-gray-400"} ${iconMarginClass}`} />
+        <Button variant="ghost" size={showTextLabels ? "default" : "icon"} className={buttonSizeClass} onClick={() => onToggleFavorite!(restaurant)} title={isFavorite!(restaurant.id) ? "즐겨찾기에서 제거" : "즐겨찾기에 추가"}>
+            <Heart className={`h-5 w-5 ${isFavorite!(restaurant.id) ? "fill-red-500 text-red-500" : "text-gray-400"} ${iconMarginClass}`} />
             {showTextLabels && <span>즐겨찾기</span>}
         </Button>
     </div>
