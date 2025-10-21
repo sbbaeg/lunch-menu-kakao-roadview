@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   AccordionContent,
   AccordionItem,
@@ -35,6 +36,11 @@ export function RestaurantCard({
   ...detailProps
 }: RestaurantCardProps) {
   const details = restaurant.googleDetails;
+  
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <AccordionItem value={restaurant.id} key={restaurant.id} className="border-none group">
@@ -72,7 +78,7 @@ export function RestaurantCard({
               
               <TooltipProvider delayDuration={100}>
                 <div className="flex flex-wrap gap-1">
-                  {restaurant.tags?.map(tag => {
+                  {isMounted && restaurant.tags?.map(tag => {
                     const isMyTag = tag.creatorId === session?.user?.id;
                     const isSubscribedTag = subscribedTagIds.includes(tag.id);
                     const badgeVariant = isSubscribedTag ? "default" : (isMyTag ? "outline" : "secondary");
