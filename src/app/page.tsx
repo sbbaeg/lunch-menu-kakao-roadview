@@ -18,6 +18,8 @@ import { useUserTags } from "@/hooks/useUserTags";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 
 
+import { useAppStore } from '@/store/useAppStore';
+
 
 import { AppRestaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
 
@@ -100,43 +102,63 @@ const Wheel = dynamic(
 export default function Home() {
     const { data: session, status } = useSession();
 
+    // --- 스토어에서 '상태(State)' 가져오기 ---
+    const {
+        selectedItemId,
+        restaurantList,
+        userLocation,
+        filters,
+        displayedSortOrder,
+        blacklistExcludedCount,
+        loading,
+        isMapReady
+    } = useAppStore((state) => ({
+        selectedItemId: state.selectedItemId,
+        restaurantList: state.restaurantList,
+        userLocation: state.userLocation,
+        filters: state.filters,
+        displayedSortOrder: state.displayedSortOrder,
+        blacklistExcludedCount: state.blacklistExcludedCount,
+        loading: state.loading,
+        isMapReady: state.isMapReady,
+    }));
+
+    // --- 스토어에서 '액션(Functions)' 가져오기 ---
+    const {
+        setSelectedItemId,
+        setFilters,
+        setIsMapReady,
+        recommendProcess,
+        handleSearchInArea,
+        handleAddressSearch,
+        handleRouletteResult,
+        handleTagsChange: updateRestaurantInStore // 이름 변경
+    } = useAppStore((state) => ({
+        setSelectedItemId: state.setSelectedItemId,
+        setFilters: state.setFilters,
+        setIsMapReady: state.setIsMapReady,
+        recommendProcess: state.recommendProcess,
+        handleSearchInArea: state.handleSearchInArea,
+        handleAddressSearch: state.handleAddressSearch,
+        handleRouletteResult: state.handleRouletteResult,
+        handleTagsChange: state.handleTagsChange,
+    }));
+
     const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
     const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
     const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
 
-
-    const [selectedItemId, setSelectedItemId] = useState<string>("");
-    const [restaurantList, setRestaurantList] = useState<AppRestaurant[]>([]);
-    const [rouletteItems, setRouletteItems] = useState<AppRestaurant[]>([]);
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
-    const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [selectedDistance, setSelectedDistance] = useState<string>("800");
-    const [sortOrder, setSortOrder] = useState<
-        "accuracy" | "distance" | "rating"
-    >("accuracy");
-    const [resultCount, setResultCount] = useState<number>(5);
-    const [minRating, setMinRating] = useState<number>(4.0);
-
-    const [displayedSortOrder, setDisplayedSortOrder] = useState<
-        "accuracy" | "distance" | "rating"
-    >("accuracy");
 
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [searchInFavoritesOnly, setSearchInFavoritesOnly] = useState(false);
 
-    const [openNowOnly, setOpenNowOnly] = useState(false);
-    const [includeUnknownHours, setIncludeUnknownHours] = useState(true); // 정보 없는 가게 포함 여부 (기본값 true)
-
-    const [selectedTags, setSelectedTags] = useState<number[]>([]); // 실제 적용될 태그 ID 목록
 
 
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
 
     const [isBlacklistOpen, setIsBlacklistOpen] = useState(false); // 관리 팝업을 여닫을 상태
     const [isTagManagementOpen, setIsTagManagementOpen] = useState(false); // 태그 관리 팝업 상태
-    const [blacklistExcludedCount, setBlacklistExcludedCount] = useState<number>(0);
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
 
     const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null); // 현재 태그를 편집할 음식점 정보
@@ -146,9 +168,6 @@ export default function Home() {
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
     }, [favorites]);
-
-    const [loading, setLoading] = useState(false);
-    const [isMapReady, setIsMapReady] = useState(false);
 
     useEffect(() => {
         // 카카오톡 인앱 브라우저인지 확인
@@ -163,123 +182,6 @@ export default function Home() {
         }
     }, []); 
 
-    const getNearbyRestaurants = async (
-        latitude: number,
-        longitude: number
-    ): Promise<AppRestaurant[]> => { // ✅ 반환 타입을 Restaurant[]으로 변경
-        const query =
-            selectedCategories.length > 0
-                ? selectedCategories.join(",")
-                : "음식점";
-        const radius = selectedDistance;
-        const sort = sortOrder;
-        const size = resultCount;
-
-        let apiUrl = `/api/recommend?lat=${latitude}&lng=${longitude}&query=${encodeURIComponent(
-            query
-        )}&radius=${radius}&sort=${sort}&size=${size}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`;
-
-        // ✅ 선택된 태그가 있을 경우에만, tags 파라미터를 URL에 추가합니다.
-        if (selectedTags.length > 0) {
-            apiUrl += `&tags=${selectedTags.join(',')}`;
-        }
-
-        if (searchInFavoritesOnly) {
-            apiUrl += `&fromFavorites=true`;
-        }
-
-        apiUrl += `&_=${new Date().getTime()}`;
-
-        const response = await fetch(apiUrl);
-        const data: { documents?: RestaurantWithTags[], blacklistExcludedCount?: number, tagExcludedCount?: number } = await response.json();
-
-        const formattedRestaurants: AppRestaurant[] = (data.documents || []).map(place => ({
-            id: place.id,
-            kakaoPlaceId: place.id,
-            placeName: place.place_name,
-            categoryName: place.category_name,
-            address: place.road_address_name,
-            x: place.x,
-            y: place.y,
-            placeUrl: place.place_url,
-            distance: place.distance,
-            googleDetails: place.googleDetails,
-            tags: place.tags,
-        }));
-
-        setBlacklistExcludedCount(data.blacklistExcludedCount || 0);
-                
-        return formattedRestaurants;
-    };
-
-    const recommendProcess = (isRoulette: boolean) => {
-        setLoading(true);
-        setDisplayedSortOrder(sortOrder);
-        setBlacklistExcludedCount(0);
-        clearMapAndResults();
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                setUserLocation({ lat: latitude, lng: longitude });
-
-                try {
-                    const restaurants = await getNearbyRestaurants(latitude, longitude);
-
-                    if (restaurants.length === 0) {
-                        setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
-                    } else {
-                        // 룰렛일 경우
-                        if (isRoulette) {
-                            if (restaurants.length < 2) {
-                                setAlertInfo({ title: "알림", message: `주변에 추첨할 음식점이 ${resultCount}개 미만입니다.` });
-                            } else {
-                                setRouletteItems(restaurants);
-                                setIsRouletteOpen(true);
-                            }
-                        } 
-                        // 일반 검색일 경우
-                        else {
-                            setRestaurantList(restaurants);
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error:", error);
-                    setAlertInfo({ title: "오류", message: "음식점을 불러오는 데 실패했습니다." });
-                } finally {
-                    setLoading(false);
-                }
-            },
-            (error) => {
-                console.error("Geolocation error:", error);
-                setAlertInfo({ title: "오류", message: "위치 정보를 가져오는 데 실패했습니다." });
-                setLoading(false);
-            }
-        );
-    };
-
-    const clearMapAndResults = () => {
-        setSelectedItemId("");
-        setRestaurantList([]);
-    };
-
-    const handleRouletteResult = (winner: AppRestaurant) => {
-        setRestaurantList([winner]);
-        setSelectedItemId(winner.id);
-    };
-
-    const handleApplyFilters = (newFilters: FilterState) => {
-        setSelectedCategories(newFilters.categories);
-        setSelectedDistance(newFilters.distance);
-        setSortOrder(newFilters.sortOrder);
-        setResultCount(newFilters.resultCount);
-        setMinRating(newFilters.minRating);
-        setSearchInFavoritesOnly(newFilters.searchInFavoritesOnly);
-        setOpenNowOnly(newFilters.openNowOnly);
-        setIncludeUnknownHours(newFilters.includeUnknownHours);
-        setSelectedTags(newFilters.tags);
-    };
-
     const handleBlacklistClick = () => {
         if (status === 'authenticated') {
             // 로그인 상태이면 -> 블랙리스트 팝업 열기
@@ -289,64 +191,6 @@ export default function Home() {
             setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
             // (추가 개선) alert 대신, 로그인 Dialog를 열어주는 것이 더 좋은 사용자 경험을 제공합니다.
         }
-    };
-
-    const handleSearchInArea = async (center: { lat: number; lng: number }) => {
-        setLoading(true);
-        clearMapAndResults();
-        try {
-            const restaurants = await getNearbyRestaurants(center.lat, center.lng);
-            if (restaurants.length === 0) {
-                setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
-            } else {
-                const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
-                    ? restaurants
-                    : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
-                setRestaurantList(finalRestaurants);
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            setAlertInfo({ title: "오류", message: "음식점을 불러오는 데 실패했습니다." });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAddressSearch = async (keyword: string, mode: 'place' | 'food', center: { lat: number; lng: number }) => {
-        if (!keyword.trim()) {
-            setAlertInfo({ title: "알림", message: "검색어를 입력해주세요." });
-            return;
-        }
-
-        if (mode === 'food') {
-            setLoading(true);
-            clearMapAndResults();
-            setDisplayedSortOrder(sortOrder);
-
-            try {
-                let apiUrl = `/api/recommend?lat=${center.lat}&lng=${center.lng}&query=${encodeURIComponent(keyword)}&radius=${selectedDistance}&sort=${sortOrder}&size=${resultCount}&minRating=${minRating}&openNow=${openNowOnly}&includeUnknown=${includeUnknownHours}`;
-                if (selectedTags.length > 0) {
-                    apiUrl += `&tags=${selectedTags.join(',')}`;
-                }
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                const formattedRestaurants = (data.documents || []).map((place: RestaurantWithTags) => ({
-                    // ... (이전 getNearbyRestaurants와 동일한 포맷팅 로직)
-                    id: place.id, kakaoPlaceId: place.id, placeName: place.place_name, categoryName: place.category_name, address: place.road_address_name, x: place.x, y: place.y, placeUrl: place.place_url, distance: place.distance, googleDetails: place.googleDetails, tags: place.tags
-                }));
-                setRestaurantList(formattedRestaurants);
-                setBlacklistExcludedCount(data.blacklistExcludedCount || 0);
-
-                if (formattedRestaurants.length === 0) {
-                    setAlertInfo({ title: "알림", message: "주변에 조건에 맞는 음식점을 찾지 못했어요!" });
-                }
-            } catch (error) {
-                setAlertInfo({ title: "오류", message: "검색 중 오류가 발생했습니다." });
-            } finally {
-                setLoading(false);
-            }
-        }
-        // 'place' 모드는 MapPanel이 자체적으로 처리하므로 page.tsx에서는 로직이 필요 없습니다.
     };
 
     const handleCreateTag = async (name: string) => {
@@ -426,11 +270,33 @@ export default function Home() {
         }
     };
 
+    const handleSearchClick = async () => {
+        const result = await recommendProcess(false); // 스토어 액션 호출
+        if (!result.success && result.message) {
+            setAlertInfo({ title: "알림", message: result.message });
+        } else if (result.isRoulette) {
+            setIsRouletteOpen(true); // 룰렛 다이얼로그 열기
+        }
+    };
+    
+    const handleRouletteClick = async () => {
+        const result = await recommendProcess(true); // 스토어 액션 호출
+        if (!result.success && result.message) {
+            setAlertInfo({ title: "알림", message: result.message });
+        } else if (result.isRoulette) {
+            setIsRouletteOpen(true);
+        }
+    };
+
+    // 필터 적용 핸들러
+    const handleApplyFilters = (newFilters: FilterState) => {
+        setFilters(newFilters); // 스토어 액션을 바로 호출
+    };
+
+    // 태그 변경 핸들러 (handleCreateTag, handleToggleTagLink 내부에서 사용됨)
     const handleTagsChange = (updatedRestaurant: AppRestaurant) => {
-        setRestaurantList(prevList => 
-            prevList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
-        );
-        updateFavoriteInList(updatedRestaurant);
+        updateRestaurantInStore(updatedRestaurant); // 1. 스토어의 목록 업데이트
+        updateFavoriteInList(updatedRestaurant);    // 2. useFavorites의 목록 업데이트
     };
 
     return (
@@ -451,7 +317,11 @@ export default function Home() {
                             selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
                             userLocation={userLocation}
                             onSearchInArea={handleSearchInArea}
-                            onAddressSearch={handleAddressSearch}
+                            onAddressSearch={(keyword, mode, center) => {
+                                // MapPanel의 mode 인자는 무시하고, 
+                                // 스토어의 handleAddressSearch에는 keyword와 center만 전달
+                                handleAddressSearch(keyword, center); 
+                            }}
                             onMapReady={setIsMapReady}
                         />
                     </div>
@@ -459,18 +329,18 @@ export default function Home() {
                     {/* 오른쪽 제어 패널 */}
                     <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
                         <MainControlPanel
-                            isSearchDisabled={loading || !isMapReady}
-                            onSearchClick={() => recommendProcess(false)}
-                            onRouletteClick={() => recommendProcess(true)}
+                            isSearchDisabled={loading || !isMapReady} 
+                            onSearchClick={handleSearchClick} 
+                            onRouletteClick={handleRouletteClick} 
                             onFilterClick={() => setIsFilterOpen(true)}
                         />
                         <ResultPanel
-                            isLoading={loading}
-                            restaurants={restaurantList}
-                            blacklistExcludedCount={blacklistExcludedCount}
-                            displayedSortOrder={displayedSortOrder}
-                            selectedItemId={selectedItemId}
-                            setSelectedItemId={setSelectedItemId}
+                            isLoading={loading} 
+                            restaurants={restaurantList} 
+                            blacklistExcludedCount={blacklistExcludedCount} 
+                            displayedSortOrder={displayedSortOrder} 
+                            selectedItemId={selectedItemId} 
+                            setSelectedItemId={setSelectedItemId} 
                             session={session}
                             subscribedTagIds={subscribedTagIds}
                             isFavorite={isFavorite}
@@ -486,18 +356,8 @@ export default function Home() {
                 <FilterDialog
                     isOpen={isFilterOpen}
                     onOpenChange={setIsFilterOpen}
-                    initialFilters={{
-                        categories: selectedCategories,
-                        distance: selectedDistance,
-                        sortOrder: sortOrder,
-                        resultCount: resultCount,
-                        minRating: minRating,
-                        searchInFavoritesOnly: searchInFavoritesOnly,
-                        openNowOnly: openNowOnly,
-                        includeUnknownHours: includeUnknownHours,
-                        tags: selectedTags,
-                    }}
-                    onApplyFilters={handleApplyFilters}
+                    initialFilters={filters} // ⬅️ 스토어 상태
+                    onApplyFilters={handleApplyFilters} // ⬅️ 위에서 만든 핸들러
                     userTags={userTags}
                 />
 
@@ -535,10 +395,9 @@ export default function Home() {
                 <RouletteDialog
                     isOpen={isRouletteOpen}
                     onOpenChange={setIsRouletteOpen}
-                    items={rouletteItems}
-                    onResult={handleRouletteResult}
+                    items={useAppStore.getState().rouletteItems} 
+                    onResult={handleRouletteResult} 
                 />
-
                 <TaggingDialog
                     restaurant={taggingRestaurant}
                     onOpenChange={() => setTaggingRestaurant(null)}
