@@ -10,6 +10,7 @@ import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import Link from "next/link";
 import { RestaurantDetails } from "./RestaurantDetails";
+import { Users, Utensils } from 'lucide-react';
 
 import {
     Tooltip,
@@ -94,7 +95,15 @@ export function RestaurantCard({
                           </Link>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>by {tag.creatorName || '알 수 없음'}</p>
+                          <div className="flex flex-col gap-2 p-1">
+                            <p>by {tag.creatorName || '알 수 없음'}</p>
+                            {(tag.restaurantCount !== undefined && tag.subscriberCount !== undefined) && (
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">
+                                <div className="flex items-center gap-1"><Utensils className="h-3 w-3" /> {tag.restaurantCount}</div>
+                                <div className="flex items-center gap-1"><Users className="h-3 w-3" /> {tag.subscriberCount}</div>
+                              </div>
+                            )}
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     );
