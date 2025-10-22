@@ -6,6 +6,12 @@ export function useBlacklist() {
     const { status } = useSession();
     const [blacklist, setBlacklist] = useState<AppRestaurant[]>([]);
 
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     useEffect(() => {
         const loadBlacklist = async () => {
             if (status === 'authenticated') {
@@ -23,8 +29,10 @@ export function useBlacklist() {
             }
         };
 
-        loadBlacklist();
-    }, [status]);
+        if (isMounted) {
+            loadBlacklist();
+        }
+    }, [status, isMounted]);
 
     const isBlacklisted = (placeId: string) => blacklist.some((item) => item.id === placeId);
 

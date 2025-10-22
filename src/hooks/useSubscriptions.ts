@@ -5,6 +5,12 @@ export function useSubscriptions() {
     const { status } = useSession();
     const [subscribedTagIds, setSubscribedTagIds] = useState<number[]>([]);
 
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     useEffect(() => {
         const fetchSubscribedTagIds = async () => {
             if (status === 'authenticated') {
@@ -21,8 +27,10 @@ export function useSubscriptions() {
                 setSubscribedTagIds([]);
             }
         };
-        fetchSubscribedTagIds();
-    }, [status]);
+        if (isMounted) {
+            fetchSubscribedTagIds();
+        }
+    }, [status, isMounted]);
 
     return { subscribedTagIds };
 }
