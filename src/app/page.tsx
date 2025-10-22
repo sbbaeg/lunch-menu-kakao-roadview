@@ -278,7 +278,7 @@ export default function Home() {
 
     return (
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
-            <div className="absolute top-4 right-4 z-50">
+            <div className="absolute top-2 right-2 z-50">
                 <SideMenuSheet
                     onShowFavorites={() => setIsFavoritesListOpen(true)}
                     onShowBlacklist={handleBlacklistClick}
