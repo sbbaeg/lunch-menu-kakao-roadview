@@ -79,8 +79,8 @@ export function SideMenuSheet({
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <Menu className="h-9 w-9" />
+                <Button variant="ghost" className="h-11 w-11">
+                    <Menu className="h-11 w-11" />
                 </Button>
             </SheetTrigger>
             <SheetContent>
