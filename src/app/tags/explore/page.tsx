@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import Link from 'next/link';
-import { Users, Utensils, Star, Search } from 'lucide-react';
+import { Users, Utensils, Star, Search, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 
@@ -49,6 +50,7 @@ function TagRankingItem({ tag, isSubscribed, onToggleSubscribe, isAuth }: {
 }
 
 export default function TagExplorePage() {
+  const router = useRouter();
   const { status } = useSession();
   const [rankedTags, setRankedTags] = useState<RankedTag[]>([]);
   const [sort, setSort] = useState('popular');
@@ -111,14 +113,17 @@ export default function TagExplorePage() {
   const showSearchResults = searchQuery.trim() !== '';
 
   return (
-    <main className="w-full min-h-screen p-4 md:p-8 flex justify-center">
+    <main className="w-full min-h-screen p-4 md:p-8 flex justify-center bg-card">
       <div className="w-full max-w-4xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">태그 탐색</CardTitle>
+        <div className="p-6">
+            <Button variant="ghost" onClick={() => router.back()} className="mb-2 w-fit p-0 h-auto">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                뒤로가기
+            </Button>
+            <h1 className="text-2xl font-bold">태그 탐색</h1>
             <p className="text-muted-foreground">다른 사용자들이 만든 유용한 태그를 검색하거나, 인기 있는 태그를 발견하고 구독해보세요.</p>
-          </CardHeader>
-          <CardContent>
+        </div>
+        <div className="px-6 pb-6">
             <div className="relative mb-6">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
@@ -201,8 +206,7 @@ export default function TagExplorePage() {
                 </TabsContent>
               </Tabs>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </main>
   );
