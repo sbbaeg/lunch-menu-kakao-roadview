@@ -1,6 +1,7 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Inter, Roboto_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppShell } from "@/components/AppShell";
@@ -11,9 +12,9 @@ const inter = Inter({
   subsets: ["latin"],
 }); 
 
-const roboto_mono = Roboto_Mono({
-  variable: "--font-roboto-mono",
-  subsets: ["latin"],
+const roboto_mono = localFont({
+  src: '../../public/fonts/RobotoMono-Regular.ttf',
+  variable: '--font-roboto-mono',
 }); 
 
 
