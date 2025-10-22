@@ -267,6 +267,7 @@ export function SideMenuSheet({
                                     </TabsContent>
                                 </Tabs>
                             </DialogContent>
+                        </Dialog>
                     </div>
                     <Separator className="my-4" />
 
