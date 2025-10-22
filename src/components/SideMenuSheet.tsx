@@ -215,19 +215,58 @@ export function SideMenuSheet({
                                     </TabsList>
 
                                     <TabsContent value="quickstart" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
-                                        {/* ... (도움말 내용) ... */}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none space-y-4">
+                                            <h4 className="font-semibold">기본 사용법</h4>
+                                            <ul>
+                                                <li><strong>필터:</strong> '필터' 기능은 음식 종류, 거리, 별점 등의 조건으로 검색 결과를 제한합니다.</li>
+                                                <li><strong>검색:</strong> '검색' 기능은 설정된 필터 조건에 맞는 음식점 목록을 반환합니다.</li>
+                                                <li><strong>룰렛:</strong> '룰렛' 기능은 검색된 결과 내에서 무작위로 하나의 음식점을 선택하여 제시합니다.</li>
+                                                <li><strong>결과:</strong> 검색 결과는 지도와 목록에 동시 출력되며, 목록의 항목 선택 시 지도에서 해당 위치를 표시합니다.</li>
+                                            </ul>
+                                        </div>
                                     </TabsContent>
                                     <TabsContent value="personal" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
-                                        {/* ... (도움말 내용) ... */}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none space-y-4">
+                                            <h4 className="font-semibold">개인화 기능</h4>
+                                            <ul>
+                                                <li><strong>♥ 즐겨찾기:</strong> 특정 음식점을 즐겨찾기에 추가하여 관리할 수 있습니다. 즐겨찾기 목록은 사이드 메뉴에서 접근 가능합니다.</li>
+                                                <li><strong>👁️ 블랙리스트:</strong> 특정 음식점을 블랙리스트에 추가할 수 있습니다. 블랙리스트에 추가된 음식점은 모든 검색 결과에서 제외됩니다.</li>
+                                                <li><strong>🏷️ 태그:</strong> 사용자는 직접 태그를 생성하여 음식점을 분류하고 관리할 수 있습니다. 태그는 뱃지(Badge) 형태로 표시되며, 아이콘과 스타일로 종류를 구분할 수 있습니다.
+                                                    <ul>
+                                                        <li><strong>★ 구독 태그:</strong> 다른 사용자의 유용한 공개 태그를 구독한 경우, 별 아이콘과 함께 강조 표시됩니다.</li>
+                                                        <li><strong># 내 태그:</strong> 내가 직접 생성한 태그는 테두리 스타일로 표시됩니다.</li>
+                                                        <li><strong># 기타 공개 태그:</strong> 다른 사용자가 생성한 공개 태그는 회색 배경으로 표시됩니다.</li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </TabsContent>
                                     <TabsContent value="reviews" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
-                                        {/* ... (도움말 내용) ... */}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none space-y-4">
+                                            <h4 className="font-semibold">리뷰 및 평점</h4>
+                                            <ul>
+                                                <li><strong>평점 시스템:</strong> 본 앱은 두 종류의 평점 정보를 제공합니다. 구글(Google)에 등록된 평점과 본 앱 사용자(User)가 직접 기록한 평점이 함께 표시됩니다.</li>
+                                                <li><strong>리뷰 기능:</strong> 각 음식점의 상세 페이지에서 해당 음식점에 대한 사용자 리뷰를 조회하고 작성할 수 있습니다.</li>
+                                                <li><strong>베스트 리뷰:</strong> 다른 사용자에게 '추천'을 많이 받은 리뷰는 '베스트 리뷰'로 선정되어, 정렬 순서와 관계없이 항상 리뷰 목록 최상단에 노출됩니다.</li>
+                                            </ul>
+                                        </div>
                                     </TabsContent>
                                     <TabsContent value="map" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
-                                        {/* ... (도움말 내용) ... */}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none space-y-4">
+                                            <h4 className="font-semibold">지도 기능</h4>
+                                            <ul>
+                                                <li><strong>지도 영역 검색:</strong> 지도를 이동하면 '현 지도에서 검색' 버튼이 활성화됩니다. 이 버튼을 사용하면 현재 보이는 지도 영역 내에서 다시 검색을 수행합니다.</li>
+                                                <li><strong>검색 모드 전환:</strong> 지도 상단 검색창 옆의 스위치를 사용하여 '장소' 또는 '음식점' 검색 모드를 선택할 수 있습니다.
+                                                    <ul>
+                                                        <li><strong>장소 검색:</strong> '장소' 모드에서는 '강남역'과 같이 특정 지역이나 장소 이름으로 검색하여 지도를 해당 위치로 이동시킬 수 있습니다.</li>
+                                                        <li><strong>음식점 검색:</strong> '음식점' 모드에서는 '마라탕'과 같이 원하는 메뉴나 식당 이름으로 검색하여 현재 지도 영역 내의 관련 음식점을 찾을 수 있습니다.</li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </TabsContent>
                                 </Tabs>
-                        </Dialog>
+                            </DialogContent>
                     </div>
                     <Separator className="my-4" />
 
