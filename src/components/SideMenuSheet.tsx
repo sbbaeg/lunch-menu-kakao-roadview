@@ -80,7 +80,7 @@ export function SideMenuSheet({
         <Sheet>
             <SheetTrigger asChild>
                 <Button variant="ghost" className="h-11 w-11">
-                    <Menu className="h-11 w-11" />
+                    <Menu style={{ width: '44px', height: '44px' }} />
                 </Button>
             </SheetTrigger>
             <SheetContent>
