@@ -277,15 +277,14 @@ export default function Home() {
     };
 
     return (
-        <main className="w-full min-h-screen">
-            <Card className="w-full min-h-screen rounded-none border-none flex flex-col items-center p-4 md:p-8">
-                <div className="absolute top-4 right-4 z-50">
-                    <SideMenuSheet
-                        onShowFavorites={() => setIsFavoritesListOpen(true)}
-                        onShowBlacklist={handleBlacklistClick}
-                        onShowTagManagement={() => setIsTagManagementOpen(true)}
-                    />
-                </div>
+        <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8">
+            <div className="absolute top-4 right-4 z-50">
+                <SideMenuSheet
+                    onShowFavorites={() => setIsFavoritesListOpen(true)}
+                    onShowBlacklist={handleBlacklistClick}
+                    onShowTagManagement={() => setIsTagManagementOpen(true)}
+                />
+            </div>
             <Card className="w-full max-w-6xl p-6 md:p-8">
                 <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-3/5 h-[400px] md:h-auto">
@@ -328,75 +327,74 @@ export default function Home() {
                         />
                     </div>
                 </div>
-                </Card>
-
-                <FilterDialog
-                    isOpen={isFilterOpen}
-                    onOpenChange={setIsFilterOpen}
-                    initialFilters={filters} // ⬅️ 스토어 상태
-                    onApplyFilters={handleApplyFilters} // ⬅️ 위에서 만든 핸들러
-                    userTags={userTags}
-                />
-
-                <TagManagementDialog
-                    isOpen={isTagManagementOpen}
-                    onOpenChange={setIsTagManagementOpen}
-                    userTags={userTags}
-                    onCreateTag={createTag}
-                    onDeleteTag={deleteTag}
-                    onToggleTagPublic={toggleTagPublic}
-                />
-
-                <FavoritesDialog
-                    isOpen={isFavoritesListOpen}
-                    onOpenChange={setIsFavoritesListOpen}
-                    favorites={favorites}
-                    session={session}
-                    subscribedTagIds={subscribedTagIds}
-                    selectedItemId={selectedItemId}
-                    setSelectedItemId={setSelectedItemId}
-                    isFavorite={isFavorite}
-                    isBlacklisted={isBlacklisted}
-                    onToggleFavorite={toggleFavorite}
-                    onToggleBlacklist={toggleBlacklist}
-                    onTagManagement={setTaggingRestaurant}
-                />
-
-                <BlacklistDialog
-                    isOpen={isBlacklistOpen}
-                    onOpenChange={setIsBlacklistOpen}
-                    blacklist={blacklist}
-                    onToggleBlacklist={toggleBlacklist}
-                />
-
-                <RouletteDialog
-                    isOpen={isRouletteOpen}
-                    onOpenChange={setIsRouletteOpen}
-                    items={useAppStore.getState().rouletteItems} 
-                    onResult={handleRouletteResult} 
-                />
-                <TaggingDialog
-                    restaurant={taggingRestaurant}
-                    onOpenChange={() => setTaggingRestaurant(null)}
-                    userTags={userTags}
-                    onToggleTagLink={handleToggleTagLink}
-                    onCreateAndLinkTag={handleCreateTag}
-                />
-
-                <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
-                    <AlertDialogContent className="max-w-lg">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
-                        </AlertDialogHeader>
-                        <AlertDialogDescription>
-                            {alertInfo?.message}
-                        </AlertDialogDescription>
-                        <AlertDialogFooter>
-                            <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </Card>
+
+            <FilterDialog
+                isOpen={isFilterOpen}
+                onOpenChange={setIsFilterOpen}
+                initialFilters={filters} // ⬅️ 스토어 상태
+                onApplyFilters={handleApplyFilters} // ⬅️ 위에서 만든 핸들러
+                userTags={userTags}
+            />
+
+            <TagManagementDialog
+                isOpen={isTagManagementOpen}
+                onOpenChange={setIsTagManagementOpen}
+                userTags={userTags}
+                onCreateTag={createTag}
+                onDeleteTag={deleteTag}
+                onToggleTagPublic={toggleTagPublic}
+            />
+
+            <FavoritesDialog
+                isOpen={isFavoritesListOpen}
+                onOpenChange={setIsFavoritesListOpen}
+                favorites={favorites}
+                session={session}
+                subscribedTagIds={subscribedTagIds}
+                selectedItemId={selectedItemId}
+                setSelectedItemId={setSelectedItemId}
+                isFavorite={isFavorite}
+                isBlacklisted={isBlacklisted}
+                onToggleFavorite={toggleFavorite}
+                onToggleBlacklist={toggleBlacklist}
+                onTagManagement={setTaggingRestaurant}
+            />
+
+            <BlacklistDialog
+                isOpen={isBlacklistOpen}
+                onOpenChange={setIsBlacklistOpen}
+                blacklist={blacklist}
+                onToggleBlacklist={toggleBlacklist}
+            />
+
+            <RouletteDialog
+                isOpen={isRouletteOpen}
+                onOpenChange={setIsRouletteOpen}
+                items={useAppStore.getState().rouletteItems} 
+                onResult={handleRouletteResult} 
+            />
+            <TaggingDialog
+                restaurant={taggingRestaurant}
+                onOpenChange={() => setTaggingRestaurant(null)}
+                userTags={userTags}
+                onToggleTagLink={handleToggleTagLink}
+                onCreateAndLinkTag={handleCreateTag}
+            />
+
+            <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
+                <AlertDialogContent className="max-w-lg">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogDescription>
+                        {alertInfo?.message}
+                    </AlertDialogDescription>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </main>
     );
 }
