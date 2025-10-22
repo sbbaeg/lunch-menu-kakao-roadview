@@ -277,7 +277,7 @@ export default function Home() {
     };
 
     return (
-        <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8">
+        <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
             <div className="absolute top-4 right-4 z-50">
                 <SideMenuSheet
                     onShowFavorites={() => setIsFavoritesListOpen(true)}
@@ -285,49 +285,47 @@ export default function Home() {
                     onShowTagManagement={() => setIsTagManagementOpen(true)}
                 />
             </div>
-            <Card className="w-full max-w-6xl p-6 md:p-8">
-                <div className="flex flex-col md:flex-row gap-6">
-                    <div className="w-full md:w-3/5 h-[400px] md:h-auto">
-                        <MapPanel
-                            restaurants={restaurantList}
-                            selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
-                            userLocation={userLocation}
-                            onSearchInArea={handleSearchInArea}
-                            onAddressSearch={(keyword, mode, center) => {
-                                // MapPanel의 mode 인자는 무시하고, 
-                                // 스토어의 handleAddressSearch에는 keyword와 center만 전달
-                                handleAddressSearch(keyword, center); 
-                            }}
-                            onMapReady={setIsMapReady}
-                        />
-                    </div>
-
-                    {/* 오른쪽 제어 패널 */}
-                    <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
-                        <MainControlPanel
-                            isSearchDisabled={loading || !isMapReady} 
-                            onSearchClick={handleSearchClick} 
-                            onRouletteClick={handleRouletteClick} 
-                            onFilterClick={() => setIsFilterOpen(true)}
-                        />
-                        <ResultPanel
-                            isLoading={loading} 
-                            restaurants={restaurantList} 
-                            blacklistExcludedCount={blacklistExcludedCount} 
-                            displayedSortOrder={displayedSortOrder} 
-                            selectedItemId={selectedItemId} 
-                            setSelectedItemId={setSelectedItemId} 
-                            session={session}
-                            subscribedTagIds={subscribedTagIds}
-                            isFavorite={isFavorite}
-                            isBlacklisted={isBlacklisted}
-                            onToggleFavorite={toggleFavorite}
-                            onToggleBlacklist={toggleBlacklist}
-                            onTagManagement={setTaggingRestaurant}
-                        />
-                    </div>
+            <div className="w-full max-w-6xl p-6 md:p-8 flex flex-col md:flex-row gap-6">
+                <div className="w-full md:w-3/5 h-[400px] md:h-auto">
+                    <MapPanel
+                        restaurants={restaurantList}
+                        selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
+                        userLocation={userLocation}
+                        onSearchInArea={handleSearchInArea}
+                        onAddressSearch={(keyword, mode, center) => {
+                            // MapPanel의 mode 인자는 무시하고, 
+                            // 스토어의 handleAddressSearch에는 keyword와 center만 전달
+                            handleAddressSearch(keyword, center); 
+                        }}
+                        onMapReady={setIsMapReady}
+                    />
                 </div>
-            </Card>
+
+                {/* 오른쪽 제어 패널 */}
+                <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+                    <MainControlPanel
+                        isSearchDisabled={loading || !isMapReady} 
+                        onSearchClick={handleSearchClick} 
+                        onRouletteClick={handleRouletteClick} 
+                        onFilterClick={() => setIsFilterOpen(true)}
+                    />
+                    <ResultPanel
+                        isLoading={loading} 
+                        restaurants={restaurantList} 
+                        blacklistExcludedCount={blacklistExcludedCount} 
+                        displayedSortOrder={displayedSortOrder} 
+                        selectedItemId={selectedItemId} 
+                        setSelectedItemId={setSelectedItemId} 
+                        session={session}
+                        subscribedTagIds={subscribedTagIds}
+                        isFavorite={isFavorite}
+                        isBlacklisted={isBlacklisted}
+                        onToggleFavorite={toggleFavorite}
+                        onToggleBlacklist={toggleBlacklist}
+                        onTagManagement={setTaggingRestaurant}
+                    />
+                </div>
+            </div>
 
             <FilterDialog
                 isOpen={isFilterOpen}
