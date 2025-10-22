@@ -110,25 +110,29 @@ export function TagManagementDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-2xl flex flex-col h-[85vh]">
+      <DialogContent className="w-[90vw] max-w-4xl flex flex-col h-[85vh]">
         <DialogHeader>
           <DialogTitle className="text-xl">태그 관리</DialogTitle>
         </DialogHeader>
-        <div className="py-2 flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto">
-            <div className="w-full flex flex-col">
-                <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
-                <div className="flex w-full items-center space-x-2 mb-4 p-1">
-                    <Input
-                        type="text"
-                        placeholder="새 태그 생성 또는 검색"
-                        value={newTagName}
-                        onChange={(e) => setNewTagName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
-                        disabled={isCreatingTag}
-                    />
-                    <Button onClick={handleCreateTag} disabled={isCreatingTag}>
-                        {isCreatingTag ? '추가 중...' : '추가'}
-                    </Button>
+        <div className="py-2 flex flex-col md:flex-row gap-6 flex-1 min-h-0">
+
+            {/* 왼쪽: 내가 만든 태그 */}
+            <div className="w-full md:w-1/2 flex flex-col gap-4">
+                <div className="flex flex-col">
+                    <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
+                    <div className="flex w-full items-center space-x-2 p-1">
+                        <Input
+                            type="text"
+                            placeholder="새 태그 생성 또는 검색"
+                            value={newTagName}
+                            onChange={(e) => setNewTagName(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
+                            disabled={isCreatingTag}
+                        />
+                        <Button onClick={handleCreateTag} disabled={isCreatingTag}>
+                            {isCreatingTag ? '추가 중...' : '추가'}
+                        </Button>
+                    </div>
                 </div>
                 <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={myTagsScrollRef}>
                     {userTags.length > 0 ? (
@@ -154,10 +158,14 @@ export function TagManagementDialog({
                         </p>
                     )}
                 </div>
+            </div>
 
-                <Separator className="my-4" />
+            <Separator orientation="vertical" className="hidden md:block" />
+            <Separator className="md:hidden" />
 
-                <h4 className="font-semibold mb-2 px-1">구독 중인 태그</h4>
+            {/* 오른쪽: 구독 중인 태그 */}
+            <div className="w-full md:w-1/2 flex flex-col gap-4">
+                <h4 className="font-semibold px-1">구독 중인 태그</h4>
                 <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={subscribedTagsScrollRef}>
                     {subscribedTags.length > 0 ? (
                         <ul className="space-y-2">

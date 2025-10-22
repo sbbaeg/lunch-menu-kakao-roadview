@@ -185,10 +185,10 @@ export function SideMenuSheet({
                                 <AccordionTrigger className="py-2 px-4 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">태그</AccordionTrigger>
                                 <AccordionContent className="pb-0">
                                     <div className="flex flex-col pl-4 pt-2">
+                                        <Button variant="ghost" className="justify-start w-full" onClick={onShowTagManagement}>- 태그 관리</Button>
                                         <Link href="/tags/explore" passHref>
                                             <Button variant="ghost" className="justify-start w-full">- 태그 탐색</Button>
                                         </Link>
-                                        <Button variant="ghost" className="justify-start w-full" onClick={onShowTagManagement}>- 태그 관리</Button>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
