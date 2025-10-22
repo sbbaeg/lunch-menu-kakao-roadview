@@ -1,0 +1,21 @@
+{
+  "name": "오늘 뭐 먹지?",
+  "short_name": "오늘 뭐 먹지?",
+  "description": "주변 맛집을 추천하고 룰렛을 돌려 식사 메뉴를 결정해주는 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

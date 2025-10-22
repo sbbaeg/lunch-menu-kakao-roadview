@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AppShell } from "@/components/AppShell";
 import Providers from './providers'; // <--- 1. 이 줄을 추가합니다.
 
 const inter = Inter({
@@ -36,6 +37,8 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://lunch-menu-kakao.vercel.app",
   },
+  manifest: '/manifest.json',
+  themeColor: '#ffffff',
 }; 
 
 export default function RootLayout({
@@ -54,8 +57,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* 2. 기존 {children}을 <Providers>로 감싸줍니다. */}
-          <Providers>{children}</Providers>
+          <Providers>
+            <AppShell>{children}</AppShell>
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
