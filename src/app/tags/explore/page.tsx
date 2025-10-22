@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import Link from 'next/link';
-import { Users, Utensils, Star } from 'lucide-react';
+import { Users, Utensils, Star, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 
 interface RankedTag {
   id: number;
@@ -49,19 +50,25 @@ function TagRankingItem({ tag, isSubscribed, onToggleSubscribe, isAuth }: {
 
 export default function TagExplorePage() {
   const { status } = useSession();
-  const [tags, setTags] = useState<RankedTag[]>([]);
+  const [rankedTags, setRankedTags] = useState<RankedTag[]>([]);
   const [sort, setSort] = useState('popular');
   const [isLoading, setIsLoading] = useState(true);
   const { subscribedTagIds, toggleSubscription } = useSubscriptions();
 
+  // 검색 기능 관련 상태
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<RankedTag[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // 랭킹 태그 로딩
   useEffect(() => {
-    const fetchTags = async () => {
+    const fetchRankedTags = async () => {
       setIsLoading(true);
       try {
         const response = await fetch(`/api/tags/explore?sort=${sort}`);
         if (response.ok) {
           const data = await response.json();
-          setTags(data);
+          setRankedTags(data);
         }
       } catch (error) {
         console.error(`Failed to fetch ${sort} tags:`, error);
@@ -70,17 +77,38 @@ export default function TagExplorePage() {
       }
     };
 
-    fetchTags();
+    fetchRankedTags();
   }, [sort]);
+
+  // 디바운스를 적용한 검색 기능
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+
+    const debounceTimer = setTimeout(() => {
+      setIsSearching(true);
+      fetch(`/api/tags/explore?query=${searchQuery.trim()}`)
+        .then(res => res.json())
+        .then(data => setSearchResults(data))
+        .catch(err => console.error("Tag search failed:", err))
+        .finally(() => setIsSearching(false));
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
 
   const handleToggleSubscription = async (tagId: number) => {
     if (status !== 'authenticated') {
       alert('로그인이 필요한 기능입니다.');
       return;
     }
-    // useSubscriptions 훅의 toggleSubscription 함수를 직접 사용
     await toggleSubscription(tagId);
   };
+
+  const showSearchResults = searchQuery.trim() !== '';
 
   return (
     <main className="w-full min-h-screen p-4 md:p-8 flex justify-center">
@@ -88,22 +116,31 @@ export default function TagExplorePage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">태그 탐색</CardTitle>
-            <p className="text-muted-foreground">다른 사용자들이 만든 유용한 태그들을 발견하고 구독해보세요.</p>
+            <p className="text-muted-foreground">다른 사용자들이 만든 유용한 태그를 검색하거나, 인기 있는 태그를 발견하고 구독해보세요.</p>
           </CardHeader>
           <CardContent>
-            <Tabs value={sort} onValueChange={setSort} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="popular">맛집 많은 순</TabsTrigger>
-                <TabsTrigger value="subscribers">구독자순</TabsTrigger>
-              </TabsList>
-              <TabsContent value="popular">
-                {isLoading ? (
+            <div className="relative mb-6">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="태그 이름으로 검색..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {showSearchResults ? (
+              // 검색 결과 표시
+              <div>
+                <h3 className="text-lg font-semibold mb-2">검색 결과</h3>
+                {isSearching ? (
                   <ul className="space-y-2 mt-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
                   </ul>
-                ) : (
+                ) : searchResults.length > 0 ? (
                   <ul className="space-y-2 mt-4">
-                    {tags.map(tag => (
+                    {searchResults.map(tag => (
                       <TagRankingItem 
                         key={tag.id} 
                         tag={tag} 
@@ -113,28 +150,57 @@ export default function TagExplorePage() {
                       />
                     ))}
                   </ul>
-                )}
-              </TabsContent>
-              <TabsContent value="subscribers">
-                {isLoading ? (
-                  <ul className="space-y-2 mt-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
-                  </ul>
                 ) : (
-                  <ul className="space-y-2 mt-4">
-                    {tags.map(tag => (
-                      <TagRankingItem 
-                        key={tag.id} 
-                        tag={tag} 
-                        isSubscribed={subscribedTagIds.includes(tag.id)}
-                        onToggleSubscribe={handleToggleSubscription}
-                        isAuth={status === 'authenticated'}
-                      />
-                    ))}
-                  </ul>
+                  <p className="text-center text-muted-foreground py-8">검색 결과가 없습니다.</p>
                 )}
-              </TabsContent>
-            </Tabs>
+              </div>
+            ) : (
+              // 랭킹 표시
+              <Tabs value={sort} onValueChange={setSort} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="popular">맛집 많은 순</TabsTrigger>
+                  <TabsTrigger value="subscribers">구독자순</TabsTrigger>
+                </TabsList>
+                <TabsContent value="popular">
+                  {isLoading ? (
+                    <ul className="space-y-2 mt-4">
+                      {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                    </ul>
+                  ) : (
+                    <ul className="space-y-2 mt-4">
+                      {rankedTags.map(tag => (
+                        <TagRankingItem 
+                          key={tag.id} 
+                          tag={tag} 
+                          isSubscribed={subscribedTagIds.includes(tag.id)}
+                          onToggleSubscribe={handleToggleSubscription}
+                          isAuth={status === 'authenticated'}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </TabsContent>
+                <TabsContent value="subscribers">
+                  {isLoading ? (
+                    <ul className="space-y-2 mt-4">
+                      {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                    </ul>
+                  ) : (
+                    <ul className="space-y-2 mt-4">
+                      {rankedTags.map(tag => (
+                        <TagRankingItem 
+                          key={tag.id} 
+                          tag={tag} 
+                          isSubscribed={subscribedTagIds.includes(tag.id)}
+                          onToggleSubscribe={handleToggleSubscription}
+                          isAuth={status === 'authenticated'}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </TabsContent>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>
