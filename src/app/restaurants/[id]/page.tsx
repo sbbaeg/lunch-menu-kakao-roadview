@@ -158,7 +158,7 @@ export default function RestaurantPage() {
   }
 
   return (
-    <main className="w-full min-h-screen p-4 md:p-8 relative">
+    <main className="w-full min-h-screen p-4 md:p-8 relative bg-card">
         <div className="absolute top-4 right-4 z-50">
             <SideMenuSheet
                 onShowFavorites={() => setIsFavoritesListOpen(true)}
@@ -166,15 +166,15 @@ export default function RestaurantPage() {
                 onShowTagManagement={() => setIsTagManagementOpen(true)}
             />
         </div>
-        <Card>
-            <CardHeader>
+        <div className="w-full max-w-7xl mx-auto">
+            <div className="px-6 pt-6">
                 <Button variant="ghost" onClick={() => router.back()} className="mb-4 w-fit p-0 h-auto">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     뒤로가기
                 </Button>
                 <h1 className="text-4xl font-bold">{restaurant.placeName}</h1>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-6">
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Left Column */}
                     <div className="w-full md:w-1/2 flex flex-col gap-8">
@@ -213,8 +213,8 @@ export default function RestaurantPage() {
                         />
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
 
         <TagManagementDialog
             isOpen={isTagManagementOpen}

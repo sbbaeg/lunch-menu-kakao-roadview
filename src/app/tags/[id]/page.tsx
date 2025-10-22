@@ -207,7 +207,7 @@ export default function TagProfilePage() {
     if (!tagData) return null;
 
     return (
-        <main className="w-full min-h-screen relative">
+        <main className="w-full min-h-screen relative bg-card">
             <div className="absolute top-4 right-4 z-50">
                 <SideMenuSheet
                     onShowFavorites={() => setIsFavoritesListOpen(true)}
