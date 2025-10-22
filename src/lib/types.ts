@@ -67,6 +67,8 @@ export interface Tag {
     isPublic: boolean;
     creatorId: string;
     creatorName: string | null;
+    restaurantCount?: number;
+    subscriberCount?: number;
 }
 
 // API 응답에 최종적으로 사용될 타입

@@ -181,7 +181,14 @@ export async function GET(request: Request) {
             include: {
                 taggedBy: {
                     include: {
-                        tag: { include: { user: { select: { id: true, name: true } } } }
+                        tag: { 
+                            include: { 
+                                user: { select: { id: true, name: true } },
+                                _count: { 
+                                    select: { restaurants: true, subscribers: true }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -210,7 +217,15 @@ export async function GET(request: Request) {
 
             return {
                 ...result,
-                tags: dbRestaurant ? dbRestaurant.taggedBy.map(t => ({ id: t.tag.id, name: t.tag.name, isPublic: t.tag.isPublic, creatorId: t.tag.user.id, creatorName: t.tag.user.name })) : [],
+                tags: dbRestaurant ? dbRestaurant.taggedBy.map(t => ({ 
+                    id: t.tag.id, 
+                    name: t.tag.name, 
+                    isPublic: t.tag.isPublic, 
+                    creatorId: t.tag.user.id, 
+                    creatorName: t.tag.user.name,
+                    restaurantCount: t.tag._count.restaurants,
+                    subscriberCount: t.tag._count.subscribers
+                })) : [],
                 appReview: reviewAggs ? {
                     averageRating: reviewAggs._avg.rating || 0,
                     reviewCount: reviewAggs._count.id,
