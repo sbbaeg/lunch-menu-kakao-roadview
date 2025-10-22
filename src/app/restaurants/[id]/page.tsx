@@ -159,7 +159,7 @@ export default function RestaurantPage() {
 
   return (
     <main className="w-full min-h-screen p-4 md:p-8 relative bg-card">
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute top-2 right-2 z-50">
             <SideMenuSheet
                 onShowFavorites={() => setIsFavoritesListOpen(true)}
                 onShowBlacklist={handleBlacklistClick}
