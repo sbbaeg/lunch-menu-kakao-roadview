@@ -94,11 +94,11 @@ export function RestaurantCard({
                             </Badge>
                           </Link>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="flex flex-col gap-2 p-1">
+                        <TooltipContent className="p-2">
+                          <div className="flex flex-col gap-2">
                             <p>by {tag.creatorName || '알 수 없음'}</p>
                             {(tag.restaurantCount !== undefined && tag.subscriberCount !== undefined) && (
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">
+                              <div className="flex items-center gap-4 text-xs border-t pt-2">
                                 <div className="flex items-center gap-1"><Utensils className="h-3 w-3" /> {tag.restaurantCount}</div>
                                 <div className="flex items-center gap-1"><Users className="h-3 w-3" /> {tag.subscriberCount}</div>
                               </div>
