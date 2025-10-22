@@ -32,5 +32,31 @@ export function useSubscriptions() {
         }
     }, [status, isMounted]);
 
-    return { subscribedTagIds };
+    const toggleSubscription = async (tagId: number) => {
+        if (status !== 'authenticated') return;
+
+        const isSubscribed = subscribedTagIds.includes(tagId);
+        const originalIds = subscribedTagIds;
+
+        // Optimistic update
+        if (isSubscribed) {
+            setSubscribedTagIds(ids => ids.filter(id => id !== tagId));
+        } else {
+            setSubscribedTagIds(ids => [...ids, tagId]);
+        }
+
+        try {
+            const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
+            if (!response.ok) {
+                // Revert on failure
+                setSubscribedTagIds(originalIds);
+            }
+        } catch (error) {
+            console.error("Failed to toggle subscription:", error);
+            // Revert on error
+            setSubscribedTagIds(originalIds);
+        }
+    };
+
+    return { subscribedTagIds, toggleSubscription };
 }

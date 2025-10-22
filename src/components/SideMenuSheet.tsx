@@ -3,6 +3,13 @@
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
+import Link from "next/link";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
     Sheet,
     SheetContent,
@@ -173,9 +180,19 @@ export function SideMenuSheet({
                         <Button variant="ghost" className="justify-start" onClick={onShowBlacklist}>
                             블랙리스트 관리
                         </Button>
-                        <Button variant="ghost" className="justify-start" onClick={onShowTagManagement}>
-                            태그
-                        </Button>
+                        <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="item-1" className="border-none">
+                                <AccordionTrigger className="py-2 px-4 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">태그</AccordionTrigger>
+                                <AccordionContent className="pb-0">
+                                    <div className="flex flex-col pl-4 pt-2">
+                                        <Link href="/tags/explore" passHref>
+                                            <Button variant="ghost" className="justify-start w-full">- 태그 탐색</Button>
+                                        </Link>
+                                        <Button variant="ghost" className="justify-start w-full" onClick={onShowTagManagement}>- 태그 관리</Button>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
 
                         <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
                             {/* ... (도움말 Dialog 부분은 변경 없음) ... */}

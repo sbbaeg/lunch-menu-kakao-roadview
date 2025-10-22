@@ -1,44 +1,72 @@
-// app/api/tags/explore/route.ts (새 파일)
-
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Prisma.TagGetPayload를 사용하여 쿼리 결과에 대한 정확한 타입을 생성합니다.
+type TagWithCountsAndUser = Prisma.TagGetPayload<{
+    include: {
+        user: {
+            select: {
+                name: true;
+            };
+        };
+        _count: {
+            select: {
+                restaurants: true;
+                subscribers: true;
+            };
+        };
+    };
+}>;
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('query');
-
-    if (!query || query.trim() === '') {
-        return NextResponse.json([]); // 검색어가 없으면 빈 배열 반환
-    }
+    const sort = searchParams.get('sort'); // 'popular' 또는 'subscribers'
 
     try {
-        const tags = await prisma.tag.findMany({
-            where: {
-                isPublic: true,       // 1. 공개된 태그만 검색
-                name: {
-                    contains: query,  // 2. 검색어가 이름에 포함된 태그
-                    mode: 'insensitive', // 3. 대소문자 구분 없이 검색
+        let tags: TagWithCountsAndUser[]; // 정확한 타입을 변수에 적용합니다.
+
+        if (sort) {
+            // 정렬 기능: 인기순 또는 구독자순으로 전체 공개 태그를 정렬
+            const orderBy: Prisma.TagOrderByWithRelationInput = sort === 'popular' 
+                ? { restaurants: { _count: 'desc' } } 
+                : { subscribers: { _count: 'desc' } };
+
+            tags = await prisma.tag.findMany({
+                where: {
+                    isPublic: true,
                 },
-            },
-            include: {
-                user: { // 생성자 정보 포함
-                    select: {
-                        name: true,
+                include: {
+                    user: { select: { name: true } },
+                    _count: { select: { restaurants: true, subscribers: true } },
+                },
+                orderBy: orderBy,
+                take: 20, // 상위 20개 결과
+            });
+
+        } else if (query && query.trim() !== '') {
+            // 기존의 검색 기능
+            tags = await prisma.tag.findMany({
+                where: {
+                    isPublic: true,
+                    name: {
+                        contains: query,
+                        mode: 'insensitive',
                     },
                 },
-                _count: { // 관계된 모델의 개수 카운트
-                    select: {
-                        restaurants: true, // 이 태그에 연결된 맛집 수
-                        subscribers: true, // 이 태그를 구독하는 사람 수
-                    },
+                include: {
+                    user: { select: { name: true } },
+                    _count: { select: { restaurants: true, subscribers: true } },
                 },
-            },
-            take: 10, // 검색 결과는 최대 10개로 제한
-        });
+                take: 10, 
+            });
+        } else {
+            // 정렬이나 검색어 없이 요청된 경우
+            return NextResponse.json([]);
+        }
         
-        // 프론트엔드가 사용하기 편한 형태로 데이터 가공
         const formattedTags = tags.map(tag => ({
             id: tag.id,
             name: tag.name,
