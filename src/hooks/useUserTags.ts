@@ -6,6 +6,12 @@ export function useUserTags() {
     const { status } = useSession();
     const [userTags, setUserTags] = useState<Tag[]>([]);
 
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     useEffect(() => {
         const loadUserTags = async () => {
             if (status === 'authenticated') {
@@ -23,8 +29,10 @@ export function useUserTags() {
             }
         };
 
-        loadUserTags();
-    }, [status]);
+        if (isMounted) {
+            loadUserTags();
+        }
+    }, [status, isMounted]);
 
     const createTag = async (name: string): Promise<Tag | null> => { // ✅ 반환 타입을 명시해줍니다.
         try {

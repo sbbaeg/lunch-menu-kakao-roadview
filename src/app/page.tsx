@@ -102,47 +102,24 @@ const Wheel = dynamic(
 export default function Home() {
     const { data: session, status } = useSession();
 
-    // --- 스토어에서 '상태(State)' 가져오기 ---
-    const {
-        selectedItemId,
-        restaurantList,
-        userLocation,
-        filters,
-        displayedSortOrder,
-        blacklistExcludedCount,
-        loading,
-        isMapReady
-    } = useAppStore((state) => ({
-        selectedItemId: state.selectedItemId,
-        restaurantList: state.restaurantList,
-        userLocation: state.userLocation,
-        filters: state.filters,
-        displayedSortOrder: state.displayedSortOrder,
-        blacklistExcludedCount: state.blacklistExcludedCount,
-        loading: state.loading,
-        isMapReady: state.isMapReady,
-    }));
+    // --- Zustand 스토어에서 상태 및 액션 가져오기 (개별 선택) ---
+    const selectedItemId = useAppStore((state) => state.selectedItemId);
+    const restaurantList = useAppStore((state) => state.restaurantList);
+    const userLocation = useAppStore((state) => state.userLocation);
+    const filters = useAppStore((state) => state.filters);
+    const displayedSortOrder = useAppStore((state) => state.displayedSortOrder);
+    const blacklistExcludedCount = useAppStore((state) => state.blacklistExcludedCount);
+    const loading = useAppStore((state) => state.loading);
+    const isMapReady = useAppStore((state) => state.isMapReady);
 
-    // --- 스토어에서 '액션(Functions)' 가져오기 ---
-    const {
-        setSelectedItemId,
-        setFilters,
-        setIsMapReady,
-        recommendProcess,
-        handleSearchInArea,
-        handleAddressSearch,
-        handleRouletteResult,
-        handleTagsChange: updateRestaurantInStore // 이름 변경
-    } = useAppStore((state) => ({
-        setSelectedItemId: state.setSelectedItemId,
-        setFilters: state.setFilters,
-        setIsMapReady: state.setIsMapReady,
-        recommendProcess: state.recommendProcess,
-        handleSearchInArea: state.handleSearchInArea,
-        handleAddressSearch: state.handleAddressSearch,
-        handleRouletteResult: state.handleRouletteResult,
-        handleTagsChange: state.handleTagsChange,
-    }));
+    const setSelectedItemId = useAppStore((state) => state.setSelectedItemId);
+    const setFilters = useAppStore((state) => state.setFilters);
+    const setIsMapReady = useAppStore((state) => state.setIsMapReady);
+    const recommendProcess = useAppStore((state) => state.recommendProcess);
+    const handleSearchInArea = useAppStore((state) => state.handleSearchInArea);
+    const handleAddressSearch = useAppStore((state) => state.handleAddressSearch);
+    const handleRouletteResult = useAppStore((state) => state.handleRouletteResult);
+    const updateRestaurantInStore = useAppStore((state) => state.handleTagsChange);
 
     const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
     const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
