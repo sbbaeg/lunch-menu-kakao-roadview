@@ -1,14 +1,30 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import BottomTabBar from './BottomTabBar';
 import MapPage from './MapPage';
 import FavoritesPage from './FavoritesPage'; // Import the new FavoritesPage component
-import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
+
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Placeholder pages
 const RoulettePage = () => <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">룰렛 화면</div>;
 const MyPage = () => <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">마이페이지</div>;
+
+// 스플래시 화면을 위한 스켈레톤 컴포넌트
+const SplashScreen = () => (
+    <div className="h-full w-full flex flex-col">
+        <div className="h-3/5 border-b">
+            <Skeleton className="w-full h-full" />
+        </div>
+        <div className="h-2/5 flex flex-col p-2">
+            <Skeleton className="h-8 w-1/2 mb-4" />
+            <Skeleton className="h-16 w-full mb-2" />
+            <Skeleton className="h-16 w-full mb-2" />
+            <Skeleton className="h-16 w-full" />
+        </div>
+    </div>
+);
 
 // All logic and state lifted from MapPage to here
 import { FilterDialog, type FilterState } from "@/components/FilterDialog";
@@ -37,33 +53,17 @@ import {
 export default function MobileLayout() {
     const activeTab = useAppStore((state) => state.activeTab);
     const setActiveTab = useAppStore((state) => state.setActiveTab);
-    const { isStandalone } = usePwaDisplayMode();
-    const isInitialLoad = useRef(true);
 
     useEffect(() => {
-        // PWA 환경의 초기 로드 시에만 실행
-        if (isStandalone && isInitialLoad.current) {
-            const initialTab = useAppStore.getState().activeTab;
-            if (initialTab === 'map') {
-                // 다른 탭으로 갔다가 돌아오는 효과를 주기 위한 타이머
-                const timer1 = setTimeout(() => {
-                    setActiveTab('favorites');
-                }, 50);
+        const initialTab = useAppStore.getState().activeTab;
+        if (initialTab === 'splash') {
+            const timer = setTimeout(() => {
+                setActiveTab('map');
+            }, 50); // 아주 짧은 시간 후 map으로 전환
 
-                const timer2 = setTimeout(() => {
-                    setActiveTab('map');
-                }, 100);
-
-                // 클린업
-                return () => {
-                    clearTimeout(timer1);
-                    clearTimeout(timer2);
-                };
-            }
+            return () => clearTimeout(timer);
         }
-        isInitialLoad.current = false;
-    }, [isStandalone, setActiveTab]);
-
+    }, [setActiveTab]);
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
@@ -180,6 +180,8 @@ export default function MobileLayout() {
         };
 
         switch (activeTab) {
+            case 'splash':
+                return <SplashScreen />;
             case 'map':
                 return <MapPage {...mapPageProps} />;
             case 'favorites':
