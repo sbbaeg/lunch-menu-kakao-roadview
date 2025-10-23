@@ -21,7 +21,7 @@ interface AppState {
   resultPanelState: 'collapsed' | 'default' | 'expanded';
 
   // Actions
-  cycleResultPanelState: () => void;
+  setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
   resetResultPanelState: () => void;
   setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
   setSelectedItemId: (id: string) => void;
@@ -67,11 +67,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   resultPanelState: 'default',
 
   // Actions
-  cycleResultPanelState: () => set((state) => {
-    if (state.resultPanelState === 'default') return { resultPanelState: 'expanded' };
-    if (state.resultPanelState === 'expanded') return { resultPanelState: 'collapsed' };
-    return { resultPanelState: 'default' };
-  }),
+  setResultPanelState: (state) => set({ resultPanelState: state }),
   resetResultPanelState: () => set({ resultPanelState: 'default' }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setSelectedItemId: (id) => set({ selectedItemId: id }),

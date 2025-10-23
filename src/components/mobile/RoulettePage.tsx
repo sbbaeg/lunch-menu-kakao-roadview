@@ -83,20 +83,21 @@ export default function RoulettePage() {
 
     return (
         <>
-            <div className="h-full w-full flex flex-col p-4 bg-gray-50 dark:bg-gray-900">
+            {/* grid-rows-[auto_1fr]는 헤더는 내용만큼, main은 나머지 전체를 차지하게 함 */}
+            <div className="h-full w-full grid grid-rows-[auto_1fr] p-4 bg-gray-50 dark:bg-gray-900">
                 <header className="p-4 flex justify-between items-center">
                     <h1 className="text-2xl font-bold">오늘의 룰렛</h1>
                     <div>
                         <Button variant="ghost" size="icon" onClick={fetchRouletteItems} disabled={loading || mustSpin}>
-                            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`h-6 w-6 ${loading ? 'animate-spin' : ''}`} />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => setIsFilterOpen(true)} disabled={loading || mustSpin}>
-                            <Settings className="h-5 w-5" />
+                            <Settings className="h-6 w-6" />
                         </Button>
                     </div>
                 </header>
 
-                <main className="flex-1 flex flex-col items-center justify-center gap-8">
+                <main className="flex flex-col items-center justify-center gap-8">
                     <div className="relative w-80 h-80 md:w-96 md:h-96">
                         {rouletteData.length > 0 ? (
                             <Wheel
@@ -108,7 +109,7 @@ export default function RoulettePage() {
                                 outerBorderWidth={5}
                                 radiusLineColor={"#e2e8f0"}
                                 radiusLineWidth={2}
-                                fontSize={12}
+                                fontSize={14}
                                 textDistance={60}
                             />
                         ) : (

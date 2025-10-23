@@ -149,7 +149,8 @@ export default function MobileLayout() {
     const mapPageProps = { // Props for MapPage
         session, loading, restaurantList, blacklistExcludedCount, displayedSortOrder, selectedItemId, setSelectedItemId,
         subscribedTagIds, isFavorite, isBlacklisted, toggleFavorite, toggleBlacklist, setTaggingRestaurant,
-        userLocation, handleSearchInArea, handleAddressSearch, setIsMapReady
+        userLocation, handleSearchInArea, handleAddressSearch, setIsMapReady,
+        onOpenFilter: () => setIsFilterOpen(true), // 필터 열기 함수 전달
     };
 
     const favoritesPageProps = { // Props for FavoritesPage

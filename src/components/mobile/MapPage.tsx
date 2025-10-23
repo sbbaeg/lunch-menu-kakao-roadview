@@ -10,7 +10,8 @@ export default function MapPage(props: any) {
     const {
         session, loading, restaurantList, blacklistExcludedCount, displayedSortOrder, selectedItemId, setSelectedItemId,
         subscribedTagIds, isFavorite, isBlacklisted, toggleFavorite, toggleBlacklist, setTaggingRestaurant,
-        userLocation, handleSearchInArea, handleAddressSearch, setIsMapReady
+        userLocation, handleSearchInArea, handleAddressSearch, setIsMapReady,
+        onOpenFilter // 필터 열기 함수 받기
     } = props;
 
     const resultPanelState = useAppStore((state) => state.resultPanelState);
@@ -65,6 +66,7 @@ export default function MapPage(props: any) {
                     onToggleFavorite={toggleFavorite}
                     onToggleBlacklist={toggleBlacklist}
                     onTagManagement={setTaggingRestaurant}
+                    onOpenFilter={onOpenFilter} // 필터 열기 함수 전달
                 />
             </div>
         </div>
