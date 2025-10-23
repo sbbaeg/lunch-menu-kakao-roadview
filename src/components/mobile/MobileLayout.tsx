@@ -173,12 +173,12 @@ export default function MobileLayout() {
 
     return (
         <div className="h-dvh w-screen flex flex-col bg-background">
-            <main className="flex-1 relative"> {/* overflow-y-auto 제거, relative 추가 */}
-                {/* 각 페이지를 absolute로 띄워서 겹치고, activeTab에 따라 hidden/block 처리 */}
-                <div className={`w-full h-full ${activeTab === 'map' ? 'block' : 'hidden'}`}><MapPage {...mapPageProps} /></div>
-                <div className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} /></div>
-                <div className={`w-full h-full ${activeTab === 'roulette' ? 'block' : 'hidden'}`}><RoulettePage /></div>
-                <div className={`w-full h-full ${activeTab === 'my-page' ? 'block' : 'hidden'}`}><MyPage /></div>
+            <main className="flex-1 grid grid-cols-1 grid-rows-1"> {/* grid로 변경 */}
+                {/* 모든 페이지를 1행 1열에 배치하여 겹치고, activeTab에 따라 hidden/block 처리 */}
+                <div style={{gridRowStart: 1, gridColumnStart: 1}} className={`w-full h-full ${activeTab === 'map' ? 'block' : 'hidden'}`}><MapPage {...mapPageProps} /></div>
+                <div style={{gridRowStart: 1, gridColumnStart: 1}} className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} /></div>
+                <div style={{gridRowStart: 1, gridColumnStart: 1}} className={`w-full h-full ${activeTab === 'roulette' ? 'block' : 'hidden'}`}><RoulettePage /></div>
+                <div style={{gridRowStart: 1, gridColumnStart: 1}} className={`w-full h-full ${activeTab === 'my-page' ? 'block' : 'hidden'}`}><MyPage /></div>
             </main>
 
             <BottomTabBar 
