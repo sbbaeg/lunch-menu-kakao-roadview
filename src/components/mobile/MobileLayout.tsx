@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import BottomTabBar from './BottomTabBar';
 import MapPage from './MapPage';
 import FavoritesPage from './FavoritesPage'; // Import the new FavoritesPage component
+import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 
 // Placeholder pages
 const RoulettePage = () => <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">룰렛 화면</div>;
@@ -36,6 +37,33 @@ import {
 export default function MobileLayout() {
     const activeTab = useAppStore((state) => state.activeTab);
     const setActiveTab = useAppStore((state) => state.setActiveTab);
+    const { isStandalone } = usePwaDisplayMode();
+    const isInitialLoad = useRef(true);
+
+    useEffect(() => {
+        // PWA 환경의 초기 로드 시에만 실행
+        if (isStandalone && isInitialLoad.current) {
+            const initialTab = useAppStore.getState().activeTab;
+            if (initialTab === 'map') {
+                // 다른 탭으로 갔다가 돌아오는 효과를 주기 위한 타이머
+                const timer1 = setTimeout(() => {
+                    setActiveTab('favorites');
+                }, 50);
+
+                const timer2 = setTimeout(() => {
+                    setActiveTab('map');
+                }, 100);
+
+                // 클린업
+                return () => {
+                    clearTimeout(timer1);
+                    clearTimeout(timer2);
+                };
+            }
+        }
+        isInitialLoad.current = false;
+    }, [isStandalone, setActiveTab]);
+
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
