@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { FilterDialog } from '@/components/FilterDialog';
@@ -8,6 +9,17 @@ import { useUserTags } from '@/hooks/useUserTags';
 import { AppRestaurant } from '@/lib/types';
 import { toast } from 'sonner';
 import { Settings, RefreshCw } from 'lucide-react';
+
+// 룰렛 라이브러리는 클라이언트 사이드에서만 렌더링하도록 dynamic import 합니다.
+const Wheel = dynamic(
+    () => import("react-custom-roulette").then((mod) => mod.Wheel),
+    { ssr: false }
+);
+
+interface RouletteOption {
+    option: string;
+    style?: { backgroundColor?: string; textColor?: string };
+}
 
 export default function RoulettePage() {
     const {
@@ -21,8 +33,10 @@ export default function RoulettePage() {
 
     const { userTags } = useUserTags();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [rotation, setRotation] = useState(0);
-    const [isSpinning, setIsSpinning] = useState(false);
+    
+    // 룰렛 라이브러리 상태
+    const [mustSpin, setMustSpin] = useState(false);
+    const [prizeNumber, setPrizeNumber] = useState(0);
 
     const fetchRouletteItems = async () => {
         const result = await recommendProcess(true);
@@ -32,91 +46,39 @@ export default function RoulettePage() {
     };
 
     useEffect(() => {
-        // 페이지에 처음 진입했을 때 룰렛 아이템 로드
         if (rouletteItems.length === 0) {
             fetchRouletteItems();
         }
     }, []);
 
-    const handleSpin = () => {
-        if (isSpinning || rouletteItems.length === 0) return;
+    // 룰렛 데이터를 라이브러리 형식에 맞게 변환
+    const rouletteData: RouletteOption[] = rouletteItems.map((item, index) => {
+        const colors = ['#FFDDC1', '#D4F1F4', '#E1F7D5', '#FEEFDD', '#E4D9FF', '#D9E4FF'];
+        return {
+            option: item.placeName.length > 10 ? item.placeName.substring(0, 10) + '..' : item.placeName,
+            style: {
+                backgroundColor: colors[index % colors.length],
+                textColor: "#333333",
+            },
+        };
+    });
 
-        setIsSpinning(true);
-        const totalItems = rouletteItems.length;
-        const winningNumber = Math.floor(Math.random() * totalItems);
-        const baseAngle = 360 / totalItems;
-
-        // 포인터가 12시 방향(270도)을 가리키므로, 당첨 아이템의 중앙 각도가 270도가 되도록 목표 각도를 설정합니다.
-        const itemCenterAngle = winningNumber * baseAngle + baseAngle / 2;
-        const targetAngle = 270 - itemCenterAngle;
-
-        // 최소 5바퀴 + 최종 목표 각도
-        const randomSpins = 5 + Math.random() * 3;
-        const finalRotation = (360 * randomSpins) + targetAngle;
-
-        setRotation(finalRotation);
-
-        // 애니메이션 시간 후 결과 처리
-        setTimeout(() => {
-            const winner = rouletteItems[winningNumber];
-            setIsSpinning(false);
-            toast.success(`🎉 축하합니다! ${winner.placeName}에 당첨되었습니다! 🎉`);
-            handleRouletteResult(winner);
-            // 여기서 activeTab을 'map'으로 변경하여 지도에서 결과를 보여줄 수 있습니다.
-            // useAppStore.getState().setActiveTab('map');
-        }, 6000); // transition-duration (5s) + 약간의 여유
+    const handleSpinClick = () => {
+        if (mustSpin || rouletteItems.length < 2) return;
+        const newPrizeNumber = Math.floor(Math.random() * rouletteItems.length);
+        setPrizeNumber(newPrizeNumber);
+        setMustSpin(true);
     };
 
-    const renderRouletteWheel = () => {
-        const itemCount = rouletteItems.length;
-        if (itemCount === 0 || itemCount < 2) {
-            return <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full"><p className="text-muted-foreground text-center px-4">룰렛을 돌리려면<br/>2개 이상의 음식점이 필요합니다.</p></div>;
-        }
-        const angle = 360 / itemCount;
-
-        // clip-path를 위한 좌표 계산
-        const getCoordinates = (angle: number) => {
-            const rad = (angle * Math.PI) / 180;
-            const x = 50 + 50 * Math.tan(rad);
-            return x > 100 ? 100 : x < 0 ? 0 : x;
-        };
-
-        return rouletteItems.map((item, index) => {
-            const itemAngle = angle * index;
-            const colors = ['#FFDDC1', '#D4F1F4', '#E1F7D5', '#FEEFDD', '#E4D9FF', '#D9E4FF'];
-            const color = colors[index % colors.length];
-
-            let clipPath;
-            if (angle > 180) { // 아이템이 1개일 경우 (실제로는 2개 미만에서 분기처리됨)
-                clipPath = 'circle(50%)';
-            } else if (angle > 90) {
-                const x = getCoordinates(angle - 90);
-                clipPath = `polygon(50% 50%, 0% 100%, 0% 0%, 100% 0%, 100% ${100-x}% )`;
-            } else {
-                const x = getCoordinates(angle);
-                clipPath = `polygon(50% 50%, 50% 0, ${x}% 0)`;
-            }
-
-            return (
-                <div
-                    key={item.id}
-                    className="absolute w-full h-full"
-                    style={{ transform: `rotate(${itemAngle}deg)` }}
-                >
-                    <div
-                        className="absolute w-full h-full"
-                        style={{ clipPath, backgroundColor: color }}
-                    >
-                        <div 
-                            className="absolute w-1/2 h-1/2 flex items-start justify-center pt-2 text-sm font-semibold text-gray-800 p-1 break-all"
-                            style={{ transform: `rotate(${angle / 2}deg) translate(25%, 25%)` }}
-                        >
-                            <span className='truncate'>{item.placeName}</span>
-                        </div>
-                    </div>
-                </div>
-            );
-        });
+    const handleStopSpinning = () => {
+        setMustSpin(false);
+        const winner = rouletteItems[prizeNumber];
+        toast.success(`🎉 축하합니다! ${winner.placeName}에 당첨되었습니다! 🎉`);
+        handleRouletteResult(winner);
+        // 1초 후 지도 탭으로 이동하여 결과 확인
+        setTimeout(() => {
+            useAppStore.getState().setActiveTab('map');
+        }, 1000);
     };
 
     return (
@@ -125,10 +87,10 @@ export default function RoulettePage() {
                 <header className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center">
                     <h1 className="text-2xl font-bold">오늘의 룰렛</h1>
                     <div>
-                        <Button variant="ghost" size="icon" onClick={fetchRouletteItems} disabled={loading || isSpinning}>
+                        <Button variant="ghost" size="icon" onClick={fetchRouletteItems} disabled={loading || mustSpin}>
                             <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setIsFilterOpen(true)} disabled={loading || isSpinning}>
+                        <Button variant="ghost" size="icon" onClick={() => setIsFilterOpen(true)} disabled={loading || mustSpin}>
                             <Settings className="h-5 w-5" />
                         </Button>
                     </div>
@@ -136,32 +98,35 @@ export default function RoulettePage() {
 
                 <main className="flex flex-col items-center justify-center gap-8">
                     <div className="relative w-80 h-80 md:w-96 md:h-96">
-                        {/* 포인터 */}
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 
-                            border-l-[15px] border-l-transparent
-                            border-r-[15px] border-r-transparent
-                            border-t-[25px] border-t-primary z-10"></div>
-                        
-                        {/* 룰렛 휠 */}
-                        <div
-                            className="relative w-full h-full rounded-full overflow-hidden border-4 border-primary shadow-lg transition-transform duration-[5s] ease-out"
-                            style={{ transform: `rotate(${rotation}deg)` }}
-                        >
-                            {loading ? (
-                                <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                                    <p>음식점 목록을 불러오는 중...</p>
-                                </div>
-                            ) : renderRouletteWheel()}
-                        </div>
+                        {rouletteData.length > 0 ? (
+                            <Wheel
+                                mustStartSpinning={mustSpin}
+                                prizeNumber={prizeNumber}
+                                data={rouletteData}
+                                onStopSpinning={handleStopSpinning}
+                                outerBorderColor={"#e2e8f0"}
+                                outerBorderWidth={5}
+                                radiusLineColor={"#e2e8f0"}
+                                radiusLineWidth={2}
+                                fontSize={12}
+                                textDistance={60}
+                            />
+                        ) : (
+                             <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full">
+                                <p className="text-muted-foreground text-center px-4">
+                                    {loading ? '음식점 목록을 불러오는 중...' : '룰렛을 구성할 음식점이 없습니다.'}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <Button 
                         size="lg" 
                         className="w-64 h-16 text-2xl font-bold shadow-lg transform active:scale-95" 
-                        onClick={handleSpin} 
-                        disabled={isSpinning || loading || rouletteItems.length < 2}
+                        onClick={handleSpinClick} 
+                        disabled={mustSpin || loading || rouletteItems.length < 2}
                     >
-                        {isSpinning ? '돌아가는 중...' : '돌리기!'}
+                        {mustSpin ? '돌아가는 중...' : '돌리기!'}
                     </Button>
                 </main>
             </div>
@@ -172,7 +137,6 @@ export default function RoulettePage() {
                 initialFilters={filters}
                 onApplyFilters={(newFilters) => {
                     setFilters(newFilters);
-                    // 필터 적용 후 자동으로 룰렛 아이템 다시 불러오기
                     setTimeout(fetchRouletteItems, 100);
                 }}
                 userTags={userTags}
