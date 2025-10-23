@@ -54,34 +54,6 @@ export default function MobileLayout() {
     const activeTab = useAppStore((state) => state.activeTab);
     const setActiveTab = useAppStore((state) => state.setActiveTab);
     const isMapReady = useAppStore((state) => state.isMapReady);
-    const setIsMapReady = useAppStore((state) => state.setIsMapReady);
-
-    // 카카오맵 스크립트를 로드하는 useEffect
-    useEffect(() => {
-        const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
-        if (!KAKAO_JS_KEY) return;
-
-        const scriptId = "kakao-maps-script";
-        if (document.getElementById(scriptId) || window.kakao) {
-            // 스크립트가 이미 로드된 경우
-            if (window.kakao && window.kakao.maps) {
-                setIsMapReady(true);
-            }
-            return;
-        }
-
-        const script = document.createElement("script");
-        script.id = scriptId;
-        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services`;
-        script.async = true;
-        document.head.appendChild(script);
-
-        script.onload = () => {
-            window.kakao.maps.load(() => {
-                setIsMapReady(true);
-            });
-        };
-    }, [setIsMapReady]);
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
@@ -175,34 +147,23 @@ export default function MobileLayout() {
         }
     };
 
-    const renderContent = () => {
-        const mapPageProps = { // Props for MapPage
-            session, loading, restaurantList, blacklistExcludedCount, displayedSortOrder, selectedItemId, setSelectedItemId,
-            subscribedTagIds, isFavorite, isBlacklisted, toggleFavorite, toggleBlacklist, setTaggingRestaurant,
-            userLocation, handleSearchInArea, handleAddressSearch, setIsMapReady
-        };
+    const mapPageProps = { // Props for MapPage
+        session, loading, restaurantList, blacklistExcludedCount, displayedSortOrder, selectedItemId, setSelectedItemId,
+        subscribedTagIds, isFavorite, isBlacklisted, toggleFavorite, toggleBlacklist, setTaggingRestaurant,
+        userLocation, handleSearchInArea, handleAddressSearch, setIsMapReady
+    };
 
-        const favoritesPageProps = { // Props for FavoritesPage
-            favorites,
-            session,
-            subscribedTagIds,
-            selectedItemId,
-            setSelectedItemId,
-            isFavorite,
-            isBlacklisted,
-            onToggleFavorite: toggleFavorite,
-            onToggleBlacklist: toggleBlacklist,
-            onTagManagement: setTaggingRestaurant,
-        };
-
-        return (
-            <div className="relative w-full h-full">
-                <div className={activeTab === 'map' ? 'block' : 'hidden'}><MapPage {...mapPageProps} /></div>
-                <div className={activeTab === 'favorites' ? 'block' : 'hidden'}><FavoritesPage {...favoritesPageProps} /></div>
-                <div className={activeTab === 'roulette' ? 'block' : 'hidden'}><RoulettePage /></div>
-                <div className={activeTab === 'my-page' ? 'block' : 'hidden'}><MyPage /></div>
-            </div>
-        );
+    const favoritesPageProps = { // Props for FavoritesPage
+        favorites,
+        session,
+        subscribedTagIds,
+        selectedItemId,
+        setSelectedItemId,
+        isFavorite,
+        isBlacklisted,
+        onToggleFavorite: toggleFavorite,
+        onToggleBlacklist: toggleBlacklist,
+        onTagManagement: setTaggingRestaurant,
     };
 
     if (!isMapReady) {
@@ -211,8 +172,12 @@ export default function MobileLayout() {
 
     return (
         <div className="h-dvh w-screen flex flex-col bg-background">
-            <main className="flex-1 overflow-y-auto">
-                {renderContent()}
+            <main className="flex-1 relative"> {/* overflow-y-auto 제거, relative 추가 */}
+                {/* 각 페이지를 absolute로 띄워서 겹치고, activeTab에 따라 hidden/block 처리 */}
+                <div className={`w-full h-full ${activeTab === 'map' ? 'block' : 'hidden'}`}><MapPage {...mapPageProps} /></div>
+                <div className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} /></div>
+                <div className={`w-full h-full ${activeTab === 'roulette' ? 'block' : 'hidden'}`}><RoulettePage /></div>
+                <div className={`w-full h-full ${activeTab === 'my-page' ? 'block' : 'hidden'}`}><MyPage /></div>
             </main>
 
             <BottomTabBar 
