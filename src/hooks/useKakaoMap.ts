@@ -1,6 +1,7 @@
 // hooks/useKakaoMap.ts (수정)
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 
 // Kakao 타입 정의 (이전과 동일)
@@ -34,25 +35,7 @@ export function useKakaoMap() {
     const roadviewContainer = useRef<HTMLDivElement | null>(null);
     const roadviewInstance = useRef<kakao.maps.Roadview | null>(null);
     const roadviewClient = useRef<kakao.maps.RoadviewClient | null>(null);
-    const [isMapReady, setIsMapReady] = useState(false);
-
-    useEffect(() => {
-        const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
-        if (!KAKAO_JS_KEY) return;
-        const scriptId = "kakao-maps-script";
-        if (document.getElementById(scriptId)) {
-            if (window.kakao && window.kakao.maps) setIsMapReady(true);
-            return;
-        }
-        const script = document.createElement("script");
-        script.id = scriptId;
-        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services`;
-        script.async = true;
-        document.head.appendChild(script);
-        script.onload = () => {
-            window.kakao.maps.load(() => setIsMapReady(true));
-        };
-    }, []);
+    const isMapReady = useAppStore((state) => state.isMapReady);
 
     // ✅ 지도 인스턴스 생성 useEffect
     useEffect(() => {

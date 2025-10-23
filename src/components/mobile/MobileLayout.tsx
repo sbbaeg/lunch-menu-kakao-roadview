@@ -53,17 +53,35 @@ import {
 export default function MobileLayout() {
     const activeTab = useAppStore((state) => state.activeTab);
     const setActiveTab = useAppStore((state) => state.setActiveTab);
+    const isMapReady = useAppStore((state) => state.isMapReady);
+    const setIsMapReady = useAppStore((state) => state.setIsMapReady);
 
+    // 카카오맵 스크립트를 로드하는 useEffect
     useEffect(() => {
-        const initialTab = useAppStore.getState().activeTab;
-        if (initialTab === 'splash') {
-            const timer = setTimeout(() => {
-                setActiveTab('map');
-            }, 50); // 아주 짧은 시간 후 map으로 전환
+        const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAOMAP_JS_KEY;
+        if (!KAKAO_JS_KEY) return;
 
-            return () => clearTimeout(timer);
+        const scriptId = "kakao-maps-script";
+        if (document.getElementById(scriptId) || window.kakao) {
+            // 스크립트가 이미 로드된 경우
+            if (window.kakao && window.kakao.maps) {
+                setIsMapReady(true);
+            }
+            return;
         }
-    }, [setActiveTab]);
+
+        const script = document.createElement("script");
+        script.id = scriptId;
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services`;
+        script.async = true;
+        document.head.appendChild(script);
+
+        script.onload = () => {
+            window.kakao.maps.load(() => {
+                setIsMapReady(true);
+            });
+        };
+    }, [setIsMapReady]);
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
@@ -75,11 +93,9 @@ export default function MobileLayout() {
     const displayedSortOrder = useAppStore((state) => state.displayedSortOrder);
     const blacklistExcludedCount = useAppStore((state) => state.blacklistExcludedCount);
     const loading = useAppStore((state) => state.loading);
-    const isMapReady = useAppStore((state) => state.isMapReady);
 
     const setSelectedItemId = useAppStore((state) => state.setSelectedItemId);
     const setFilters = useAppStore((state) => state.setFilters);
-    const setIsMapReady = useAppStore((state) => state.setIsMapReady);
     const recommendProcess = useAppStore((state) => state.recommendProcess);
     const handleSearchInArea = useAppStore((state) => state.handleSearchInArea);
     const handleAddressSearch = useAppStore((state) => state.handleAddressSearch);
@@ -179,21 +195,19 @@ export default function MobileLayout() {
             onTagManagement: setTaggingRestaurant,
         };
 
-        switch (activeTab) {
-            case 'splash':
-                return <SplashScreen />;
-            case 'map':
-                return <MapPage {...mapPageProps} />;
-            case 'favorites':
-                return <FavoritesPage {...favoritesPageProps} />;
-            case 'roulette':
-                return <RoulettePage />;
-            case 'my-page':
-                return <MyPage />;
-            default:
-                return <MapPage {...mapPageProps} />;
-        }
+        return (
+            <div className="relative w-full h-full">
+                <div className={activeTab === 'map' ? 'block' : 'hidden'}><MapPage {...mapPageProps} /></div>
+                <div className={activeTab === 'favorites' ? 'block' : 'hidden'}><FavoritesPage {...favoritesPageProps} /></div>
+                <div className={activeTab === 'roulette' ? 'block' : 'hidden'}><RoulettePage /></div>
+                <div className={activeTab === 'my-page' ? 'block' : 'hidden'}><MyPage /></div>
+            </div>
+        );
     };
+
+    if (!isMapReady) {
+        return <SplashScreen />;
+    }
 
     return (
         <div className="h-dvh w-screen flex flex-col bg-background">

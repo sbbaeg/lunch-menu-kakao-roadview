@@ -9,7 +9,7 @@ interface AppState {
   restaurantList: AppRestaurant[];
   rouletteItems: AppRestaurant[];
   userLocation: { lat: number; lng: number } | null;
-  activeTab: 'map' | 'favorites' | 'roulette' | 'my-page' | 'splash';
+  activeTab: 'map' | 'favorites' | 'roulette' | 'my-page';
 
   // Filter State
   filters: Omit<FilterState, 'categories'> & { categories: string[] };
@@ -45,7 +45,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   restaurantList: [],
   rouletteItems: [],
   userLocation: null,
-  activeTab: 'splash',
+  activeTab: 'map',
   
   filters: {
     categories: [],
