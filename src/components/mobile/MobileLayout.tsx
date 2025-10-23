@@ -160,7 +160,7 @@ export default function MobileLayout() {
             case 'my-page':
                 return <MyPage />;
             default:
-                return <MapPage {...pageProps} />;
+                return <MapPage {...mapPageProps} />;
         }
     };
 
