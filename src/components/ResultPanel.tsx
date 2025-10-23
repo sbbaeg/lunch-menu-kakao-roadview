@@ -43,14 +43,14 @@ export function ResultPanel({
   ...cardProps // session, onToggleFavorite 등 RestaurantCard에 필요한 나머지 props
 }: ResultPanelProps) {
 
-  const toggleResultPanel = useAppStore((state) => state.toggleResultPanel);
+  const cycleResultPanelState = useAppStore((state) => state.cycleResultPanelState);
   const { isStandalone } = usePwaDisplayMode(); // PWA 모드 확인
 
   // 핸들러 UI를 조건부로 렌더링
   const expansionHandler = isStandalone ? (
     <div 
       className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-6 flex items-center justify-center cursor-pointer z-10"
-      onClick={toggleResultPanel}
+      onClick={cycleResultPanelState}
     >
       <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
     </div>
@@ -58,7 +58,7 @@ export function ResultPanel({
 
   if (isLoading) {
     return (
-      <Card className="w-full flex flex-col flex-1 min-h-0 relative"> {/* relative 추가 */}
+      <Card className="w-full flex flex-col min-h-0 relative"> {/* flex-1 제거 */}
         {expansionHandler}
         <div className="w-full flex-1 flex flex-col min-h-0 pt-4"> {/* pt-4 추가 */}
           <div className="h-full flex flex-col justify-center p-2">
