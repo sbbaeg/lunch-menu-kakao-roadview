@@ -1,5 +1,6 @@
 "use client";
 
+import { useAppStore } from '@/store/useAppStore';
 import { Map, Heart, Search, Dices, User } from 'lucide-react';
 
 // 탭 종류를 타입으로 정의
@@ -7,8 +8,6 @@ type Tab = 'map' | 'favorites' | 'roulette' | 'my-page';
 
 // BottomTabBar가 받을 props 타입 정의
 interface BottomTabBarProps {
-  activeTab: Tab;
-  setActiveTab: (tab: Tab) => void;
   onSearchClick: () => void; // 중앙 검색 버튼 클릭 시 실행될 함수
 }
 
@@ -27,7 +26,10 @@ const TabItem = ({ icon, label, isActive, onClick }: {
   </button>
 );
 
-export default function BottomTabBar({ activeTab, setActiveTab, onSearchClick }: BottomTabBarProps) {
+export default function BottomTabBar({ onSearchClick }: BottomTabBarProps) {
+  const activeTab = useAppStore((state) => state.activeTab);
+  const setActiveTab = useAppStore((state) => state.setActiveTab);
+
   return (
     <footer className="relative h-20 w-full border-t bg-background shadow-inner">
       {/* 중앙 검색 버튼 */}

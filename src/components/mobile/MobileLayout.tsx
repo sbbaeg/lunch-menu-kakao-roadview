@@ -34,7 +34,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function MobileLayout() {
-    const [activeTab, setActiveTab] = useState<'map' | 'favorites' | 'roulette' | 'my-page'>('map');
+    const activeTab = useAppStore((state) => state.activeTab);
+    const setActiveTab = useAppStore((state) => state.setActiveTab);
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
@@ -171,8 +172,6 @@ export default function MobileLayout() {
             </main>
 
             <BottomTabBar 
-                activeTab={activeTab} 
-                setActiveTab={setActiveTab} 
                 onSearchClick={handleCentralSearchClick} 
             />
 
