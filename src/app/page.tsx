@@ -323,6 +323,7 @@ export default function Home() {
                         onToggleFavorite={toggleFavorite}
                         onToggleBlacklist={toggleBlacklist}
                         onTagManagement={setTaggingRestaurant}
+                        onOpenFilter={() => setIsFilterOpen(true)}
                     />
                 </div>
             </div>
@@ -358,7 +359,6 @@ export default function Home() {
                 onToggleBlacklist={toggleBlacklist}
                 onTagManagement={setTaggingRestaurant}
             />
-
             <BlacklistDialog
                 isOpen={isBlacklistOpen}
                 onOpenChange={setIsBlacklistOpen}
