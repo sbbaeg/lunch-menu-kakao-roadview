@@ -169,18 +169,91 @@ export default function MobileLayout() {
         return <SplashScreen />;
     }
 
-        const myPageProps = {
-            onShowFavorites: () => setIsFavoritesListOpen(true),
-            onShowBlacklist: () => setIsBlacklistOpen(true),
-            onShowTagManagement: () => setIsTagManagementOpen(true),
-        };
+    const myPageProps = {
+        onShowFavorites: () => setIsFavoritesListOpen(true),
+        onShowBlacklist: () => setIsBlacklistOpen(true),
+        onShowTagManagement: () => setIsTagManagementOpen(true),
+    };
 
-        return (
-            <div className="relative w-full h-full">
-                <div className={activeTab === 'map' ? 'block' : 'hidden'}><MapPage {...mapPageProps} /></div>
-                <div className={activeTab === 'favorites' ? 'block' : 'hidden'}><FavoritesPage {...favoritesPageProps} /></div>
-                <div className={activeTab === 'roulette' ? 'block' : 'hidden'}><RoulettePage /></div>
-                <div className={activeTab === 'my-page' ? 'block' : 'hidden'}><MyPage {...myPageProps} /></div>
+    return (
+        <div className="h-dvh w-screen relative">
+            {/* 메인 컨텐츠 영역: 하단 탭 바(h-20)를 제외한 전체 공간 차지 */}
+            <main className="absolute top-0 left-0 right-0 bottom-20">
+                <div className={`w-full h-full ${activeTab === 'map' ? 'block' : 'hidden'}`}><MapPage {...mapPageProps} /></div>
+                <div className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} /></div>
+                <div className={`w-full h-full ${activeTab === 'roulette' ? 'block' : 'hidden'}`}><RoulettePage /></div>
+                <div className={`w-full h-full ${activeTab === 'my-page' ? 'block' : 'hidden'}`}><MyPage {...myPageProps} /></div>
+            </main>
+
+            {/* 하단 탭 바: 화면 맨 아래에 고정 */}
+            <div className="absolute bottom-0 left-0 right-0 h-20">
+                <BottomTabBar 
+                    onSearchClick={handleCentralSearchClick} 
+                />
             </div>
-        )
+
+            {/* 다이얼로그들은 레이아웃 흐름에 영향을 주지 않음 */}
+            <FilterDialog
+                isOpen={isFilterOpen}
+                onOpenChange={setIsFilterOpen}
+                initialFilters={filters}
+                onApplyFilters={(newFilters) => setFilters(newFilters)}
+                userTags={userTags}
+            />
+            <TagManagementDialog
+                isOpen={isTagManagementOpen}
+                onOpenChange={setIsTagManagementOpen}
+                userTags={userTags}
+                onCreateTag={createTag}
+                onDeleteTag={deleteTag}
+                onToggleTagPublic={toggleTagPublic}
+            />
+            <FavoritesDialog
+                isOpen={isFavoritesListOpen}
+                onOpenChange={setIsFavoritesListOpen}
+                favorites={favorites}
+                session={session}
+                subscribedTagIds={subscribedTagIds}
+                selectedItemId={selectedItemId}
+                setSelectedItemId={setSelectedItemId}
+                isFavorite={isFavorite}
+                isBlacklisted={isBlacklisted}
+                onToggleFavorite={toggleFavorite}
+                onToggleBlacklist={toggleBlacklist}
+                onTagManagement={setTaggingRestaurant}
+            />
+            <BlacklistDialog
+                isOpen={isBlacklistOpen}
+                onOpenChange={setIsBlacklistOpen}
+                blacklist={blacklist}
+                onToggleBlacklist={toggleBlacklist}
+            />
+            <RouletteDialog
+                isOpen={isRouletteOpen}
+                onOpenChange={setIsRouletteOpen}
+                items={useAppStore.getState().rouletteItems}
+                onResult={handleRouletteResult}
+            />
+            <TaggingDialog
+                restaurant={taggingRestaurant}
+                onOpenChange={() => setTaggingRestaurant(null)}
+                userTags={userTags}
+                onToggleTagLink={handleToggleTagLink}
+                onCreateAndLinkTag={handleCreateTag}
+            />
+            <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
+                <AlertDialogContent className="max-w-lg">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogDescription>
+                        {alertInfo?.message}
+                    </AlertDialogDescription>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    );
 }
