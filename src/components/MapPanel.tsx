@@ -1,6 +1,6 @@
 // src/components/MapPanel.tsx
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 import { AppRestaurant } from '@/lib/types';
 import { Input } from '@/components/ui/input';
@@ -19,22 +19,33 @@ interface MapPanelProps {
   showSearchBar?: boolean; // 검색창 표시 여부 prop 추가
 }
 
-export function MapPanel({
-  restaurants,
-  selectedRestaurant,
-  userLocation,
-  onSearchInArea,
-  onAddressSearch,
-  onMapReady,
-  hideControls = false,
-  showSearchBar = true, // 기본값은 true
-}: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview } = useKakaoMap();
+export interface MapPanelRef {
+  relayout: () => void;
+}
+
+export const MapPanel = forwardRef<MapPanelRef, MapPanelProps>((
+  {
+    restaurants,
+    selectedRestaurant,
+    userLocation,
+    onSearchInArea,
+    onAddressSearch,
+    onMapReady,
+    hideControls = false,
+    showSearchBar = true, // 기본값은 true
+  }, 
+  ref
+) => {
+  const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview, relayout } = useKakaoMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
   const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
   const [isRoadviewVisible, setRoadviewVisible] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    relayout,
+  }));
 
   useEffect(() => {
     if (onMapReady) {
@@ -161,4 +172,4 @@ export function MapPanel({
       </div>
     </div>
   );
-}
+});
