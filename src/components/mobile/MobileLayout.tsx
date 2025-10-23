@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import BottomTabBar from './BottomTabBar';
 import MapPage from './MapPage';
-import FavoritesPage from './FavoritesPage'; // Import the new FavoritesPage component
+import FavoritesPage from './FavoritesPage';
+import RoulettePage from './RoulettePage'; // 룰렛 페이지 컴포넌트 import
 
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Placeholder pages
-const RoulettePage = () => <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">룰렛 화면</div>;
 const MyPage = () => <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">마이페이지</div>;
 
 // 스플래시 화면을 위한 스켈레톤 컴포넌트
