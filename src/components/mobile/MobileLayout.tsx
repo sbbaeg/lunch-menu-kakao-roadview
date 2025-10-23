@@ -54,6 +54,7 @@ export default function MobileLayout() {
     const activeTab = useAppStore((state) => state.activeTab);
     const setActiveTab = useAppStore((state) => state.setActiveTab);
     const isMapReady = useAppStore((state) => state.isMapReady);
+    const setIsMapReady = useAppStore((state) => state.setIsMapReady);
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
