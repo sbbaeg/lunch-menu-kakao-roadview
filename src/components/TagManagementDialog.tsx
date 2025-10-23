@@ -14,6 +14,9 @@ import { Separator } from "@/components/ui/separator";
 import { Tag } from "@/lib/types";
 import { useSession } from "next-auth/react";
 
+import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 interface SubscribedTag {
     id: number;
     name: string;
@@ -108,84 +111,110 @@ export function TagManagementDialog({
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-4xl flex flex-col h-[85vh]">
-        <DialogHeader>
-          <DialogTitle className="text-xl">태그 관리</DialogTitle>
-        </DialogHeader>
-        <div className="py-2 flex flex-col md:flex-row gap-6 flex-1 min-h-0">
+  const { isStandalone } = usePwaDisplayMode();
 
-            {/* 왼쪽: 내가 만든 태그 */}
-            <div className="w-full md:w-1/2 flex flex-col gap-4 min-h-0">
-                <div className="flex flex-col">
-                    <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
-                    <div className="flex w-full items-center space-x-2 p-1">
-                        <Input
-                            type="text"
-                            placeholder="새 태그 생성 또는 검색"
-                            value={newTagName}
-                            onChange={(e) => setNewTagName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
-                            disabled={isCreatingTag}
-                        />
-                        <Button onClick={handleCreateTag} disabled={isCreatingTag}>
-                            {isCreatingTag ? '추가 중...' : '추가'}
-                        </Button>
-                    </div>
-                </div>
-                <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={myTagsScrollRef}>
-                    {userTags.length > 0 ? (
-                        <ul className="space-y-2">
-                            {filteredTags.map(tag => (
-                                <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                                    <Link href={`/tags/${tag.id}`} className="hover:underline">
-                                        {tag.name}
-                                    </Link>
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center space-x-2">
-                                            <Switch id={`public-switch-${tag.id}`} checked={tag.isPublic} onCheckedChange={() => onToggleTagPublic(tag.id)} />
-                                            <Label htmlFor={`public-switch-${tag.id}`} className="text-xs text-muted-foreground">{tag.isPublic ? '공개' : '비공개'}</Label>
-                                        </div>
-                                        <Button variant="ghost" size="sm" onClick={() => onDeleteTag(tag.id)}>삭제</Button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-center text-muted-foreground pt-8">
-                            {newTagName.trim() === '' ? '생성된 태그가 없습니다.' : '일치하는 태그가 없습니다.'}
-                        </p>
-                    )}
-                </div>
-            </div>
-
-            <Separator orientation="vertical" className="hidden md:block" />
-            <Separator className="md:hidden" />
-
-            {/* 오른쪽: 구독 중인 태그 */}
-            <div className="w-full md:w-1/2 flex flex-col gap-4 min-h-0">
-                <h4 className="font-semibold px-1">구독 중인 태그</h4>
-                <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={subscribedTagsScrollRef}>
-                    {subscribedTags.length > 0 ? (
-                        <ul className="space-y-2">
-                            {subscribedTags.map(tag => (
-                                <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                                    <Link href={`/tags/${tag.id}`} className="hover:underline">
-                                        <div>
-                                            <span className="font-semibold">{tag.name}</span>
-                                            <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
-                                        </div>
-                                    </Link>
-                                    <Button variant="ghost" size="sm" onClick={() => handleUnsubscribe(tag.id)}>구독 취소</Button>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <p className="text-center text-muted-foreground pt-8">구독 중인 태그가 없습니다.</p>}
-                </div>
+  const MyTagsView = (
+    <div className="w-full flex flex-col gap-4 h-full">
+        <div className="flex flex-col">
+            <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
+            <div className="flex w-full items-center space-x-2 p-1">
+                <Input
+                    type="text"
+                    placeholder="새 태그 생성 또는 검색"
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
+                    disabled={isCreatingTag}
+                />
+                <Button onClick={handleCreateTag} disabled={isCreatingTag}>
+                    {isCreatingTag ? '추가 중...' : '추가'}
+                </Button>
             </div>
         </div>
-      </DialogContent>
+        <div className="flex-1 overflow-y-auto pr-4 min-h-0">
+            {userTags.length > 0 ? (
+                <ul className="space-y-2">
+                    {filteredTags.map(tag => (
+                        <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                            <Link href={`/tags/${tag.id}`} className="hover:underline">
+                                {tag.name}
+                            </Link>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <Switch id={`public-switch-${tag.id}`} checked={tag.isPublic} onCheckedChange={() => onToggleTagPublic(tag.id)} />
+                                    <Label htmlFor={`public-switch-${tag.id}`} className="text-xs text-muted-foreground">{tag.isPublic ? '공개' : '비공개'}</Label>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => onDeleteTag(tag.id)}>삭제</Button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="text-center text-muted-foreground pt-8">
+                    {newTagName.trim() === '' ? '생성된 태그가 없습니다.' : '일치하는 태그가 없습니다.'}
+                </p>
+            )}
+        </div>
+    </div>
+  );
+
+  const SubscribedTagsView = (
+    <div className="w-full flex flex-col gap-4 h-full">
+        <h4 className="font-semibold px-1">구독 중인 태그</h4>
+        <div className="flex-1 overflow-y-auto pr-4 min-h-0">
+            {subscribedTags.length > 0 ? (
+                <ul className="space-y-2">
+                    {subscribedTags.map(tag => (
+                        <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                            <Link href={`/tags/${tag.id}`} className="hover:underline">
+                                <div>
+                                    <span className="font-semibold">{tag.name}</span>
+                                    <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
+                                </div>
+                            </Link>
+                            <Button variant="ghost" size="sm" onClick={() => handleUnsubscribe(tag.id)}>구독 취소</Button>
+                        </li>
+                    ))}
+                </ul>
+            ) : <p className="text-center text-muted-foreground pt-8">구독 중인 태그가 없습니다.</p>}
+        </div>
+    </div>
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="w-[90vw] max-w-4xl flex flex-col h-[85vh]">
+            <DialogHeader>
+                <DialogTitle className="text-xl">태그 관리</DialogTitle>
+            </DialogHeader>
+            
+            {isStandalone ? (
+                // PWA (모바일) 탭 레이아웃
+                <Tabs defaultValue="my-tags" className="w-full flex-1 flex flex-col min-h-0">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="my-tags">내 태그</TabsTrigger>
+                        <TabsTrigger value="subscribed-tags">구독 태그</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="my-tags" className="flex-1 overflow-y-auto mt-4">
+                        {MyTagsView}
+                    </TabsContent>
+                    <TabsContent value="subscribed-tags" className="flex-1 overflow-y-auto mt-4">
+                        {SubscribedTagsView}
+                    </TabsContent>
+                </Tabs>
+            ) : (
+                // PC (데스크탑) 좌우 분할 레이아웃
+                <div className="py-2 flex flex-row gap-6 flex-1 min-h-0">
+                    <div className="w-1/2 flex flex-col gap-4">
+                        {MyTagsView}
+                    </div>
+                    <Separator orientation="vertical" />
+                    <div className="w-1/2 flex flex-col gap-4">
+                        {SubscribedTagsView}
+                    </div>
+                </div>
+            )}
+        </DialogContent>
     </Dialog>
   );
 }
