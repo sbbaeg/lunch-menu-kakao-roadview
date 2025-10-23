@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { ResultPanel } from "@/components/ResultPanel";
-import { MapPanel } from "@/components/MapPanel";
+import { MapPanel, type MapPanelRef } from "@/components/MapPanel";
 
 // This is now a presentational component. All logic is in MobileLayout.
 export default function MapPage(props: any) {
@@ -15,12 +15,13 @@ export default function MapPage(props: any) {
 
     const activeTab = useAppStore((state) => state.activeTab);
     const isResultPanelExpanded = useAppStore((state) => state.isResultPanelExpanded);
+    const mapPanelRef = useRef<MapPanelRef>(null);
 
     useEffect(() => {
         if (activeTab === 'map') {
-            // The timeout gives the layout time to adjust before triggering the resize event.
+            // The timeout gives the layout time to adjust before triggering the relayout.
             const timer = setTimeout(() => {
-                window.dispatchEvent(new Event('resize'));
+                mapPanelRef.current?.relayout();
             }, 100);
             return () => clearTimeout(timer);
         }
@@ -31,6 +32,7 @@ export default function MapPage(props: any) {
             {/* Top: Map Panel */}
             <div className="h-3/5 border-b">
                 <MapPanel
+                    ref={mapPanelRef}
                     restaurants={restaurantList}
                     selectedRestaurant={restaurantList.find((r: any) => r.id === selectedItemId) || null}
                     userLocation={userLocation}

@@ -134,6 +134,11 @@ export function useKakaoMap() {
         }
     };
 
+    const relayout = () => {
+        mapInstance.current?.relayout();
+        roadviewInstance.current?.relayout();
+    };
+
     return {
         isMapReady,
         mapContainerRef: mapContainer,
@@ -145,5 +150,6 @@ export function useKakaoMap() {
         drawDirections,
         clearOverlays,
         displayRoadview,
+        relayout, // relayout 함수 반환
     };
 }
