@@ -20,10 +20,10 @@ export default function FavoritesPage(props: any) {
 
     return (
         <div className="h-full w-full flex flex-col">
-            <header className="p-4 border-b">
+            <header className="p-4 border-b flex-shrink-0">
                 <h1 className="text-2xl font-bold">즐겨찾기</h1>
             </header>
-            <main className="flex-1 overflow-y-auto p-2">
+            <main className="flex-1 overflow-y-auto p-2 min-h-0">
                 {favorites.length > 0 ? (
                     <Accordion
                         type="single"
