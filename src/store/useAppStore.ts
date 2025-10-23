@@ -9,7 +9,8 @@ interface AppState {
   restaurantList: AppRestaurant[];
   rouletteItems: AppRestaurant[];
   userLocation: { lat: number; lng: number } | null;
-  
+  activeTab: 'map' | 'favorites' | 'roulette' | 'my-page';
+
   // Filter State
   filters: Omit<FilterState, 'categories'> & { categories: string[] };
 
@@ -17,8 +18,11 @@ interface AppState {
   blacklistExcludedCount: number;
   loading: boolean;
   isMapReady: boolean;
+  isResultPanelExpanded: boolean;
 
   // Actions
+  toggleResultPanel: () => void;
+  setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
   setSelectedItemId: (id: string) => void;
   setRestaurantList: (restaurants: AppRestaurant[]) => void;
   setUserLocation: (location: { lat: number; lng: number } | null) => void;
@@ -41,6 +45,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   restaurantList: [],
   rouletteItems: [],
   userLocation: null,
+  activeTab: 'map',
   
   filters: {
     categories: [],
@@ -58,8 +63,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   blacklistExcludedCount: 0,
   loading: false,
   isMapReady: false,
+  isResultPanelExpanded: false,
 
   // Actions
+  toggleResultPanel: () => set((state) => ({ isResultPanelExpanded: !state.isResultPanelExpanded })),
+  setActiveTab: (tab) => set({ activeTab: tab }),
   setSelectedItemId: (id) => set({ selectedItemId: id }),
   setRestaurantList: (restaurants) => set({ restaurantList: restaurants }),
   setUserLocation: (location) => set({ userLocation: location }),

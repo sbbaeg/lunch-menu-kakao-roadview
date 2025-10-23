@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from 'react';
+import { useAppStore } from '@/store/useAppStore';
 import { ResultPanel } from "@/components/ResultPanel";
 import { MapPanel } from "@/components/MapPanel";
 
@@ -11,8 +13,21 @@ export default function MapPage(props: any) {
         userLocation, handleSearchInArea, handleAddressSearch, setIsMapReady
     } = props;
 
+    const activeTab = useAppStore((state) => state.activeTab);
+    const isResultPanelExpanded = useAppStore((state) => state.isResultPanelExpanded);
+
+    useEffect(() => {
+        if (activeTab === 'map') {
+            // The timeout gives the layout time to adjust before triggering the resize event.
+            const timer = setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [activeTab]);
+
     return (
-        <div className="h-full w-full flex flex-col">
+        <div className="h-full w-full flex flex-col relative overflow-hidden"> {/* relative, overflow-hidden 추가 */}
             {/* Top: Map Panel */}
             <div className="h-3/5 border-b">
                 <MapPanel
@@ -26,7 +41,13 @@ export default function MapPage(props: any) {
             </div>
 
             {/* Bottom: Result Panel */}
-            <div className="h-2/5 flex flex-col">
+            <div 
+              className={`
+                absolute bottom-0 left-0 right-0 z-10 flex flex-col
+                transition-all duration-300 ease-in-out
+                ${isResultPanelExpanded ? 'h-full' : 'h-2/5'}
+              `}
+            >
                 <ResultPanel
                     isLoading={loading}
                     restaurants={restaurantList}

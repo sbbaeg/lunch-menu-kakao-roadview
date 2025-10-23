@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import { RestaurantCard } from "./RestaurantCard";
+import { useAppStore } from "@/store/useAppStore"; // zustand 스토어 import
 
 interface ResultPanelProps {
   isLoading: boolean;
@@ -40,10 +41,20 @@ export function ResultPanel({
   setSelectedItemId,
   ...cardProps // session, onToggleFavorite 등 RestaurantCard에 필요한 나머지 props
 }: ResultPanelProps) {
+
+  const toggleResultPanel = useAppStore((state) => state.toggleResultPanel);
+
   if (isLoading) {
     return (
-      <Card className="w-full flex flex-col flex-1 min-h-0">
-        <div className="w-full flex-1 flex flex-col min-h-0">
+      <Card className="w-full flex flex-col flex-1 min-h-0 relative"> {/* relative 추가 */}
+        {/* 핸들러 UI */}
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-6 flex items-center justify-center cursor-pointer z-10"
+          onClick={toggleResultPanel}
+        >
+          <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+        </div>
+        <div className="w-full flex-1 flex flex-col min-h-0 pt-4"> {/* pt-4 추가 */}
           <div className="h-full flex flex-col justify-center p-2">
             {[...Array(3)].map((_, index) => (
               <Card key={index} className="p-4 mb-2">
@@ -62,8 +73,15 @@ export function ResultPanel({
 
   if (restaurants.length === 0) {
     return (
-      <Card className="w-full flex flex-col flex-1 min-h-0">
-        <div className="w-full flex-1 flex flex-col min-h-0">
+      <Card className="w-full flex flex-col flex-1 min-h-0 relative"> {/* relative 추가 */}
+        {/* 핸들러 UI */}
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-6 flex items-center justify-center cursor-pointer z-10"
+          onClick={toggleResultPanel}
+        >
+          <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+        </div>
+        <div className="w-full flex-1 flex flex-col min-h-0 pt-4"> {/* pt-4 추가 */}
           <div className="w-full h-full flex items-center justify-center">
             <p className="text-muted-foreground">검색 결과가 여기에 표시됩니다.</p>
           </div>
@@ -73,8 +91,15 @@ export function ResultPanel({
   }
 
   return (
-    <Card className="w-full flex flex-col flex-1 min-h-0">
-      <div className="w-full flex-1 flex flex-col min-h-0">
+    <Card className="w-full flex flex-col flex-1 min-h-0 relative bg-background"> {/* relative, bg-background 추가 */}
+      {/* 핸들러 UI */}
+      <div 
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-6 flex items-center justify-center cursor-pointer z-10"
+        onClick={toggleResultPanel}
+      >
+        <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+      </div>
+      <div className="w-full flex-1 flex flex-col min-h-0 pt-4"> {/* pt-4 추가 */}
         {blacklistExcludedCount > 0 && (
           <div className="p-2 mx-4 mt-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
