@@ -1,6 +1,6 @@
 // src/components/MapPanel.tsx
 
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 import { AppRestaurant } from '@/lib/types';
 import { Input } from '@/components/ui/input';
@@ -19,23 +19,16 @@ interface MapPanelProps {
   showSearchBar?: boolean; // 검색창 표시 여부 prop 추가
 }
 
-export interface MapPanelRef {
-  relayout: () => void;
-}
-
-export const MapPanel = forwardRef<MapPanelRef, MapPanelProps>((
-  {
-    restaurants,
-    selectedRestaurant,
-    userLocation,
-    onSearchInArea,
-    onAddressSearch,
-    onMapReady,
-    hideControls = false,
-    showSearchBar = true, // 기본값은 true
-  }, 
-  ref
-) => {
+export function MapPanel({
+  restaurants,
+  selectedRestaurant,
+  userLocation,
+  onSearchInArea,
+  onAddressSearch,
+  onMapReady,
+  hideControls = false,
+  showSearchBar = true, // 기본값은 true
+}: MapPanelProps) {
   const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview, relayout } = useKakaoMap();
   
   const [searchAddress, setSearchAddress] = useState("");
@@ -43,15 +36,42 @@ export const MapPanel = forwardRef<MapPanelRef, MapPanelProps>((
   const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
   const [isRoadviewVisible, setRoadviewVisible] = useState(false);
 
-  useImperativeHandle(ref, () => ({
-    relayout,
-  }));
-
   useEffect(() => {
     if (onMapReady) {
       onMapReady(isMapReady);
     }
   }, [isMapReady, onMapReady]);
+
+  // ResizeObserver를 사용하여 컨테이너 크기 변경 시 지도 리레이아웃
+  useEffect(() => {
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer || !isMapReady) return;
+
+    let observer: ResizeObserver;
+
+    const checkAndRelayout = () => {
+      // 컨테이너가 실제로 화면에 표시되고 크기를 가졌을 때 relayout 호출
+      if (mapContainer.clientWidth > 0 && mapContainer.clientHeight > 0) {
+        relayout();
+        // 한번 relayout을 실행한 후에는 observer를 중단하여 불필요한 반복을 막음
+        if (observer) {
+          observer.disconnect();
+        }
+      }
+    };
+
+    observer = new ResizeObserver(() => {
+      checkAndRelayout();
+    });
+
+    observer.observe(mapContainer);
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [isMapReady, mapContainerRef, relayout]);
 
   useEffect(() => {
     if (isMapReady) {
@@ -172,4 +192,4 @@ export const MapPanel = forwardRef<MapPanelRef, MapPanelProps>((
       </div>
     </div>
   );
-});
+}
