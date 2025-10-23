@@ -5,11 +5,9 @@ import BottomTabBar from './BottomTabBar';
 import MapPage from './MapPage';
 import FavoritesPage from './FavoritesPage';
 import RoulettePage from './RoulettePage'; // 룰렛 페이지 컴포넌트 import
+import MyPage from './MyPage'; // 마이페이지 컴포넌트 import
 
 import { Skeleton } from '@/components/ui/skeleton';
-
-// Placeholder pages
-const MyPage = () => <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">마이페이지</div>;
 
 // 스플래시 화면을 위한 스켈레톤 컴포넌트
 const SplashScreen = () => (
@@ -171,84 +169,18 @@ export default function MobileLayout() {
         return <SplashScreen />;
     }
 
-    return (
-        <div className="h-dvh w-screen relative bg-background">
-            {/* h-20은 BottomTabBar의 높이입니다 */}
-            <main className="absolute top-0 left-0 right-0 bottom-20 overflow-y-auto">
-                <div className={`w-full h-full ${activeTab === 'map' ? 'block' : 'hidden'}`}><MapPage {...mapPageProps} /></div>
-                <div className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} /></div>
-                <div className={`w-full h-full ${activeTab === 'roulette' ? 'block' : 'hidden'}`}><RoulettePage /></div>
-                <div className={`w-full h-full ${activeTab === 'my-page' ? 'block' : 'hidden'}`}><MyPage /></div>
-            </main>
+        const myPageProps = {
+            onShowFavorites: () => setIsFavoritesListOpen(true),
+            onShowBlacklist: () => setIsBlacklistOpen(true),
+            onShowTagManagement: () => setIsTagManagementOpen(true),
+        };
 
-            <div className="absolute bottom-0 left-0 right-0">
-                <BottomTabBar 
-                    onSearchClick={handleCentralSearchClick} 
-                />
+        return (
+            <div className="relative w-full h-full">
+                <div className={activeTab === 'map' ? 'block' : 'hidden'}><MapPage {...mapPageProps} /></div>
+                <div className={activeTab === 'favorites' ? 'block' : 'hidden'}><FavoritesPage {...favoritesPageProps} /></div>
+                <div className={activeTab === 'roulette' ? 'block' : 'hidden'}><RoulettePage /></div>
+                <div className={activeTab === 'my-page' ? 'block' : 'hidden'}><MyPage {...myPageProps} /></div>
             </div>
-
-            {/* All dialogs are now managed by the layout */}
-            <FilterDialog
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                initialFilters={filters}
-                onApplyFilters={(newFilters) => setFilters(newFilters)}
-                userTags={userTags}
-            />
-            <TagManagementDialog
-                isOpen={isTagManagementOpen}
-                onOpenChange={setIsTagManagementOpen}
-                userTags={userTags}
-                onCreateTag={createTag}
-                onDeleteTag={deleteTag}
-                onToggleTagPublic={toggleTagPublic}
-            />
-            <FavoritesDialog
-                isOpen={isFavoritesListOpen}
-                onOpenChange={setIsFavoritesListOpen}
-                favorites={favorites}
-                session={session}
-                subscribedTagIds={subscribedTagIds}
-                selectedItemId={selectedItemId}
-                setSelectedItemId={setSelectedItemId}
-                isFavorite={isFavorite}
-                isBlacklisted={isBlacklisted}
-                onToggleFavorite={toggleFavorite}
-                onToggleBlacklist={toggleBlacklist}
-                onTagManagement={setTaggingRestaurant}
-            />
-            <BlacklistDialog
-                isOpen={isBlacklistOpen}
-                onOpenChange={setIsBlacklistOpen}
-                blacklist={blacklist}
-                onToggleBlacklist={toggleBlacklist}
-            />
-            <RouletteDialog
-                isOpen={isRouletteOpen}
-                onOpenChange={setIsRouletteOpen}
-                items={useAppStore.getState().rouletteItems}
-                onResult={handleRouletteResult}
-            />
-            <TaggingDialog
-                restaurant={taggingRestaurant}
-                onOpenChange={() => setTaggingRestaurant(null)}
-                userTags={userTags}
-                onToggleTagLink={handleToggleTagLink}
-                onCreateAndLinkTag={handleCreateTag}
-            />
-            <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
-                <AlertDialogContent className="max-w-lg">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
-                    </AlertDialogHeader>
-                    <AlertDialogDescription>
-                        {alertInfo?.message}
-                    </AlertDialogDescription>
-                    <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
-    );
+        )
 }
