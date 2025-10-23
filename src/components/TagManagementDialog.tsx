@@ -117,7 +117,7 @@ export function TagManagementDialog({
         <div className="py-2 flex flex-col md:flex-row gap-6 flex-1 min-h-0">
 
             {/* 왼쪽: 내가 만든 태그 */}
-            <div className="w-full md:w-1/2 flex flex-col gap-4">
+            <div className="w-full md:w-1/2 flex flex-col gap-4 min-h-0">
                 <div className="flex flex-col">
                     <h4 className="font-semibold mb-2 px-1">내가 만든 태그</h4>
                     <div className="flex w-full items-center space-x-2 p-1">
@@ -164,7 +164,7 @@ export function TagManagementDialog({
             <Separator className="md:hidden" />
 
             {/* 오른쪽: 구독 중인 태그 */}
-            <div className="w-full md:w-1/2 flex flex-col gap-4">
+            <div className="w-full md:w-1/2 flex flex-col gap-4 min-h-0">
                 <h4 className="font-semibold px-1">구독 중인 태그</h4>
                 <div className="flex-1 overflow-y-auto pr-4 min-h-0" ref={subscribedTagsScrollRef}>
                     {subscribedTags.length > 0 ? (

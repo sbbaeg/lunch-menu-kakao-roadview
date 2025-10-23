@@ -99,7 +99,7 @@ export function ResultPanel({
             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
           </div>
         )}
-        <p className="text-sm font-semibold text-gray-600 px-4 pt-4">
+        <p className="text-sm font-semibold text-gray-600 px-4">
           {getSortTitle(displayedSortOrder)}: {restaurants.length}개
         </p>
         <CardContent className="px-2 pt-1 pb-2 thin-scrollbar overflow-y-auto flex-1">

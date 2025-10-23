@@ -43,14 +43,16 @@ export default function RoulettePage() {
 
         setIsSpinning(true);
         const totalItems = rouletteItems.length;
-        // 각 아이템이 중앙에 오도록 추가 각도 계산 (포인터가 위쪽을 가리키므로, 첫 아이템의 중앙은 0도)
         const winningNumber = Math.floor(Math.random() * totalItems);
         const baseAngle = 360 / totalItems;
-        const targetAngle = -(winningNumber * baseAngle + baseAngle / 2);
 
-        // 최소 5바퀴 + 랜덤 각도
-        const randomSpins = 5 + Math.random() * 5;
-        const finalRotation = rotation + (360 * randomSpins) + targetAngle;
+        // 포인터가 12시 방향(270도)을 가리키므로, 당첨 아이템의 중앙 각도가 270도가 되도록 목표 각도를 설정합니다.
+        const itemCenterAngle = winningNumber * baseAngle + baseAngle / 2;
+        const targetAngle = 270 - itemCenterAngle;
+
+        // 최소 5바퀴 + 최종 목표 각도
+        const randomSpins = 5 + Math.random() * 3;
+        const finalRotation = (360 * randomSpins) + targetAngle;
 
         setRotation(finalRotation);
 
@@ -67,30 +69,50 @@ export default function RoulettePage() {
 
     const renderRouletteWheel = () => {
         const itemCount = rouletteItems.length;
-        if (itemCount === 0) {
-            return <div className="text-muted-foreground">룰렛을 구성할 음식점이 없습니다.</div>;
+        if (itemCount === 0 || itemCount < 2) {
+            return <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full"><p className="text-muted-foreground text-center px-4">룰렛을 돌리려면<br/>2개 이상의 음식점이 필요합니다.</p></div>;
         }
         const angle = 360 / itemCount;
-        const skewY = 90 - angle;
+
+        // clip-path를 위한 좌표 계산
+        const getCoordinates = (angle: number) => {
+            const rad = (angle * Math.PI) / 180;
+            const x = 50 + 50 * Math.tan(rad);
+            return x > 100 ? 100 : x < 0 ? 0 : x;
+        };
 
         return rouletteItems.map((item, index) => {
             const itemAngle = angle * index;
-            const colors = ['bg-red-100', 'bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-purple-100', 'bg-indigo-100'];
+            const colors = ['#FFDDC1', '#D4F1F4', '#E1F7D5', '#FEEFDD', '#E4D9FF', '#D9E4FF'];
             const color = colors[index % colors.length];
+
+            let clipPath;
+            if (angle > 180) { // 아이템이 1개일 경우 (실제로는 2개 미만에서 분기처리됨)
+                clipPath = 'circle(50%)';
+            } else if (angle > 90) {
+                const x = getCoordinates(angle - 90);
+                clipPath = `polygon(50% 50%, 0% 100%, 0% 0%, 100% 0%, 100% ${100-x}% )`;
+            } else {
+                const x = getCoordinates(angle);
+                clipPath = `polygon(50% 50%, 50% 0, ${x}% 0)`;
+            }
 
             return (
                 <div
                     key={item.id}
-                    className={`absolute w-1/2 h-1/2 origin-bottom-right transform-gpu ${color}`}
-                    style={{
-                        transform: `rotate(${itemAngle}deg) skewY(-${skewY}deg)`,
-                    }}
+                    className="absolute w-full h-full"
+                    style={{ transform: `rotate(${itemAngle}deg)` }}
                 >
-                    <div 
-                        className="absolute w-full h-full flex items-center justify-center text-sm font-semibold text-gray-700 p-2 break-all"
-                        style={{ transform: `skewY(${skewY}deg) rotate(${angle / 2}deg)` }}
+                    <div
+                        className="absolute w-full h-full"
+                        style={{ clipPath, backgroundColor: color }}
                     >
-                        <span className='truncate'>{item.placeName}</span>
+                        <div 
+                            className="absolute w-1/2 h-1/2 flex items-start justify-center pt-2 text-sm font-semibold text-gray-800 p-1 break-all"
+                            style={{ transform: `rotate(${angle / 2}deg) translate(25%, 25%)` }}
+                        >
+                            <span className='truncate'>{item.placeName}</span>
+                        </div>
                     </div>
                 </div>
             );
