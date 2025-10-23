@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,6 +7,8 @@ import { Session } from "next-auth";
 import { RestaurantCard } from "./RestaurantCard";
 import { useAppStore } from "@/store/useAppStore"; // zustand 스토어 import
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode"; // PWA 모드 감지 훅
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 
 interface ResultPanelProps {
   isLoading: boolean;
@@ -14,6 +17,7 @@ interface ResultPanelProps {
   displayedSortOrder: "accuracy" | "distance" | "rating";
   selectedItemId: string;
   setSelectedItemId: (id: string) => void;
+  onOpenFilter: () => void; // 필터 열기 함수 prop 추가
   // --- RestaurantCard에 전달할 Props ---
   session: Session | null;
   subscribedTagIds: number[];
@@ -40,17 +44,57 @@ export function ResultPanel({
   displayedSortOrder,
   selectedItemId,
   setSelectedItemId,
+  onOpenFilter,
   ...cardProps // session, onToggleFavorite 등 RestaurantCard에 필요한 나머지 props
 }: ResultPanelProps) {
 
-  const cycleResultPanelState = useAppStore((state) => state.cycleResultPanelState);
-  const { isStandalone } = usePwaDisplayMode(); // PWA 모드 확인
+  const { resultPanelState, setResultPanelState } = useAppStore();
+  const { isStandalone } = usePwaDisplayMode();
+  const touchStartY = useRef(0);
+  const touchMoveY = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.targetTouches[0].clientY;
+    touchMoveY.current = e.targetTouches[0].clientY; // 초기화
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchMoveY.current = e.targetTouches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    const touchDistance = touchStartY.current - touchMoveY.current;
+    const threshold = 50; // 50px 이상 움직여야 스와이프로 간주
+
+    if (touchDistance > threshold) { // 위로 스와이프
+      if (resultPanelState === 'collapsed') setResultPanelState('default');
+      else if (resultPanelState === 'default') setResultPanelState('expanded');
+    } else if (touchDistance < -threshold) { // 아래로 스와이프
+      if (resultPanelState === 'expanded') setResultPanelState('default');
+      else if (resultPanelState === 'default') setResultPanelState('collapsed');
+    } else {
+      // 스와이프 거리가 짧으면 클릭으로 간주하여 순환
+      if (resultPanelState === 'default') setResultPanelState('expanded');
+      else if (resultPanelState === 'expanded') setResultPanelState('collapsed');
+      else setResultPanelState('default');
+    }
+    // 값 초기화
+    touchStartY.current = 0;
+    touchMoveY.current = 0;
+  };
 
   // 핸들러 UI를 조건부로 렌더링
   const expansionHandler = isStandalone ? (
     <div 
       className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-6 flex items-center justify-center cursor-pointer z-10"
-      onClick={cycleResultPanelState}
+      onClick={() => { // 클릭 이벤트 핸들러 (터치 미지원 기기용)
+        if (resultPanelState === 'default') setResultPanelState('expanded');
+        else if (resultPanelState === 'expanded') setResultPanelState('collapsed');
+        else setResultPanelState('default');
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
     </div>
@@ -99,9 +143,14 @@ export function ResultPanel({
             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
           </div>
         )}
-        <p className="text-sm font-semibold text-gray-600 px-4">
-          {getSortTitle(displayedSortOrder)}: {restaurants.length}개
-        </p>
+        <div className="flex justify-between items-center px-4">
+          <p className="text-sm font-semibold text-gray-600">
+            {getSortTitle(displayedSortOrder)}: {restaurants.length}개
+          </p>
+          <Button variant="ghost" size="icon" onClick={onOpenFilter}>
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
         <CardContent className="px-2 pt-1 pb-2 thin-scrollbar overflow-y-auto flex-1">
           <Accordion
             type="single"
