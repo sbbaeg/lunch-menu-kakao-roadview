@@ -18,10 +18,11 @@ interface AppState {
   blacklistExcludedCount: number;
   loading: boolean;
   isMapReady: boolean;
-  isResultPanelExpanded: boolean;
+  resultPanelState: 'collapsed' | 'default' | 'expanded';
 
   // Actions
-  toggleResultPanel: () => void;
+  cycleResultPanelState: () => void;
+  resetResultPanelState: () => void;
   setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
   setSelectedItemId: (id: string) => void;
   setRestaurantList: (restaurants: AppRestaurant[]) => void;
@@ -63,10 +64,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   blacklistExcludedCount: 0,
   loading: false,
   isMapReady: false,
-  isResultPanelExpanded: false,
+  resultPanelState: 'default',
 
   // Actions
-  toggleResultPanel: () => set((state) => ({ isResultPanelExpanded: !state.isResultPanelExpanded })),
+  cycleResultPanelState: () => set((state) => {
+    if (state.resultPanelState === 'default') return { resultPanelState: 'expanded' };
+    if (state.resultPanelState === 'expanded') return { resultPanelState: 'collapsed' };
+    return { resultPanelState: 'default' };
+  }),
+  resetResultPanelState: () => set({ resultPanelState: 'default' }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setSelectedItemId: (id) => set({ selectedItemId: id }),
   setRestaurantList: (restaurants) => set({ restaurantList: restaurants }),
@@ -117,6 +123,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   recommendProcess: async (isRoulette, center) => {
+    get().resetResultPanelState(); // 패널 상태 리셋
     set({ loading: true, displayedSortOrder: get().filters.sortOrder, blacklistExcludedCount: 0 });
     get().clearMapAndResults();
 
@@ -168,6 +175,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   
   handleSearchInArea: async (center) => {
+    get().resetResultPanelState(); // 패널 상태 리셋
     set({ loading: true });
     get().clearMapAndResults();
     try {
@@ -190,6 +198,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   handleAddressSearch: async (keyword, center) => {
+    get().resetResultPanelState(); // 패널 상태 리셋
     if (!keyword.trim()) {
       // Let component handle alert
       return;

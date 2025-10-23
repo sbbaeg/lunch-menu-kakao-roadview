@@ -83,8 +83,8 @@ export default function RoulettePage() {
 
     return (
         <>
-            <div className="h-full w-full flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-                <header className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center">
+            <div className="h-full w-full flex flex-col p-4 bg-gray-50 dark:bg-gray-900">
+                <header className="p-4 flex justify-between items-center">
                     <h1 className="text-2xl font-bold">오늘의 룰렛</h1>
                     <div>
                         <Button variant="ghost" size="icon" onClick={fetchRouletteItems} disabled={loading || mustSpin}>
@@ -96,7 +96,7 @@ export default function RoulettePage() {
                     </div>
                 </header>
 
-                <main className="flex flex-col items-center justify-center gap-8">
+                <main className="flex-1 flex flex-col items-center justify-center gap-8">
                     <div className="relative w-80 h-80 md:w-96 md:h-96">
                         {rouletteData.length > 0 ? (
                             <Wheel
