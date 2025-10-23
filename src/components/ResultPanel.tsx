@@ -49,7 +49,7 @@ export function ResultPanel({
       <Card className="w-full flex flex-col flex-1 min-h-0 relative"> {/* relative 추가 */}
         {/* 핸들러 UI */}
         <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-6 flex items-center justify-center cursor-pointer z-10"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-6 flex items-center justify-center cursor-pointer z-10 md:hidden"
           onClick={toggleResultPanel}
         >
           <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
