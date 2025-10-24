@@ -37,27 +37,17 @@ export function useKakaoMap() {
     const roadviewContainer = useRef<HTMLDivElement | null>(null);
     const roadviewInstance = useRef<kakao.maps.Roadview | null>(null);
     const roadviewClient = useRef<kakao.maps.RoadviewClient | null>(null);
-    const isMapReady = useAppStore((state) => state.isMapReady);
-
-    // ✅ 지도 인스턴스 생성 useEffect
-    useEffect(() => {
-        if (isMapReady && mapContainer.current && !mapInstance.current) {
-            const mapOption = {
-                center: new window.kakao.maps.LatLng(36.3504, 127.3845),
-                level: 5,
-            };
-            mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
-            setIsMapInitialized(true);
-        }
-    }, [isMapReady]);
 
     // ✅ 로드뷰 인스턴스 생성 useEffect (분리)
     useEffect(() => {
-        if (isMapReady && roadviewContainer.current && !roadviewInstance.current) {
-            roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
-            roadviewClient.current = new window.kakao.maps.RoadviewClient();
+        if (roadviewContainer.current && !roadviewInstance.current) {
+            window.kakao.maps.load(() => {
+                if (!roadviewContainer.current) return;
+                roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
+                roadviewClient.current = new window.kakao.maps.RoadviewClient();
+            });
         }
-    }, [isMapReady, roadviewContainer.current]); // roadviewContainer.current가 설정된 후 실행되도록 의존성 추가
+    }, [roadviewContainer]); // roadviewContainer.current가 설정된 후 실행되도록 의존성 추가
 
 
     const displayMarkers = (places: AppRestaurant[]) => {
@@ -121,20 +111,25 @@ export function useKakaoMap() {
     };
 
     const relayout = () => {
-        if (isMapReady && mapContainer.current && !mapInstance.current) {
-            const mapOption = {
-                center: new window.kakao.maps.LatLng(36.3504, 127.3845),
-                level: 5,
-            };
-            mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
-            setIsMapInitialized(true);
+        if (typeof window !== 'undefined' && window.kakao && window.kakao.maps && mapContainer.current && !mapInstance.current) {
+            window.kakao.maps.load(() => {
+                if (!mapContainer.current) return;
+                const mapOption = {
+                    center: new window.kakao.maps.LatLng(36.3504, 127.3845),
+                    level: 5,
+                };
+                mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
+                setIsMapInitialized(true);
+                // A slight delay for the very first relayout might be needed after creation
+                setTimeout(() => mapInstance.current?.relayout(), 0);
+            });
+        } else {
+            mapInstance.current?.relayout();
         }
-        mapInstance.current?.relayout();
         roadviewInstance.current?.relayout();
     };
 
     return {
-        isMapReady,
         isMapInitialized,
         mapContainerRef: mapContainer,
         mapInstance: mapInstance.current,
