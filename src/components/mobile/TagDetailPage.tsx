@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useKakaoMap } from '@/hooks/useKakaoMap';
 
 type TagDetailData = Tag & {
     restaurants: AppRestaurant[];
@@ -30,6 +31,9 @@ export default function TagDetailPage() {
     const [tagData, setTagData] = useState<TagDetailData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isMapVisible, setIsMapVisible] = useState(false);
+
+    const { mapContainerRef, displayMarkers, relayout, mapInstance } = useKakaoMap();
 
     useEffect(() => {
         if (activeTagId) {
@@ -52,6 +56,21 @@ export default function TagDetailPage() {
             fetchTagData();
         }
     }, [activeTagId]);
+
+    useEffect(() => {
+        if (isMapVisible && mapInstance && tagData && tagData.restaurants.length > 0) {
+            setTimeout(() => {
+                relayout();
+                displayMarkers(tagData.restaurants);
+                
+                const bounds = new window.kakao.maps.LatLngBounds();
+                tagData.restaurants.forEach(restaurant => {
+                    bounds.extend(new window.kakao.maps.LatLng(Number(restaurant.y), Number(restaurant.x)));
+                });
+                mapInstance.setBounds(bounds);
+            }, 300); // Wait for transition
+        }
+    }, [isMapVisible, mapInstance, tagData, displayMarkers, relayout]);
 
     const handleSubscribe = async () => {
         if (!tagData || !session) return;
@@ -93,6 +112,8 @@ export default function TagDetailPage() {
             alert('링크가 클립보드에 복사되었습니다.');
         }
     };
+
+    const toggleMap = () => setIsMapVisible(prev => !prev);
 
     if (loading) {
         return (
@@ -144,7 +165,13 @@ export default function TagDetailPage() {
                 }}
                 onSubscribe={handleSubscribe}
                 onShare={handleShare}
+                onBack={hideTagDetail}
+                isMapVisible={isMapVisible}
+                onToggleMap={toggleMap}
             />
+            <div className={`transition-all duration-300 ease-in-out ${isMapVisible ? 'h-1/2' : 'h-0'}`}>
+                <div ref={mapContainerRef} className="w-full h-full" />
+            </div>
             <div className="flex-1 overflow-y-auto min-h-0">
                 <Accordion type="multiple" className="w-full">
                     {tagData.restaurants.map(restaurant => (
