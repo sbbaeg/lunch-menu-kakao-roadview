@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import Link from "next/link";
+import { useAppStore } from '@/store/useAppStore';
+import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 import { RestaurantDetails } from "./RestaurantDetails";
 import { Users, Utensils } from 'lucide-react';
 
@@ -37,11 +39,21 @@ export function RestaurantCard({
   ...detailProps
 }: RestaurantCardProps) {
   const details = restaurant.googleDetails;
+  const { isStandalone } = usePwaDisplayMode();
+  const showTagDetail = useAppStore((state) => state.showTagDetail);
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const handleTagClick = (e: React.MouseEvent, tagId: number) => {
+    e.stopPropagation();
+    if (isStandalone) {
+      e.preventDefault();
+      showTagDetail(tagId);
+    }
+  };
 
   return (
     <AccordionItem value={restaurant.id} key={restaurant.id} className="border-none group">
@@ -88,7 +100,7 @@ export function RestaurantCard({
                     return (
                       <Tooltip key={tag.id}>
                         <TooltipTrigger asChild>
-                          <Link href={`/tags/${tag.id}`} onClick={(e) => e.stopPropagation()}>
+                          <Link href={`/tags/${tag.id}`} onClick={(e) => handleTagClick(e, tag.id)}>
                             <Badge variant={badgeVariant} className="flex items-center">
                               {icon}{tag.name}
                             </Badge>
