@@ -33,7 +33,7 @@ export default function TagDetailPage() {
     const [error, setError] = useState<string | null>(null);
     const [isMapVisible, setIsMapVisible] = useState(false);
 
-    const { mapContainerRef, displayMarkers, relayout, mapInstance, isMapInitialized } = useKakaoMap();
+    const { mapContainerRef, displayMarkers, relayout, mapInstance, isMapInitialized, setCenter } = useKakaoMap();
 
     useEffect(() => {
         if (activeTagId) {
@@ -76,6 +76,14 @@ export default function TagDetailPage() {
              mapInstance.setBounds(bounds);
         }
     }, [isMapVisible, isMapInitialized, mapInstance, tagData, displayMarkers]);
+
+    const handleRestaurantSelect = (id: string) => {
+        if (!id) return;
+        const restaurant = tagData?.restaurants.find(r => r.id === id);
+        if (restaurant && mapInstance) {
+            setCenter(Number(restaurant.y), Number(restaurant.x));
+        }
+    };
 
     const handleSubscribe = async () => {
         if (!tagData || !session) return;
@@ -178,7 +186,12 @@ export default function TagDetailPage() {
                 <div ref={mapContainerRef} className="w-full h-full" />
             </div>
             <div className="flex-1 overflow-y-auto min-h-0">
-                <Accordion type="multiple" className="w-full">
+                <Accordion 
+                    type="single" 
+                    collapsible 
+                    className="w-full"
+                    onValueChange={handleRestaurantSelect}
+                >
                     {tagData.restaurants.map(restaurant => (
                         <RestaurantCard
                             key={restaurant.id}
