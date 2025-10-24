@@ -6,9 +6,10 @@ import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Map } from 'lucide-react';
 import { RestaurantDetails } from '@/components/RestaurantDetails';
 import { ReviewSection } from '@/components/ReviewSection';
+import { useKakaoMap } from '@/hooks/useKakaoMap';
 
 export default function RestaurantDetailPage() {
     const { data: session } = useSession();
@@ -18,6 +19,9 @@ export default function RestaurantDetailPage() {
     const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isMapVisible, setIsMapVisible] = useState(false);
+
+    const { mapContainerRef, displayMarkers, relayout, setCenter, isMapInitialized, mapInstance } = useKakaoMap();
 
     useEffect(() => {
         if (activeRestaurantId) {
@@ -40,6 +44,22 @@ export default function RestaurantDetailPage() {
             fetchRestaurantData();
         }
     }, [activeRestaurantId]);
+
+    useEffect(() => {
+        if (isMapVisible) {
+            setTimeout(() => {
+                relayout();
+            }, 10); // A small delay can help
+        }
+    }, [isMapVisible, relayout]);
+
+    useEffect(() => {
+        if (isMapVisible && isMapInitialized && restaurant && mapInstance) {
+            mapInstance.relayout();
+            setCenter(Number(restaurant.y), Number(restaurant.x));
+            displayMarkers([restaurant]);
+        }
+    }, [isMapVisible, isMapInitialized, restaurant, mapInstance, setCenter, displayMarkers]);
 
     if (loading) {
         return (
@@ -89,14 +109,25 @@ export default function RestaurantDetailPage() {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     뒤로가기
                 </Button>
-                <h1 className="text-2xl font-bold">{restaurant.placeName}</h1>
+                <div className="flex justify-between items-center">
+                    <h1 className="text-2xl font-bold">{restaurant.placeName}</h1>
+                    <Button variant="outline" size="sm" onClick={() => setIsMapVisible(prev => !prev)}>
+                        <Map className="mr-2 h-4 w-4" />
+                        {isMapVisible ? '지도 숨기기' : '지도 보기'}
+                    </Button>
+                </div>
             </header>
+
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isMapVisible ? 'h-64 border rounded-md' : 'h-0'}`}>
+                <div ref={mapContainerRef} className="w-full h-full" />
+            </div>
             
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 pt-4">
                 <div className="bg-card p-4 rounded-lg shadow-sm mb-6 border">
                     <RestaurantDetails 
                         restaurant={restaurant} 
                         session={session}
+                        hideViewDetailsButton={true}
                     />
                 </div>
 

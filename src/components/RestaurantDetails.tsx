@@ -18,6 +18,7 @@ interface RestaurantDetailsProps {
   onToggleFavorite?: (restaurant: AppRestaurant) => void;
   onToggleBlacklist?: (restaurant: AppRestaurant) => void;
   onTagManagement?: (restaurant: AppRestaurant) => void;
+  hideViewDetailsButton?: boolean;
 }
 
 export function RestaurantDetails(props: RestaurantDetailsProps) {
@@ -70,6 +71,7 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
         restaurant={restaurant} 
         isNavigating={isNavigating}
         onViewDetails={handleViewDetails}
+        showViewDetailsButton={!props.hideViewDetailsButton}
       />
     </div>
   );
