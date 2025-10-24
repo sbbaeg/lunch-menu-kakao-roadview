@@ -32,6 +32,7 @@ export default function TagDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isMapVisible, setIsMapVisible] = useState(false);
+    const [hasMapLoaded, setHasMapLoaded] = useState(false);
 
     const { mapContainerRef, displayMarkers, relayout, mapInstance, isMapInitialized, setCenter } = useKakaoMap();
 
@@ -68,14 +69,15 @@ export default function TagDetailPage() {
 
     // A separate effect to draw markers once the map is actually created.
     useEffect(() => {
-        if (isMapVisible && isMapInitialized && mapInstance && tagData && tagData.restaurants.length > 0) {
+        if (isMapVisible && isMapInitialized && mapInstance && tagData && tagData.restaurants.length > 0 && !hasMapLoaded) {
              mapInstance.relayout();
              displayMarkers(tagData.restaurants);
              const bounds = new window.kakao.maps.LatLngBounds();
              tagData.restaurants.forEach(r => bounds.extend(new window.kakao.maps.LatLng(Number(r.y), Number(r.x))));
              mapInstance.setBounds(bounds);
+             setHasMapLoaded(true);
         }
-    }, [isMapVisible, isMapInitialized, mapInstance, tagData, displayMarkers]);
+    }, [isMapVisible, isMapInitialized, mapInstance, tagData, displayMarkers, hasMapLoaded]);
 
     const handleRestaurantSelect = (id: string) => {
         if (!id) return;
