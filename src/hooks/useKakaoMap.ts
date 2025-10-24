@@ -1,6 +1,6 @@
 // hooks/useKakaoMap.ts (수정)
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 
@@ -31,6 +31,7 @@ interface DirectionPoint { lat: number; lng: number; }
 export function useKakaoMap() {
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapInstance = useRef<kakao.maps.Map | null>(null);
+    const [isMapInitialized, setIsMapInitialized] = useState(false);
     const markers = useRef<kakao.maps.Marker[]>([]);
     const polylineInstance = useRef<kakao.maps.Polyline | null>(null);
     const roadviewContainer = useRef<HTMLDivElement | null>(null);
@@ -46,6 +47,7 @@ export function useKakaoMap() {
                 level: 5,
             };
             mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
+            setIsMapInitialized(true);
         }
     }, [isMapReady]);
 
@@ -125,6 +127,7 @@ export function useKakaoMap() {
 
     return {
         isMapReady,
+        isMapInitialized,
         mapContainerRef: mapContainer,
         mapInstance: mapInstance.current,
         roadviewContainerRef: roadviewContainer,
