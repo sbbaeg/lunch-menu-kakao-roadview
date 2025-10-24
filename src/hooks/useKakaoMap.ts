@@ -40,14 +40,14 @@ export function useKakaoMap() {
 
     // ✅ 로드뷰 인스턴스 생성 useEffect (분리)
     useEffect(() => {
-        if (roadviewContainer.current && !roadviewInstance.current) {
+        if (roadviewContainer.current && !roadviewInstance.current && typeof window !== 'undefined' && window.kakao && window.kakao.maps) {
             window.kakao.maps.load(() => {
                 if (!roadviewContainer.current) return;
                 roadviewInstance.current = new window.kakao.maps.Roadview(roadviewContainer.current);
                 roadviewClient.current = new window.kakao.maps.RoadviewClient();
             });
         }
-    }, [roadviewContainer]); // roadviewContainer.current가 설정된 후 실행되도록 의존성 추가
+    }, [roadviewContainer]);
 
 
     const displayMarkers = (places: AppRestaurant[]) => {
@@ -87,9 +87,7 @@ export function useKakaoMap() {
     };
 
     const displayRoadview = (position: { lat: number, lng: number }) => {
-        if (!roadviewClient.current || !roadviewInstance.current) {
-            // 이 alert가 뜨면 로드뷰 객체가 생성되지 않은 것입니다.
-            // alert("로드뷰 객체가 아직 준비되지 않았습니다.");
+        if (!roadviewClient.current || !roadviewInstance.current || !window.kakao?.maps) {
             return;
         }
         const placePosition = new window.kakao.maps.LatLng(position.lat, position.lng);
