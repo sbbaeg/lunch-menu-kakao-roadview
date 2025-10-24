@@ -137,9 +137,9 @@ export function ResultPanel({
   return (
     <Card className="w-full flex flex-col flex-1 min-h-0 relative bg-background"> {/* relative, bg-background 추가 */}
       {expansionHandler}
-      <div className="w-full flex-1 flex flex-col min-h-0 pt-4"> {/* pt-4 추가 */}
+      <div className="w-full flex-1 flex flex-col min-h-0"> {/* pt-4 추가 */}
         {blacklistExcludedCount > 0 && (
-          <div className="p-2 mx-4 mt-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
+          <div className="p-2 mx-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm text-center">
             <p>블랙리스트에 포함된 {blacklistExcludedCount}개의 장소가 결과에서 제외되었습니다.</p>
           </div>
         )}
