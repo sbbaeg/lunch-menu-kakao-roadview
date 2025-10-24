@@ -121,6 +121,14 @@ export function useKakaoMap() {
     };
 
     const relayout = () => {
+        if (isMapReady && mapContainer.current && !mapInstance.current) {
+            const mapOption = {
+                center: new window.kakao.maps.LatLng(36.3504, 127.3845),
+                level: 5,
+            };
+            mapInstance.current = new window.kakao.maps.Map(mapContainer.current, mapOption);
+            setIsMapInitialized(true);
+        }
         mapInstance.current?.relayout();
         roadviewInstance.current?.relayout();
     };
