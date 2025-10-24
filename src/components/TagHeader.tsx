@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Share2, Star } from "lucide-react";
+import { ArrowLeft, Share2, Star, Map } from "lucide-react";
 
 interface TagHeaderProps {
     tagData: {
@@ -15,15 +15,27 @@ interface TagHeaderProps {
     };
     onSubscribe: () => void;
     onShare: () => void;
+    onBack?: () => void;
+    isMapVisible?: boolean;
+    onToggleMap?: () => void;
 }
 
-export function TagHeader({ tagData, onSubscribe, onShare }: TagHeaderProps) {
+export function TagHeader({ 
+    tagData, 
+    onSubscribe, 
+    onShare, 
+    onBack, 
+    isMapVisible,
+    onToggleMap 
+}: TagHeaderProps) {
     const router = useRouter();
     const { data: session, status } = useSession();
 
+    const handleBack = onBack ? onBack : () => router.back();
+
     return (
-        <header className="mb-6">
-            <Button variant="ghost" onClick={() => router.back()} className="w-fit p-0 h-auto text-muted-foreground mb-4">
+        <header className="mb-6 flex-shrink-0">
+            <Button variant="ghost" onClick={handleBack} className="w-fit p-0 h-auto text-muted-foreground mb-4">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 뒤로가기
             </Button>
@@ -48,6 +60,12 @@ export function TagHeader({ tagData, onSubscribe, onShare }: TagHeaderProps) {
                         <Share2 className="mr-2 h-4 w-4" />
                         공유
                     </Button>
+                    {onToggleMap && (
+                        <Button variant="outline" onClick={onToggleMap}>
+                            <Map className="mr-2 h-4 w-4" />
+                            {isMapVisible ? '지도 숨기기' : '지도 보기'}
+                        </Button>
+                    )}
                 </div>
             </div>
         </header>

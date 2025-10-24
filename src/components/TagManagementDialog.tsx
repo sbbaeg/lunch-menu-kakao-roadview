@@ -15,6 +15,7 @@ import { Tag } from "@/lib/types";
 import { useSession } from "next-auth/react";
 
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
+import { useAppStore } from "@/store/useAppStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SubscribedTag {
@@ -44,6 +45,7 @@ export function TagManagementDialog({
   const [newTagName, setNewTagName] = useState("");
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [subscribedTags, setSubscribedTags] = useState<SubscribedTag[]>([]);
+  const showTagDetail = useAppStore((state) => state.showTagDetail);
 
   const myTagsScrollRef = useRef<HTMLDivElement>(null);
   const subscribedTagsScrollRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,15 @@ export function TagManagementDialog({
 
   const { isStandalone } = usePwaDisplayMode();
 
+  const handleTagClick = (e: React.MouseEvent, tagId: number) => {
+    if (isStandalone) {
+      e.preventDefault();
+      showTagDetail(tagId);
+      onOpenChange(false); // Close the dialog
+    }
+    // On PC, do nothing, let the Link component handle it.
+  };
+
   const MyTagsView = (
     <div className="w-full flex flex-col gap-4 h-full">
         <div className="flex flex-col">
@@ -136,7 +147,7 @@ export function TagManagementDialog({
                 <ul className="space-y-2">
                     {filteredTags.map(tag => (
                         <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                            <Link href={`/tags/${tag.id}`} className="hover:underline">
+                            <Link href={`/tags/${tag.id}`} onClick={(e) => handleTagClick(e, tag.id)} className="hover:underline">
                                 {tag.name}
                             </Link>
                             <div className="flex items-center gap-4">
@@ -166,7 +177,7 @@ export function TagManagementDialog({
                 <ul className="space-y-2">
                     {subscribedTags.map(tag => (
                         <li key={tag.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                            <Link href={`/tags/${tag.id}`} className="hover:underline">
+                            <Link href={`/tags/${tag.id}`} onClick={(e) => handleTagClick(e, tag.id)} className="hover:underline">
                                 <div>
                                     <span className="font-semibold">{tag.name}</span>
                                     <span className="text-xs text-muted-foreground ml-2">(by {tag.creatorName})</span>
