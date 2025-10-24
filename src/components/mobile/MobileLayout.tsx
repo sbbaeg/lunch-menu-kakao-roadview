@@ -143,6 +143,7 @@ export default function MobileLayout() {
     };
 
     const handleCentralSearchClick = async () => {
+        setActiveTab('map');
         const result = await recommendProcess(false);
         if (!result.success && result.message) {
             setAlertInfo({ title: "알림", message: result.message });
