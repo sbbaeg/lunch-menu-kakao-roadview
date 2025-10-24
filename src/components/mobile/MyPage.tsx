@@ -26,6 +26,8 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { useAppStore } from "@/store/useAppStore";
+
 interface MyPageProps {
     onShowFavorites: () => void;
     onShowBlacklist: () => void;
@@ -38,6 +40,7 @@ export default function MyPage({
     onShowTagManagement,
 }: MyPageProps) {
     const { data: session, status } = useSession();
+    const showTagExplore = useAppStore((state) => state.showTagExplore);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -153,9 +156,7 @@ export default function MyPage({
                                 <AccordionContent className="pb-0">
                                     <div className="flex flex-col pl-4 pt-2 items-start">
                                         <Button variant="ghost" className="justify-start" onClick={onShowTagManagement}>- 태그 관리</Button>
-                                        <Link href="/tags/explore" passHref>
-                                            <Button variant="ghost" className="justify-start">- 태그 탐색</Button>
-                                        </Link>
+                                        <Button variant="ghost" className="justify-start" onClick={showTagExplore}>- 태그 탐색</Button>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
