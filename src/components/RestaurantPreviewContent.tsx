@@ -22,9 +22,10 @@ interface RestaurantPreviewContentProps {
     restaurant: AppRestaurant;
     isNavigating: boolean;
     onViewDetails: () => Promise<void>;
+    showViewDetailsButton?: boolean;
 }
 
-export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetails }: RestaurantPreviewContentProps) {
+export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetails, showViewDetailsButton = true }: RestaurantPreviewContentProps) {
     const details = restaurant.googleDetails;
 
     const [isMounted, setIsMounted] = useState(false);
@@ -100,14 +101,16 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
                 </div>
             )}
 
-            <div className="pt-2 flex justify-center">
-                <Button size="sm" className="font-bold px-8" onClick={onViewDetails} disabled={isNavigating}>
-                    <span className="flex items-center justify-center">
-                        {isNavigating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        상세보기
-                    </span>
-                </Button>
-            </div>
+            {showViewDetailsButton && (
+                <div className="pt-2 flex justify-center">
+                    <Button size="sm" className="font-bold px-8" onClick={onViewDetails} disabled={isNavigating}>
+                        <span className="flex items-center justify-center">
+                            {isNavigating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            상세보기
+                        </span>
+                    </Button>
+                </div>
+            )}
 
             <div className="flex justify-center gap-2 pt-2">
                 <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
