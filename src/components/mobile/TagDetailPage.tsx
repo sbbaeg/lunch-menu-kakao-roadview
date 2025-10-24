@@ -58,20 +58,24 @@ export default function TagDetailPage() {
     }, [activeTagId]);
 
     useEffect(() => {
-        if (isMapVisible && isMapInitialized && tagData && tagData.restaurants.length > 0) {
+        if (isMapVisible) {
+            // A timeout gives the container time to transition its height
             setTimeout(() => {
-                if (!mapInstance) return;
-                relayout();
-                displayMarkers(tagData.restaurants);
-                
-                const bounds = new window.kakao.maps.LatLngBounds();
-                tagData.restaurants.forEach(restaurant => {
-                    bounds.extend(new window.kakao.maps.LatLng(Number(restaurant.y), Number(restaurant.x)));
-                });
-                mapInstance.setBounds(bounds);
-            }, 300); // Wait for transition
+                relayout(); 
+            }, 300);
         }
-    }, [isMapVisible, isMapInitialized, tagData, displayMarkers, relayout, mapInstance]);
+    }, [isMapVisible, relayout]);
+
+    // A separate effect to draw markers once the map is actually created.
+    useEffect(() => {
+        if (isMapVisible && isMapInitialized && mapInstance && tagData && tagData.restaurants.length > 0) {
+             mapInstance.relayout();
+             displayMarkers(tagData.restaurants);
+             const bounds = new window.kakao.maps.LatLngBounds();
+             tagData.restaurants.forEach(r => bounds.extend(new window.kakao.maps.LatLng(Number(r.y), Number(r.x))));
+             mapInstance.setBounds(bounds);
+        }
+    }, [isMapVisible, isMapInitialized, mapInstance, tagData, displayMarkers]);
 
     const handleSubscribe = async () => {
         if (!tagData || !session) return;
