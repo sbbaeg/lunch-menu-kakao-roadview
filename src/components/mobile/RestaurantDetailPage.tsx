@@ -21,7 +21,7 @@ export default function RestaurantDetailPage() {
     const [error, setError] = useState<string | null>(null);
     const [isMapVisible, setIsMapVisible] = useState(false);
 
-    const { mapContainerRef, displayMarkers, relayout, setCenter, isMapInitialized, mapInstance } = useKakaoMap();
+    const { mapContainerRef, displayMarkers, relayout, setCenter, isMapInitialized, mapInstance, setLevel } = useKakaoMap();
 
     useEffect(() => {
         if (activeRestaurantId) {
@@ -49,7 +49,7 @@ export default function RestaurantDetailPage() {
         if (isMapVisible) {
             setTimeout(() => {
                 relayout();
-            }, 10); // A small delay can help
+            }, 300); // A small delay can help
         }
     }, [isMapVisible, relayout]);
 
@@ -57,6 +57,7 @@ export default function RestaurantDetailPage() {
         if (isMapVisible && isMapInitialized && restaurant && mapInstance) {
             mapInstance.relayout();
             setCenter(Number(restaurant.y), Number(restaurant.x));
+            setLevel(3);
             displayMarkers([restaurant]);
         }
     }, [isMapVisible, isMapInitialized, restaurant, mapInstance, setCenter, displayMarkers]);

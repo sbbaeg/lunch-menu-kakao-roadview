@@ -8,7 +8,7 @@ import { AppRestaurant } from '@/lib/types';
 declare namespace kakao.maps {
     class LatLng { constructor(lat: number, lng: number); getLat(): number; getLng(): number; }
     class LatLngBounds { constructor(); extend(latlng: LatLng): void; }
-    class Map { constructor(container: HTMLElement, options: { center: LatLng; level: number }); setCenter(latlng: LatLng): void; relayout(): void; getCenter(): LatLng; setBounds(bounds: LatLngBounds): void; }
+    class Map { constructor(container: HTMLElement, options: { center: LatLng; level: number }); setCenter(latlng: LatLng): void; relayout(): void; getCenter(): LatLng; setBounds(bounds: LatLngBounds): void; setLevel(level: number): void; }
     class Marker { constructor(options: { position: LatLng }); setMap(map: Map | null): void; }
     class Polyline { constructor(options: { path: LatLng[]; strokeColor: string; strokeWeight: number; strokeOpacity: number; }); setMap(map: Map | null): void; }
     class Roadview { constructor(container: HTMLElement); setPanoId(panoId: number, position: LatLng): void; relayout(): void; }
@@ -80,6 +80,11 @@ export function useKakaoMap() {
         mapInstance.current.setCenter(moveLatLon);
     };
 
+    const setLevel = (level: number) => {
+        if (!mapInstance.current) return;
+        mapInstance.current.setLevel(level);
+    };
+
     const drawDirections = async (origin: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
         if (!mapInstance.current) return;
         if (polylineInstance.current) polylineInstance.current.setMap(null);
@@ -143,6 +148,7 @@ export function useKakaoMap() {
         roadviewInstance: roadviewInstance.current,
         displayMarkers,
         setCenter,
+        setLevel,
         drawDirections,
         clearOverlays,
         displayRoadview,
