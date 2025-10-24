@@ -29,7 +29,7 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview, relayout } = useKakaoMap();
+  const { isMapInitialized, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview, relayout } = useKakaoMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
@@ -38,50 +38,35 @@ export function MapPanel({
 
   useEffect(() => {
     if (onMapReady) {
-      onMapReady(isMapReady);
+      onMapReady(isMapInitialized);
     }
-  }, [isMapReady, onMapReady]);
+  }, [isMapInitialized, onMapReady]);
 
   // ResizeObserver를 사용하여 컨테이너 크기 변경 시 지도 리레이아웃
   useEffect(() => {
     const mapContainer = mapContainerRef.current;
-    if (!mapContainer || !isMapReady) return;
+    if (!mapContainer || !isMapInitialized) return;
 
-    let observer: ResizeObserver;
-
-    const checkAndRelayout = () => {
-      // 컨테이너가 실제로 화면에 표시되고 크기를 가졌을 때 relayout 호출
-      if (mapContainer.clientWidth > 0 && mapContainer.clientHeight > 0) {
-        relayout();
-        // 한번 relayout을 실행한 후에는 observer를 중단하여 불필요한 반복을 막음
-        if (observer) {
-          observer.disconnect();
-        }
-      }
-    };
-
-    observer = new ResizeObserver(() => {
-      checkAndRelayout();
+    const observer = new ResizeObserver(() => {
+      relayout();
     });
 
     observer.observe(mapContainer);
 
     return () => {
-      if (observer) {
-        observer.disconnect();
-      }
+      observer.disconnect();
     };
-  }, [isMapReady, mapContainerRef, relayout]);
+  }, [isMapInitialized, mapContainerRef, relayout]);
 
   useEffect(() => {
-    if (isMapReady) {
+    if (isMapInitialized) {
       clearOverlays();
       displayMarkers(restaurants);
     }
-  }, [restaurants, isMapReady]);
+  }, [restaurants, isMapInitialized]);
 
   useEffect(() => {
-    if (isMapReady && selectedRestaurant) {
+    if (isMapInitialized && selectedRestaurant) {
         setCenter(Number(selectedRestaurant.y), Number(selectedRestaurant.x));
         displayRoadview({ lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
         setRoadviewVisible(false);
@@ -92,7 +77,7 @@ export function MapPanel({
             );
         }
     }
-}, [selectedRestaurant, userLocation, isMapReady]);
+}, [selectedRestaurant, userLocation, isMapInitialized]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -118,11 +103,11 @@ export function MapPanel({
   }, [userLocation]);
 
   useEffect(() => {
-    if (isMapReady && restaurants.length > 0 && !userLocation && !selectedRestaurant) {
+    if (isMapInitialized && restaurants.length > 0 && !userLocation && !selectedRestaurant) {
       const firstRestaurant = restaurants[0];
       setCenter(Number(firstRestaurant.y), Number(firstRestaurant.x));
     }
-  }, [isMapReady, restaurants, userLocation, selectedRestaurant]);
+  }, [isMapInitialized, restaurants, userLocation, selectedRestaurant]);
 
   const handleSearch = () => {
     if (!mapInstance || !searchAddress.trim()) return;

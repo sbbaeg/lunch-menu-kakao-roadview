@@ -102,9 +102,9 @@ export function ResultPanel({
 
   if (isLoading) {
     return (
-      <Card className="w-full flex flex-col min-h-0 relative"> {/* flex-1 제거 */}
+      <Card className="w-full flex flex-col min-h-0 relative overflow-hidden">
         {expansionHandler}
-        <div className="w-full flex-1 flex flex-col min-h-0 pt-4"> {/* pt-4 추가 */}
+        <div className="w-full flex-1 flex flex-col min-h-0">
           <div className="h-full flex flex-col justify-center p-2">
             {[...Array(3)].map((_, index) => (
               <Card key={index} className="p-4 mb-2">
