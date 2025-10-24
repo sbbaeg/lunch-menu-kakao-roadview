@@ -33,7 +33,7 @@ export default function TagDetailPage() {
     const [error, setError] = useState<string | null>(null);
     const [isMapVisible, setIsMapVisible] = useState(false);
 
-    const { mapContainerRef, displayMarkers, relayout, mapInstance } = useKakaoMap();
+    const { mapContainerRef, displayMarkers, relayout, mapInstance, isMapInitialized } = useKakaoMap();
 
     useEffect(() => {
         if (activeTagId) {
@@ -58,8 +58,9 @@ export default function TagDetailPage() {
     }, [activeTagId]);
 
     useEffect(() => {
-        if (isMapVisible && mapInstance && tagData && tagData.restaurants.length > 0) {
+        if (isMapVisible && isMapInitialized && tagData && tagData.restaurants.length > 0) {
             setTimeout(() => {
+                if (!mapInstance) return;
                 relayout();
                 displayMarkers(tagData.restaurants);
                 
@@ -70,7 +71,7 @@ export default function TagDetailPage() {
                 mapInstance.setBounds(bounds);
             }, 300); // Wait for transition
         }
-    }, [isMapVisible, mapInstance, tagData, displayMarkers, relayout]);
+    }, [isMapVisible, isMapInitialized, tagData, displayMarkers, relayout, mapInstance]);
 
     const handleSubscribe = async () => {
         if (!tagData || !session) return;
