@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
+import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
+import { useAppStore } from "@/store/useAppStore";
 
 interface RestaurantDetailsProps {
   restaurant: AppRestaurant;
@@ -22,6 +24,8 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
   const { restaurant } = props;
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
+  const { isStandalone } = usePwaDisplayMode();
+  const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
 
   const handleViewDetails = async () => {
     setIsNavigating(true);
@@ -31,7 +35,12 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(restaurant),
       });
-      router.push(`/restaurants/${restaurant.id}`);
+      
+      if (isStandalone) {
+        showRestaurantDetail(restaurant.id);
+      } else {
+        router.push(`/restaurants/${restaurant.id}`);
+      }
     } catch (error) {
       console.error("Failed to navigate to details page:", error);
       alert("상세 페이지로 이동하는 데 실패했습니다.");
