@@ -38,6 +38,7 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useAppStore } from '@/store/useAppStore';
 import TagDetailPage from './TagDetailPage';
 import RestaurantDetailPage from './RestaurantDetailPage';
+import TagExplorePage from './TagExplorePage';
 import { AppRestaurant, Tag } from '@/lib/types';
 import { useSession } from "next-auth/react";
 import {
@@ -203,9 +204,13 @@ export default function MobileLayout() {
                 <main className="absolute inset-0">
                     <TagDetailPage />
                 </main>
-            ) : ( // restaurantDetail
+            ) : activeView === 'restaurantDetail' ? (
                 <main className="absolute inset-0">
                     <RestaurantDetailPage />
+                </main>
+            ) : ( // tagExplore
+                <main className="absolute inset-0">
+                    <TagExplorePage />
                 </main>
             )}
 
