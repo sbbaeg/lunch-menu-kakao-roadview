@@ -95,11 +95,14 @@ export function MapPanel({
 }, [selectedRestaurant, userLocation, isMapInitialized]);
 
   useEffect(() => {
-    if (!mapInstance) return;
+    if (!mapInstance || !window.kakao?.maps?.event) return;
     const handleDragEnd = () => { setShowSearchAreaButton(true); };
     window.kakao.maps.event.addListener(mapInstance, 'dragend', handleDragEnd);
     return () => {
-      window.kakao.maps.event.removeListener(mapInstance, 'dragend', handleDragEnd);
+      // Check if kakao objects still exist on cleanup
+      if (window.kakao?.maps?.event) {
+        window.kakao.maps.event.removeListener(mapInstance, 'dragend', handleDragEnd);
+      }
     };
   }, [mapInstance]);
 
@@ -125,7 +128,7 @@ export function MapPanel({
   }, [isMapInitialized, restaurants, userLocation, selectedRestaurant]);
 
   const handleSearch = () => {
-    if (!mapInstance || !searchAddress.trim()) return;
+    if (!mapInstance || !searchAddress.trim() || !window.kakao?.maps?.services) return;
     if (searchMode === 'place') {
       const ps = new window.kakao.maps.services.Places();
       ps.keywordSearch(searchAddress, (data, status) => {
