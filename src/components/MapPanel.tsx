@@ -29,7 +29,7 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapInitialized, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview, relayout } = useKakaoMap();
+  const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview, relayout } = useKakaoMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
@@ -38,14 +38,14 @@ export function MapPanel({
 
   useEffect(() => {
     if (onMapReady) {
-      onMapReady(isMapInitialized);
+      onMapReady(isMapReady);
     }
-  }, [isMapInitialized, onMapReady]);
+  }, [isMapReady, onMapReady]);
 
   // ResizeObserver를 사용하여 컨테이너 크기 변경 시 지도 리레이아웃
   useEffect(() => {
     const mapContainer = mapContainerRef.current;
-    if (!mapContainer || !isMapInitialized) return;
+    if (!mapContainer || !isMapReady) return;
 
     const observer = new ResizeObserver(() => {
       relayout();
@@ -56,17 +56,17 @@ export function MapPanel({
     return () => {
       observer.disconnect();
     };
-  }, [isMapInitialized, mapContainerRef, relayout]);
+  }, [isMapReady, mapContainerRef, relayout]);
 
   useEffect(() => {
-    if (isMapInitialized) {
+    if (isMapReady) {
       clearOverlays();
       displayMarkers(restaurants);
     }
-  }, [restaurants, isMapInitialized]);
+  }, [restaurants, isMapReady]);
 
   useEffect(() => {
-    if (isMapInitialized && selectedRestaurant) {
+    if (isMapReady && selectedRestaurant) {
         setCenter(Number(selectedRestaurant.y), Number(selectedRestaurant.x));
         displayRoadview({ lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
         setRoadviewVisible(false);
@@ -77,7 +77,7 @@ export function MapPanel({
             );
         }
     }
-}, [selectedRestaurant, userLocation, isMapInitialized]);
+}, [selectedRestaurant, userLocation, isMapReady]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -103,11 +103,11 @@ export function MapPanel({
   }, [userLocation]);
 
   useEffect(() => {
-    if (isMapInitialized && restaurants.length > 0 && !userLocation && !selectedRestaurant) {
+    if (isMapReady && restaurants.length > 0 && !userLocation && !selectedRestaurant) {
       const firstRestaurant = restaurants[0];
       setCenter(Number(firstRestaurant.y), Number(firstRestaurant.x));
     }
-  }, [isMapInitialized, restaurants, userLocation, selectedRestaurant]);
+  }, [isMapReady, restaurants, userLocation, selectedRestaurant]);
 
   const handleSearch = () => {
     if (!mapInstance || !searchAddress.trim()) return;
