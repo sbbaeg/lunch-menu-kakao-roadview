@@ -137,7 +137,7 @@ export default function MyPage({
                     
                     <Separator className="my-4" />
 
-                    <div className="flex flex-col gap-2 px-4">
+                    <div className="flex flex-col gap-2 px-4 items-start">
                         <h3 className="text-lg font-semibold mb-2">내 활동 관리</h3>
                         <Button variant="ghost" className="justify-start" onClick={onShowFavorites}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
@@ -145,16 +145,16 @@ export default function MyPage({
                         <Button variant="ghost" className="justify-start" onClick={onShowBlacklist}>
                             <EyeOff className="mr-2 h-4 w-4" /> 블랙리스트 관리
                         </Button>
-                        <Accordion type="single" collapsible className="w-full">
+                        <Accordion type="single" collapsible>
                             <AccordionItem value="item-1" className="border-none">
                                 <AccordionTrigger className="py-2 px-4 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">
                                     <Tags className="mr-2 h-4 w-4" /> 태그
                                 </AccordionTrigger>
                                 <AccordionContent className="pb-0">
-                                    <div className="flex flex-col pl-4 pt-2">
-                                        <Button variant="ghost" className="justify-start w-full" onClick={onShowTagManagement}>- 태그 관리</Button>
+                                    <div className="flex flex-col pl-4 pt-2 items-start">
+                                        <Button variant="ghost" className="justify-start" onClick={onShowTagManagement}>- 태그 관리</Button>
                                         <Link href="/tags/explore" passHref>
-                                            <Button variant="ghost" className="justify-start w-full">- 태그 탐색</Button>
+                                            <Button variant="ghost" className="justify-start">- 태그 탐색</Button>
                                         </Link>
                                     </div>
                                 </AccordionContent>

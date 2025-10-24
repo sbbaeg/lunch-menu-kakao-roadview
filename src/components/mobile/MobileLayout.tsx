@@ -36,6 +36,7 @@ import { useBlacklist } from "@/hooks/useBlacklist";
 import { useUserTags } from "@/hooks/useUserTags";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useAppStore } from '@/store/useAppStore';
+import TagDetailPage from './TagDetailPage';
 import { AppRestaurant, Tag } from '@/lib/types';
 import { useSession } from "next-auth/react";
 import {
@@ -50,6 +51,7 @@ import {
 
 export default function MobileLayout() {
     const activeTab = useAppStore((state) => state.activeTab);
+    const activeView = useAppStore((state) => state.activeView);
     const setActiveTab = useAppStore((state) => state.setActiveTab);
     const isMapReady = useAppStore((state) => state.isMapReady);
     const setIsMapReady = useAppStore((state) => state.setIsMapReady);
@@ -178,20 +180,28 @@ export default function MobileLayout() {
 
     return (
         <div className="h-dvh w-screen relative">
-            {/* 메인 컨텐츠 영역: 하단 탭 바(h-20)를 제외한 전체 공간 차지 */}
-            <main className="absolute top-0 left-0 right-0 bottom-20">
-                <div className={`w-full h-full ${activeTab === 'map' ? 'block' : 'hidden'}`}><MapPage {...mapPageProps} /></div>
-                <div className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} /></div>
-                <div className={`w-full h-full ${activeTab === 'roulette' ? 'block' : 'hidden'}`}><RoulettePage /></div>
-                <div className={`w-full h-full ${activeTab === 'my-page' ? 'block' : 'hidden'}`}><MyPage {...myPageProps} /></div>
-            </main>
+            {activeView === 'tabs' ? (
+                <>
+                    {/* 메인 컨텐츠 영역: 하단 탭 바(h-20)를 제외한 전체 공간 차지 */}
+                    <main className="absolute top-0 left-0 right-0 bottom-20">
+                        <div className={`w-full h-full ${activeTab === 'map' ? 'block' : 'hidden'}`}><MapPage {...mapPageProps} /></div>
+                        <div className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} /></div>
+                        <div className={`w-full h-full ${activeTab === 'roulette' ? 'block' : 'hidden'}`}><RoulettePage /></div>
+                        <div className={`w-full h-full ${activeTab === 'my-page' ? 'block' : 'hidden'}`}><MyPage {...myPageProps} /></div>
+                    </main>
 
-            {/* 하단 탭 바: 화면 맨 아래에 고정 */}
-            <div className="absolute bottom-0 left-0 right-0 h-20">
-                <BottomTabBar 
-                    onSearchClick={handleCentralSearchClick} 
-                />
-            </div>
+                    {/* 하단 탭 바: 화면 맨 아래에 고정 */}
+                    <div className="absolute bottom-0 left-0 right-0 h-20">
+                        <BottomTabBar 
+                            onSearchClick={handleCentralSearchClick} 
+                        />
+                    </div>
+                </>
+            ) : (
+                <main className="absolute inset-0">
+                    <TagDetailPage />
+                </main>
+            )}
 
             {/* 다이얼로그들은 레이아웃 흐름에 영향을 주지 않음 */}
             <FilterDialog

@@ -10,6 +10,8 @@ interface AppState {
   rouletteItems: AppRestaurant[];
   userLocation: { lat: number; lng: number } | null;
   activeTab: 'map' | 'favorites' | 'roulette' | 'my-page';
+  activeView: 'tabs' | 'tagDetail';
+  activeTagId: number | null;
 
   // Filter State
   filters: Omit<FilterState, 'categories'> & { categories: string[] };
@@ -24,6 +26,10 @@ interface AppState {
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
   resetResultPanelState: () => void;
   setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
+  setActiveView: (view: 'tabs' | 'tagDetail') => void;
+  setActiveTagId: (tagId: number | null) => void;
+  showTagDetail: (tagId: number) => void;
+  hideTagDetail: () => void;
   setSelectedItemId: (id: string) => void;
   setRestaurantList: (restaurants: AppRestaurant[]) => void;
   setUserLocation: (location: { lat: number; lng: number } | null) => void;
@@ -47,6 +53,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   rouletteItems: [],
   userLocation: null,
   activeTab: 'map',
+  activeView: 'tabs',
+  activeTagId: null,
   
   filters: {
     categories: [],
@@ -70,6 +78,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   setResultPanelState: (state) => set({ resultPanelState: state }),
   resetResultPanelState: () => set({ resultPanelState: 'default' }),
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setActiveView: (view) => set({ activeView: view }),
+  setActiveTagId: (tagId) => set({ activeTagId: tagId }),
+  showTagDetail: (tagId) => set({ activeView: 'tagDetail', activeTagId: tagId }),
+  hideTagDetail: () => set({ activeView: 'tabs', activeTagId: null }),
   setSelectedItemId: (id) => set({ selectedItemId: id }),
   setRestaurantList: (restaurants) => set({ restaurantList: restaurants }),
   setUserLocation: (location) => set({ userLocation: location }),
