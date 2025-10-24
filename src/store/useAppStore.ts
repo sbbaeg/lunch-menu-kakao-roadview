@@ -10,8 +10,9 @@ interface AppState {
   rouletteItems: AppRestaurant[];
   userLocation: { lat: number; lng: number } | null;
   activeTab: 'map' | 'favorites' | 'roulette' | 'my-page';
-  activeView: 'tabs' | 'tagDetail';
+  activeView: 'tabs' | 'tagDetail' | 'restaurantDetail';
   activeTagId: number | null;
+  activeRestaurantId: string | null;
 
   // Filter State
   filters: Omit<FilterState, 'categories'> & { categories: string[] };
@@ -26,10 +27,13 @@ interface AppState {
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
   resetResultPanelState: () => void;
   setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
-  setActiveView: (view: 'tabs' | 'tagDetail') => void;
+  setActiveView: (view: 'tabs' | 'tagDetail' | 'restaurantDetail') => void;
   setActiveTagId: (tagId: number | null) => void;
   showTagDetail: (tagId: number) => void;
   hideTagDetail: () => void;
+  setActiveRestaurantId: (restaurantId: string | null) => void;
+  showRestaurantDetail: (restaurantId: string) => void;
+  hideRestaurantDetail: () => void;
   setSelectedItemId: (id: string) => void;
   setRestaurantList: (restaurants: AppRestaurant[]) => void;
   setUserLocation: (location: { lat: number; lng: number } | null) => void;
@@ -55,6 +59,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeTab: 'map',
   activeView: 'tabs',
   activeTagId: null,
+  activeRestaurantId: null,
   
   filters: {
     categories: [],
@@ -82,6 +87,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   setActiveTagId: (tagId) => set({ activeTagId: tagId }),
   showTagDetail: (tagId) => set({ activeView: 'tagDetail', activeTagId: tagId }),
   hideTagDetail: () => set({ activeView: 'tabs', activeTagId: null }),
+  setActiveRestaurantId: (restaurantId) => set({ activeRestaurantId: restaurantId }),
+  showRestaurantDetail: (restaurantId) => set({ activeView: 'restaurantDetail', activeRestaurantId: restaurantId }),
+  hideRestaurantDetail: () => set({ activeView: 'tabs', activeRestaurantId: null }),
   setSelectedItemId: (id) => set({ selectedItemId: id }),
   setRestaurantList: (restaurants) => set({ restaurantList: restaurants }),
   setUserLocation: (location) => set({ userLocation: location }),
