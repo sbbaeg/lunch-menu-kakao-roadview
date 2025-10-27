@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useKakaoMap } from '@/hooks/useKakaoMap';
+import { MapPanel } from '@/components/MapPanel';
 
 type TagDetailData = Tag & {
     restaurants: AppRestaurant[];
@@ -32,9 +32,7 @@ export default function TagDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isMapVisible, setIsMapVisible] = useState(false);
-    const [hasMapLoaded, setHasMapLoaded] = useState(false);
-
-    const { mapContainerRef, displayMarkers, relayout, mapInstance, isMapInitialized, setCenter } = useKakaoMap();
+    const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
 
     useEffect(() => {
         if (activeTagId) {
@@ -58,34 +56,11 @@ export default function TagDetailPage() {
         }
     }, [activeTagId]);
 
-    useEffect(() => {
-        if (isMapVisible) {
-            // A timeout gives the container time to transition its height
-            setTimeout(() => {
-                relayout(); 
-            }, 300);
-        }
-    }, [isMapVisible, relayout]);
-
-    // A separate effect to draw markers once the map is actually created.
-    useEffect(() => {
-        if (isMapVisible && isMapInitialized && mapInstance && tagData && tagData.restaurants.length > 0 && !hasMapLoaded) {
-             mapInstance.relayout();
-             displayMarkers(tagData.restaurants);
-             const bounds = new window.kakao.maps.LatLngBounds();
-             tagData.restaurants.forEach(r => bounds.extend(new window.kakao.maps.LatLng(Number(r.y), Number(r.x))));
-             mapInstance.setBounds(bounds);
-             setHasMapLoaded(true);
-        }
-    }, [isMapVisible, isMapInitialized, mapInstance, tagData, displayMarkers, hasMapLoaded]);
-
     const handleRestaurantSelect = (id: string) => {
-        if (!id) return;
-        const restaurant = tagData?.restaurants.find(r => r.id === id);
-        if (restaurant && mapInstance) {
-            setCenter(Number(restaurant.y), Number(restaurant.x));
-        }
+        setSelectedRestaurantId(id);
     };
+
+
 
     const handleSubscribe = async () => {
         if (!tagData || !session) return;
@@ -185,7 +160,17 @@ export default function TagDetailPage() {
                 onToggleMap={toggleMap}
             />
             <div className={`transition-all duration-300 ease-in-out ${isMapVisible ? 'h-1/2' : 'h-0'}`}>
-                <div ref={mapContainerRef} className="w-full h-full" />
+                {isMapVisible && tagData && (
+                    <MapPanel
+                        restaurants={tagData.restaurants}
+                        selectedRestaurant={tagData.restaurants.find(r => r.id === selectedRestaurantId) || null}
+                        userLocation={null}
+                        onSearchInArea={() => {}}
+                        onAddressSearch={() => {}}
+                        showSearchBar={false}
+                        hideControls={false} // 로드뷰 버튼 표시
+                    />
+                )}
             </div>
             <div className="flex-1 overflow-y-auto min-h-0">
                 <Accordion 
