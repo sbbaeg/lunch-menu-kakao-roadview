@@ -52,6 +52,7 @@ export function ResultPanel({
   const { isStandalone } = usePwaDisplayMode();
   const touchStartY = useRef(0);
   const touchMoveY = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.targetTouches[0].clientY;
@@ -62,7 +63,7 @@ export function ResultPanel({
     touchMoveY.current = e.targetTouches[0].clientY;
   };
 
-  const handleTouchEnd = () => {
+  const handleDragEnd = () => {
     const touchDistance = touchStartY.current - touchMoveY.current;
     const threshold = 50; // 50px 이상 움직여야 스와이프로 간주
 
@@ -83,6 +84,27 @@ export function ResultPanel({
     touchMoveY.current = 0;
   };
 
+  const handleTouchEnd = () => {
+    handleDragEnd();
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    touchStartY.current = e.clientY;
+    touchMoveY.current = e.clientY;
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    handleDragEnd();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    touchMoveY.current = e.clientY;
+  };
+
   // 핸들러 UI를 조건부로 렌더링
   const expansionHandler = isStandalone ? (
     <div 
@@ -95,6 +117,10 @@ export function ResultPanel({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseUp}
     >
       <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
     </div>
