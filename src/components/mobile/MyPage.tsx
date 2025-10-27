@@ -140,7 +140,7 @@ export default function MyPage({
                     
                     <Separator className="my-4" />
 
-                    <div className="flex flex-col gap-2 px-4 items-start">
+                    <div className="flex flex-col gap-2 px-4">
                         <h3 className="text-lg font-semibold mb-2">내 활동 관리</h3>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowFavorites}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
@@ -154,7 +154,7 @@ export default function MyPage({
                                     <Tags className="mr-2 h-4 w-4" /> 태그
                                 </AccordionTrigger>
                                 <AccordionContent className="pb-0">
-                                    <div className="flex flex-col pl-4 pt-2 items-start">
+                                    <div className="flex flex-col pl-4 pt-2">
                                         <Button variant="ghost" className="justify-start w-full" onClick={onShowTagManagement}>- 태그 관리</Button>
                                         <Button variant="ghost" className="justify-start w-full" onClick={showTagExplore}>- 태그 탐색</Button>
                                     </div>
