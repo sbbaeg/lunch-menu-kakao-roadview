@@ -97,27 +97,29 @@ export default function RoulettePage() {
                 </header>
 
                 <main className="flex-1 flex flex-col items-center justify-between gap-8 min-h-0 pt-24 pb-8">
-                    <div className="relative w-80 h-80 md:w-96 md:h-96 flex items-center justify-center overflow-hidden">
-                        {rouletteData.length > 0 ? (
-                            <Wheel
-                                mustStartSpinning={mustSpin}
-                                prizeNumber={prizeNumber}
-                                data={rouletteData}
-                                onStopSpinning={handleStopSpinning}
-                                outerBorderColor={"#e2e8f0"}
-                                outerBorderWidth={5}
-                                radiusLineColor={"#e2e8f0"}
-                                radiusLineWidth={2}
-                                fontSize={14}
-                                textDistance={60}
-                            />
-                        ) : (
-                             <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full">
-                                <p className="text-muted-foreground text-center px-4">
-                                    {loading ? '음식점 목록을 불러오는 중...' : '룰렛을 구성할 음식점이 없습니다.'}
-                                </p>
-                            </div>
-                        )}
+                    <div className="relative w-80 h-80 md:w-[420px] md:h-[420px] flex items-center justify-center">
+                        <div className="w-80 h-80 md:w-96 md:h-96">
+                            {rouletteData.length > 0 ? (
+                                <Wheel
+                                    mustStartSpinning={mustSpin}
+                                    prizeNumber={prizeNumber}
+                                    data={rouletteData}
+                                    onStopSpinning={handleStopSpinning}
+                                    outerBorderColor={"#e2e8f0"}
+                                    outerBorderWidth={5}
+                                    radiusLineColor={"#e2e8f0"}
+                                    radiusLineWidth={2}
+                                    fontSize={14}
+                                    textDistance={60}
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full">
+                                    <p className="text-muted-foreground text-center px-4">
+                                        {loading ? '음식점 목록을 불러오는 중...' : '룰렛을 구성할 음식점이 없습니다.'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <Button 
