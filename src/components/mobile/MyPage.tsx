@@ -142,10 +142,10 @@ export default function MyPage({
 
                     <div className="flex flex-col gap-2 px-4 items-start">
                         <h3 className="text-lg font-semibold mb-2">내 활동 관리</h3>
-                        <Button variant="ghost" className="justify-start" onClick={onShowFavorites}>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowFavorites}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
                         </Button>
-                        <Button variant="ghost" className="justify-start" onClick={onShowBlacklist}>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowBlacklist}>
                             <EyeOff className="mr-2 h-4 w-4" /> 블랙리스트 관리
                         </Button>
                         <Accordion type="single" collapsible>
@@ -155,8 +155,8 @@ export default function MyPage({
                                 </AccordionTrigger>
                                 <AccordionContent className="pb-0">
                                     <div className="flex flex-col pl-4 pt-2 items-start">
-                                        <Button variant="ghost" className="justify-start" onClick={onShowTagManagement}>- 태그 관리</Button>
-                                        <Button variant="ghost" className="justify-start" onClick={showTagExplore}>- 태그 탐색</Button>
+                                        <Button variant="ghost" className="justify-start w-full" onClick={onShowTagManagement}>- 태그 관리</Button>
+                                        <Button variant="ghost" className="justify-start w-full" onClick={showTagExplore}>- 태그 탐색</Button>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
