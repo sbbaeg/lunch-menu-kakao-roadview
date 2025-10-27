@@ -1,3 +1,4 @@
+// Re-trigger detection
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -87,6 +88,7 @@ model Review {
   text         String?  @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  needsModeration Boolean @default(false)
 
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -98,6 +100,7 @@ model Review {
 
   // 한 명의 유저는 한 식당에 하나의 리뷰만 작성 가능
   @@unique([userId, restaurantId])
+  @@index([needsModeration])
 }
 
 // 8. 리뷰 투표 모델
@@ -158,6 +161,7 @@ model Tag {
   name   String // 태그 이름 (예: #혼밥하기좋은)
   userId String // 생성한 사용자 ID
   isPublic Boolean @default(false)
+  needsModeration Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
@@ -167,6 +171,7 @@ model Tag {
 
   // 한 명의 유저는 동일한 이름의 태그를 중복 생성할 수 없음
   @@unique([name, userId])
+  @@index([needsModeration])
 }
 
 model TagSubscription {
@@ -189,4 +194,11 @@ model TagsOnRestaurants {
   tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([restaurantId, tagId]) // 복합 기본 키
+}
+
+// 9. 비속어 단어 모델
+model ProfanityWord {
+  id        Int      @id @default(autoincrement())
+  word      String   @unique
+  createdAt DateTime @default(now())
 }
