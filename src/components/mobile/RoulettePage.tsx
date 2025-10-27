@@ -96,7 +96,7 @@ export default function RoulettePage() {
                     </div>
                 </header>
 
-                <main className="flex-1 flex flex-col items-center justify-center gap-8 min-h-0">
+                <main className="flex-1 flex flex-col items-center justify-start gap-8 min-h-0 pt-8">
                     <div className="relative w-80 h-80 md:w-96 md:h-96">
                         {rouletteData.length > 0 ? (
                             <Wheel
