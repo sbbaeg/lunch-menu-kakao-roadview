@@ -30,12 +30,14 @@ interface RestaurantCardProps {
   onToggleFavorite?: (restaurant: AppRestaurant) => void;
   onToggleBlacklist?: (restaurant: AppRestaurant) => void;
   onTagManagement?: (restaurant: AppRestaurant) => void;
+  onNavigate?: () => void;
 }
 
 export function RestaurantCard({
   restaurant,
   session,
   subscribedTagIds,
+  onNavigate, // onNavigate prop 추가
   ...detailProps
 }: RestaurantCardProps) {
   const details = restaurant.googleDetails;
@@ -49,6 +51,7 @@ export function RestaurantCard({
 
   const handleTagClick = (e: React.MouseEvent, tagId: number) => {
     e.stopPropagation();
+    if (onNavigate) onNavigate(); // 네비게이트 콜백 호출
     if (isStandalone) {
       e.preventDefault();
       showTagDetail(tagId);
@@ -127,7 +130,7 @@ export function RestaurantCard({
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          <RestaurantDetails restaurant={restaurant} session={session} {...detailProps} />
+          <RestaurantDetails restaurant={restaurant} session={session} onNavigate={onNavigate} {...detailProps} />
         </AccordionContent>
       </Card>
     </AccordionItem>

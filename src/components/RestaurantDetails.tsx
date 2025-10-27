@@ -19,6 +19,7 @@ interface RestaurantDetailsProps {
   onToggleBlacklist?: (restaurant: AppRestaurant) => void;
   onTagManagement?: (restaurant: AppRestaurant) => void;
   hideViewDetailsButton?: boolean;
+  onNavigate?: () => void;
 }
 
 export function RestaurantDetails(props: RestaurantDetailsProps) {
@@ -37,6 +38,8 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
         body: JSON.stringify(restaurant),
       });
       
+      if (props.onNavigate) props.onNavigate(); // 네비게이트 콜백 호출
+
       if (isStandalone) {
         showRestaurantDetail(restaurant.id);
       } else {
@@ -51,7 +54,7 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
 
   return (
     <div
-      className="px-4 pb-4 text-sm space-y-3 border-t"
+      className="px-4 pb-4 text-sm space-y-3"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between pt-2">

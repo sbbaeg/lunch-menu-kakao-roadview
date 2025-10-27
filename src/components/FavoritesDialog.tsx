@@ -22,6 +22,7 @@ interface FavoritesDialogProps {
   onToggleFavorite: (restaurant: AppRestaurant) => void;
   onToggleBlacklist: (restaurant: AppRestaurant) => void;
   onTagManagement: (restaurant: AppRestaurant) => void;
+  onNavigate?: () => void;
 }
 
 export function FavoritesDialog({
@@ -30,6 +31,7 @@ export function FavoritesDialog({
   favorites,
   selectedItemId,
   setSelectedItemId,
+  onNavigate, // onNavigate prop 추가
   ...cardProps // RestaurantCard에 전달할 나머지 props
 }: FavoritesDialogProps) {
   return (
@@ -51,6 +53,7 @@ export function FavoritesDialog({
                 <RestaurantCard
                   key={place.id}
                   restaurant={place}
+                  onNavigate={onNavigate} // onNavigate 전달
                   {...cardProps}
                 />
               ))}

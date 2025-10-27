@@ -233,6 +233,7 @@ export default function MobileLayout() {
             <FavoritesDialog
                 isOpen={isFavoritesListOpen}
                 onOpenChange={setIsFavoritesListOpen}
+                onNavigate={() => setIsFavoritesListOpen(false)} // 네비게이트 시 다이얼로그 닫기
                 favorites={favorites}
                 session={session}
                 subscribedTagIds={subscribedTagIds}
