@@ -97,7 +97,7 @@ export default function RoulettePage() {
                 </header>
 
                 <main className="flex-1 flex flex-col items-center justify-between gap-8 min-h-0 pt-24 pb-8">
-                    <div className="relative w-80 h-80 md:w-96 md:h-96 flex items-center justify-center">
+                    <div className="relative w-80 h-80 md:w-96 md:h-96 flex items-center justify-center overflow-hidden">
                         {rouletteData.length > 0 ? (
                             <Wheel
                                 mustStartSpinning={mustSpin}
