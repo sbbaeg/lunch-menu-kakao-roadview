@@ -109,11 +109,6 @@ export function ResultPanel({
   const expansionHandler = isStandalone ? (
     <div 
       className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-6 flex items-center justify-center cursor-pointer z-10"
-      onClick={() => { // 클릭 이벤트 핸들러 (터치 미지원 기기용)
-        if (resultPanelState === 'default') setResultPanelState('expanded');
-        else if (resultPanelState === 'expanded') setResultPanelState('collapsed');
-        else setResultPanelState('default');
-      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
