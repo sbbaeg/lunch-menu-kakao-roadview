@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Map } from 'lucide-react';
 import { RestaurantDetails } from '@/components/RestaurantDetails';
 import { ReviewSection } from '@/components/ReviewSection';
+import { MapPanel } from '@/components/MapPanel';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 
 export default function RestaurantDetailPage() {
@@ -20,9 +21,6 @@ export default function RestaurantDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isMapVisible, setIsMapVisible] = useState(false);
-    const [hasMapLoaded, setHasMapLoaded] = useState(false);
-
-    const { mapContainerRef, displayMarkers, relayout, setCenter, isMapInitialized, mapInstance, setLevel } = useKakaoMap();
 
     useEffect(() => {
         if (activeRestaurantId) {
@@ -46,23 +44,7 @@ export default function RestaurantDetailPage() {
         }
     }, [activeRestaurantId]);
 
-    useEffect(() => {
-        if (isMapVisible) {
-            setTimeout(() => {
-                relayout();
-            }, 300); // A small delay can help
-        }
-    }, [isMapVisible, relayout]);
 
-    useEffect(() => {
-        if (isMapVisible && isMapInitialized && restaurant && mapInstance && !hasMapLoaded) {
-            mapInstance.relayout();
-            setCenter(Number(restaurant.y), Number(restaurant.x));
-            setLevel(3);
-            displayMarkers([restaurant]);
-            setHasMapLoaded(true);
-        }
-    }, [isMapVisible, isMapInitialized, restaurant, mapInstance, setCenter, displayMarkers, setLevel, hasMapLoaded]);
 
     if (loading) {
         return (
@@ -121,8 +103,18 @@ export default function RestaurantDetailPage() {
                 </div>
             </header>
 
-            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isMapVisible ? 'h-64 border rounded-md' : 'h-0'}`}>
-                <div ref={mapContainerRef} className="w-full h-full" />
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isMapVisible ? 'h-64' : 'h-0'}`}>
+                {isMapVisible && restaurant && (
+                    <MapPanel
+                        restaurants={[restaurant]}
+                        selectedRestaurant={restaurant}
+                        userLocation={null}
+                        onSearchInArea={() => {}}
+                        onAddressSearch={() => {}}
+                        showSearchBar={false}
+                        hideControls={false} // 로드뷰 버튼 표시
+                    />
+                )}
             </div>
             
             <div className="flex-1 overflow-y-auto min-h-0 pt-4">

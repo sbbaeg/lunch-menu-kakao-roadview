@@ -9,6 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 import { MapPanel } from '@/components/MapPanel';
 import { RestaurantInfoPanel } from '@/components/RestaurantInfoPanel';
 import { ReviewSection } from '@/components/ReviewSection';
@@ -178,16 +184,23 @@ export default function RestaurantPage() {
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Left Column */}
                     <div className="w-full md:w-1/2 flex flex-col gap-8">
-                        <div className="aspect-video w-full">
-                            <MapPanel 
-                                restaurants={[restaurant]}
-                                selectedRestaurant={restaurant}
-                                userLocation={null}
-                                onSearchInArea={() => {}}
-                                onAddressSearch={() => {}}
-                                showSearchBar={false}
-                            />
-                        </div>
+                        <Accordion type="single" collapsible defaultValue="map">
+                            <AccordionItem value="map">
+                                <AccordionTrigger className="text-lg font-semibold">지도 보기</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="aspect-video w-full">
+                                        <MapPanel 
+                                            restaurants={[restaurant]}
+                                            selectedRestaurant={restaurant}
+                                            userLocation={null}
+                                            onSearchInArea={() => {}}
+                                            onAddressSearch={() => {}}
+                                            showSearchBar={false}
+                                        />
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                         <div className="w-full">
                             
                             {restaurant.dbId ? (
