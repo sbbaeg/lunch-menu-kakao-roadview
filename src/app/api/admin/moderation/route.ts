@@ -5,6 +5,8 @@ import { getServerSession } from 'next-auth/next';
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 const prisma = new PrismaClient();
 
 /**
