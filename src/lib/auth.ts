@@ -25,6 +25,7 @@ export const authOptions: NextAuthOptions = {
           name: profile.kakao_account?.profile?.nickname,
           email: profile.kakao_account?.email ?? `${profile.id}@kakao.local`,
           image: profile.kakao_account?.profile?.profile_image_url,
+          isAdmin: false, // isAdmin 기본값 추가
         };
       },
     }),
@@ -36,6 +37,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
+        session.user.isAdmin = (user as any).isAdmin; // Add isAdmin flag
       }
       return session;
     },

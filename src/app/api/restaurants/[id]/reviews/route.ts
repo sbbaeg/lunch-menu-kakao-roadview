@@ -87,6 +87,10 @@ export async function POST(
 
     const userId = session.user.id;
 
+    // 비속어 검사 로직 추가
+    const profanityWords = await prisma.profanityWord.findMany();
+    const needsModeration = text ? profanityWords.some(badWord => text.includes(badWord.word)) : false;
+
     // 한 사용자가 한 식당에 대해 리뷰를 작성/수정 (upsert 사용)
     const review = await prisma.review.upsert({
       where: {
@@ -98,12 +102,14 @@ export async function POST(
       update: {
         rating,
         text,
+        needsModeration: needsModeration, // 검사 결과 반영
       },
       create: {
         userId,
         restaurantId,
         rating,
         text,
+        needsModeration: needsModeration, // 검사 결과 반영
       },
       include: { // 프론트엔드에서 바로 UI를 업데이트할 수 있도록 user 정보를 포함하여 반환
         user: {
