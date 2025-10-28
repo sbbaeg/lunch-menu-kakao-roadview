@@ -214,34 +214,40 @@ export default function AdminPage() {
                     </div>
                 </CardContent>
             </Card>
-            <Card className="mb-8">
+            <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        검토가 필요한 태그
-                        <Badge variant="destructive">{tagsToModerate.length}</Badge>
+                        검토가 필요한 리뷰
+                        <Badge variant="destructive">{reviewsToModerate.length}</Badge>
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
-                        {tagsToModerate.length === 0 ? (
-                            <p className="text-muted-foreground">검토가 필요한 태그가 없습니다.</p>
+                        {reviewsToModerate.length === 0 ? (
+                            <p className="text-muted-foreground">검토가 필요한 리뷰가 없습니다.</p>
                         ) : (
-                            tagsToModerate.map(tag => (
-                                <div key={tag.id} className="p-3 border rounded-md">
+                            reviewsToModerate.map(review => (
+                                <div key={review.id} className="p-3 border rounded-md">
+                                    <div className="mb-2">
+                                        <span className="font-semibold">음식점:</span> {review.restaurant.placeName} (별점: {review.rating}점)
+                                    </div>
+                                    <blockquote className="p-2 border-l-4 bg-muted text-foreground mb-2">
+                                        {review.text || "(리뷰 내용 없음)"}
+                                    </blockquote>
                                     <div className="flex justify-between items-center mb-2">
-                                        <p className="text-lg font-semibold">{tag.name}</p>
+                                        <div/> {/* 오른쪽 정렬용 빈 div */}
                                         <div className="flex gap-1">
-                                            <Button variant="outline" size="sm" onClick={() => handleEditItem('tag', tag.id)}>
+                                            <Button variant="outline" size="sm" onClick={() => handleEditItem('review', review.id)}>
                                                 <Edit className="h-4 w-4 mr-1" /> 수정
                                             </Button>
-                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteItem('tag', tag.id)}>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteItem('review', review.id)}>
                                                 <Trash2 className="h-4 w-4 mr-1" /> 삭제
                                             </Button>
                                         </div>
                                     </div>
                                     <div className="text-sm text-muted-foreground flex justify-between items-center">
-                                        <span>작성자: {tag.user.name} ({tag.user.email})</span>
-                                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleBanUser(tag.user.id, tag.user.name)}>
+                                        <span>작성자: {review.user.name} ({review.user.email})</span>
+                                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleBanUser(review.user.id, review.user.name)}>
                                             <UserX className="h-4 w-4 mr-1" /> 사용자 차단
                                         </Button>
                                     </div>
