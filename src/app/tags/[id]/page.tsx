@@ -2,6 +2,7 @@
 
 "use client";
 
+import { MyReviewsDialog } from "@/components/MyReviewsDialog";
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -65,10 +66,16 @@ export default function TagProfilePage() {
 
     // State for dialogs
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
+    const [isMyReviewsOpen, setIsMyReviewsOpen] = useState(false);
     const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
     const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
     const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
+
+    const handleMyReviewRestaurantSelect = (kakaoPlaceId: string) => {
+        setIsMyReviewsOpen(false);
+        alert(`(구현 필요) ${kakaoPlaceId} 음식점 정보로 이동`);
+    };
 
     const tagId = params.id;
 
@@ -213,6 +220,7 @@ export default function TagProfilePage() {
                     onShowFavorites={() => setIsFavoritesListOpen(true)}
                     onShowBlacklist={handleBlacklistClick}
                     onShowTagManagement={() => setIsTagManagementOpen(true)}
+                    onShowMyReviews={() => setIsMyReviewsOpen(true)}
                 />
             </div>
             <div className="p-4 md:p-8">
@@ -302,6 +310,13 @@ export default function TagProfilePage() {
                 onToggleTagLink={handleToggleTagLink}
                 onCreateAndLinkTag={handleCreateAndLinkTag}
             />
+
+            <MyReviewsDialog
+                isOpen={isMyReviewsOpen}
+                onOpenChange={setIsMyReviewsOpen}
+                onRestaurantSelect={handleMyReviewRestaurantSelect}
+            />
+            
             <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
                 <AlertDialogContent className="max-w-lg">
                     <AlertDialogHeader>
