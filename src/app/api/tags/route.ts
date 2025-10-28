@@ -37,15 +37,21 @@ export async function POST(request: Request) {
 
     try {
         const { name } = await request.json();
+        const trimmedName = name?.trim();
 
-        if (!name || typeof name !== 'string' || name.trim() === '') {
+        if (!trimmedName || typeof trimmedName !== 'string') {
             return NextResponse.json({ error: '태그 이름이 올바르지 않습니다.' }, { status: 400 });
         }
 
+        // 비속어 검사 로직 추가
+        const profanityWords = await prisma.profanityWord.findMany();
+        const needsModeration = profanityWords.some(badWord => trimmedName.includes(badWord.word));
+
         const newTag = await prisma.tag.create({
             data: {
-                name: name.trim(),
+                name: trimmedName,
                 userId: session.user.id,
+                needsModeration: needsModeration, // 검사 결과 반영
             },
         });
 
