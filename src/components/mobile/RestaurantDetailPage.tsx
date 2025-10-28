@@ -6,13 +6,27 @@ import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Map } from 'lucide-react';
+import { ArrowLeft, Map, Heart, EyeOff, Tags } from 'lucide-react'; 
 import { RestaurantDetails } from '@/components/RestaurantDetails';
 import { ReviewSection } from '@/components/ReviewSection';
 import { MapPanel } from '@/components/MapPanel';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 
-export default function RestaurantDetailPage() {
+interface RestaurantDetailPageProps {
+    isFavorite: (id: string) => boolean;
+    isBlacklisted: (id: string) => boolean;
+    onToggleFavorite: (restaurant: AppRestaurant) => void;
+    onToggleBlacklist: (restaurant: AppRestaurant) => void;
+    onTagManagement: (restaurant: AppRestaurant | null) => void;
+}
+
+export default function RestaurantDetailPage({
+    isFavorite,
+    isBlacklisted,
+    onToggleFavorite,
+    onToggleBlacklist,
+    onTagManagement
+}: RestaurantDetailPageProps) {
     const { data: session } = useSession();
     const activeRestaurantId = useAppStore(state => state.activeRestaurantId);
     const hideRestaurantDetail = useAppStore(state => state.hideRestaurantDetail);
@@ -44,7 +58,29 @@ export default function RestaurantDetailPage() {
         }
     }, [activeRestaurantId]);
 
+    const handleTagClick = () => {
+        if (session && restaurant) {
+            onTagManagement(restaurant);
+        } else if (!session) {
+            alert('로그인이 필요한 기능입니다.');
+        }
+    };
 
+    const handleFavoriteClick = () => {
+        if (session && restaurant) {
+            onToggleFavorite(restaurant);
+        } else if (!session) {
+            alert('로그인이 필요한 기능입니다.');
+        }
+    };
+
+    const handleBlacklistClick = () => {
+        if (session && restaurant) {
+            onToggleBlacklist(restaurant);
+        } else if (!session) {
+            alert('로그인이 필요한 기능입니다.');
+        }
+    };
 
     if (loading) {
         return (
@@ -54,7 +90,7 @@ export default function RestaurantDetailPage() {
                     <Skeleton className="h-32 w-full" />
                     <Skeleton className="h-24 w-full" />
                 </div>
-                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-4 w-1/Try" />
                 <div className="space-y-2">
                     <Skeleton className="h-20 w-full" />
                     <Skeleton className="h-20 w-full" />
@@ -86,7 +122,6 @@ export default function RestaurantDetailPage() {
             </div>
         );
     }
-
     return (
         <div className="p-4 h-full flex flex-col">
             <header className="flex-shrink-0 mb-4">
@@ -112,12 +147,43 @@ export default function RestaurantDetailPage() {
                         onSearchInArea={() => {}}
                         onAddressSearch={() => {}}
                         showSearchBar={false}
-                        hideControls={false} // 로드뷰 버튼 표시
+                        hideControls={false}
                     />
                 )}
             </div>
-            
-            <div className="flex-1 overflow-y-auto min-h-0 pt-4">
+            <div className="flex items-center gap-2 mb-3 px-1 pt-4">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={handleTagClick}
+                    disabled={!session}
+                >
+                    <Tags className="h-4 w-4 mr-2" />
+                    태그
+                </Button>
+                <Button 
+                    variant={isBlacklisted(restaurant.id) ? "destructive" : "outline"}
+                    size="sm" 
+                    className="flex-1"
+                    onClick={handleBlacklistClick}
+                    disabled={!session}
+                >
+                    <EyeOff className="h-4 w-4 mr-2" />
+                    블랙리스트
+                </Button>
+                <Button 
+                    variant={isFavorite(restaurant.id) ? "default" : "outline"}
+                    size="sm" 
+                    className="flex-1"
+                    onClick={handleFavoriteClick}
+                    disabled={!session}
+                >
+                    <Heart className={`h-4 w-4 mr-2 ${isFavorite(restaurant.id) ? 'fill-current' : ''}`} />
+                    즐겨찾기
+                </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="bg-card p-4 rounded-lg shadow-sm mb-6 border">
                     <RestaurantDetails 
                         restaurant={restaurant} 
@@ -125,8 +191,11 @@ export default function RestaurantDetailPage() {
                         hideViewDetailsButton={true}
                     />
                 </div>
-
-                <ReviewSection restaurantId={restaurant.dbId!} />
+                {restaurant.dbId ? (
+                    <ReviewSection restaurantId={restaurant.dbId} />
+                ) : (
+                    <p className="text-center text-muted-foreground">리뷰를 불러올 수 없습니다.</p>
+                )}
             </div>
         </div>
     );

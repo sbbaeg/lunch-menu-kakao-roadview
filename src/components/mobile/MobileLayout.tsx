@@ -206,7 +206,13 @@ export default function MobileLayout() {
                 </main>
             ) : activeView === 'restaurantDetail' ? (
                 <main className="absolute inset-0">
-                    <RestaurantDetailPage />
+                    <RestaurantDetailPage 
+                        isFavorite={isFavorite}
+                        isBlacklisted={isBlacklisted}
+                        onToggleFavorite={toggleFavorite}
+                        onToggleBlacklist={toggleBlacklist}
+                        onTagManagement={setTaggingRestaurant}
+                    />
                 </main>
             ) : ( // tagExplore
                 <main className="absolute inset-0">
