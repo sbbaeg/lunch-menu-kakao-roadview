@@ -147,7 +147,7 @@ export default function MyPage({
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
                         </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={showMyReviews}>
-                            <FileText className="mr-2 h-4 w-4" /> 내가 쓴 리뷰
+                            <FileText className="mr-2 h-4 w-4" /> 내 리뷰
                         </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowBlacklist}>
                             <EyeOff className="mr-2 h-4 w-4" /> 블랙리스트 관리

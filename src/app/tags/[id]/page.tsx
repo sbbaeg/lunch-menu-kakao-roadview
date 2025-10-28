@@ -72,11 +72,6 @@ export default function TagProfilePage() {
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
     const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
 
-    const handleMyReviewRestaurantSelect = (kakaoPlaceId: string) => {
-        setIsMyReviewsOpen(false);
-        alert(`(구현 필요) ${kakaoPlaceId} 음식점 정보로 이동`);
-    };
-
     const tagId = params.id;
 
     useEffect(() => {
@@ -311,12 +306,6 @@ export default function TagProfilePage() {
                 onCreateAndLinkTag={handleCreateAndLinkTag}
             />
 
-            <MyReviewsDialog
-                isOpen={isMyReviewsOpen}
-                onOpenChange={setIsMyReviewsOpen}
-                onRestaurantSelect={handleMyReviewRestaurantSelect}
-            />
-            
             <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
                 <AlertDialogContent className="max-w-lg">
                     <AlertDialogHeader>

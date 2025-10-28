@@ -180,7 +180,7 @@ export function SideMenuSheet({
                             즐겨찾기 목록
                         </Button>
                         <Button variant="ghost" className="justify-start" onClick={onShowMyReviews}>
-                            <FileText className="h-4 w-4 mr-2" /> 내가 쓴 리뷰
+                            내 리뷰
                         </Button>
                         <Button variant="ghost" className="justify-start" onClick={onShowBlacklist}>
                             블랙리스트 관리
@@ -188,7 +188,7 @@ export function SideMenuSheet({
                         <Accordion type="single" collapsible className="w-full">
                             <AccordionItem value="item-1" className="border-none">
                                 <AccordionTrigger className="flex w-full justify-start p-2 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">
-                                    <Tags className="h-4 w-4 mr-2" /> 태그
+                                    태그
                                 </AccordionTrigger>
                                 <AccordionContent className="pb-0">
                                     <div className="flex flex-col pl-4 pt-2">

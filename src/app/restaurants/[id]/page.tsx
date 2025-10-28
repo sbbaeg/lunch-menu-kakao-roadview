@@ -62,12 +62,6 @@ export default function RestaurantPage() {
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
 
-  const handleMyReviewRestaurantSelect = (kakaoPlaceId: string) => {
-        setIsMyReviewsOpen(false);
-        // (빌드 오류 해결을 위해 임시로 alert을 사용합니다)
-        alert(`(구현 필요) ${kakaoPlaceId} 음식점 정보로 이동`);
-    };
-
   const id = params.id as string;
 
   useEffect(() => {
@@ -275,12 +269,6 @@ export default function RestaurantPage() {
             userTags={userTags}
             onToggleTagLink={handleToggleTagLink}
             onCreateAndLinkTag={handleCreateAndLinkTag}
-        />
-
-        <MyReviewsDialog
-            isOpen={isMyReviewsOpen}
-            onOpenChange={setIsMyReviewsOpen}
-            onRestaurantSelect={handleMyReviewRestaurantSelect}
         />
 
         <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
