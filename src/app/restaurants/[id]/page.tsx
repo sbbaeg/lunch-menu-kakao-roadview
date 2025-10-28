@@ -1,6 +1,7 @@
 // src/app/restaurants/[id]/page.tsx
 "use client";
 
+import { MyReviewsDialog } from "@/components/MyReviewsDialog";
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -55,10 +56,17 @@ export default function RestaurantPage() {
   // State for dialogs
   const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
   const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
+  const [isMyReviewsOpen, setIsMyReviewsOpen] = useState(false);
   const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
+
+  const handleMyReviewRestaurantSelect = (kakaoPlaceId: string) => {
+        setIsMyReviewsOpen(false);
+        // (빌드 오류 해결을 위해 임시로 alert을 사용합니다)
+        alert(`(구현 필요) ${kakaoPlaceId} 음식점 정보로 이동`);
+    };
 
   const id = params.id as string;
 
@@ -170,6 +178,7 @@ export default function RestaurantPage() {
                 onShowFavorites={() => setIsFavoritesListOpen(true)}
                 onShowBlacklist={handleBlacklistClick}
                 onShowTagManagement={() => setIsTagManagementOpen(true)}
+                onShowMyReviews={() => setIsMyReviewsOpen(true)}
             />
         </div>
         <div className="w-full max-w-7xl mx-auto">
@@ -266,6 +275,12 @@ export default function RestaurantPage() {
             userTags={userTags}
             onToggleTagLink={handleToggleTagLink}
             onCreateAndLinkTag={handleCreateAndLinkTag}
+        />
+
+        <MyReviewsDialog
+            isOpen={isMyReviewsOpen}
+            onOpenChange={setIsMyReviewsOpen}
+            onRestaurantSelect={handleMyReviewRestaurantSelect}
         />
 
         <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
