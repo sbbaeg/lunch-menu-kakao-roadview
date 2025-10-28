@@ -7,12 +7,34 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit, UserX } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface ProfanityWord {
     id: number;
     word: string;
     createdAt: string;
+}
+
+interface ModerationUser {
+    id: string;
+    name: string | null;
+    email: string | null;
+}
+interface ModerationTag {
+    id: number;
+    name: string;
+    user: ModerationUser;
+}
+interface ModerationReview {
+    id: number;
+    text: string | null;
+    rating: number;
+    user: ModerationUser;
+    restaurant: {
+        id: number;
+        placeName: string;
+    };
 }
 
 export default function AdminPage() {
@@ -22,23 +44,37 @@ export default function AdminPage() {
     const [newWord, setNewWord] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [tagsToModerate, setTagsToModerate] = useState<ModerationTag[]>([]);
+    const [reviewsToModerate, setReviewsToModerate] = useState<ModerationReview[]>([]);
 
     useEffect(() => {
         if (status === 'loading') return;
 
         if (status === 'unauthenticated' || !session?.user?.isAdmin) {
-            router.push('/'); // 관리자가 아니면 메인 페이지로 리디렉션
+            router.push('/');
             return;
         }
 
-        const fetchWords = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch('/api/admin/profanity');
-                if (!res.ok) {
+                const [profanityRes, moderationRes] = await Promise.all([
+                    fetch('/api/admin/profanity'),
+                    fetch('/api/admin/moderation') // 새 API 호출
+                ]);
+
+                if (!profanityRes.ok) {
                     throw new Error('비속어를 불러오는 데 실패했습니다.');
                 }
-                const data = await res.json();
-                setWords(data);
+                const profanityData = await profanityRes.json();
+                setWords(profanityData);
+
+                if (!moderationRes.ok) {
+                    throw new Error('검토 목록을 불러오는 데 실패했습니다.');
+                }
+                const moderationData = await moderationRes.json();
+                setTagsToModerate(moderationData.tags);
+                setReviewsToModerate(moderationData.reviews);
+
             } catch (e: any) {
                 setError(e.message);
             } finally {
@@ -46,7 +82,7 @@ export default function AdminPage() {
             }
         };
 
-        fetchWords();
+        fetchData();
     }, [session, status, router]);
 
     const handleAddWord = async () => {
@@ -83,6 +119,21 @@ export default function AdminPage() {
             setError(e.message);
         }
     };
+
+    // --- ⬇️ 3. (임시) 액션 핸들러 추가 ⬇️ ---
+    // (기능은 다음 단계에서 구현합니다)
+    const handleEditItem = (type: 'tag' | 'review', id: number) => {
+        alert(`[구현 필요] ${type} #${id} 수정`);
+    };
+    
+    const handleDeleteItem = (type: 'tag' | 'review', id: number) => {
+        alert(`[구현 필요] ${type} #${id} 삭제`);
+    };
+    
+    const handleBanUser = (userId: string, userName: string | null) => {
+        alert(`[구현 필요] 사용자 ${userName}(${userId}) 차단`);
+    };
+    // --- ⬆️ 3. (임시) 액션 핸들러 추가 ⬆️ ---
 
     if (status === 'loading' || isLoading) {
         return <div className="p-8">Loading...</div>;
@@ -126,8 +177,80 @@ export default function AdminPage() {
                     </div>
                 </CardContent>
             </Card>
-
-            {/* 여기에 다른 관리자 기능을 추가할 수 있습니다. */}
+            <Card className="mb-8">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        검토가 필요한 태그
+                        <Badge variant="destructive">{tagsToModerate.length}</Badge>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-3">
+                        {tagsToModerate.length === 0 ? (
+                            <p className="text-muted-foreground">검토가 필요한 태그가 없습니다.</p>
+                        ) : (
+                            tagsToModerate.map(tag => (
+                                <div key={tag.id} className="p-3 border rounded-md">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-lg font-semibold">{tag.name}</p>
+                                        <div className="flex gap-1">
+                                            <Button variant="outline" size="sm" onClick={() => handleEditItem('tag', tag.id)}>
+                                                <Edit className="h-4 w-4 mr-1" /> 수정
+                                            </Button>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteItem('tag', tag.id)}>
+                                                <Trash2 className="h-4 w-4 mr-1" /> 삭제
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground flex justify-between items-center">
+                                        <span>작성자: {tag.user.name} ({tag.user.email})</span>
+                                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleBanUser(tag.user.id, tag.user.name)}>
+                                            <UserX className="h-4 w-4 mr-1" /> 사용자 차단
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+            <Card className="mb-8">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        검토가 필요한 태그
+                        <Badge variant="destructive">{tagsToModerate.length}</Badge>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-3">
+                        {tagsToModerate.length === 0 ? (
+                            <p className="text-muted-foreground">검토가 필요한 태그가 없습니다.</p>
+                        ) : (
+                            tagsToModerate.map(tag => (
+                                <div key={tag.id} className="p-3 border rounded-md">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-lg font-semibold">{tag.name}</p>
+                                        <div className="flex gap-1">
+                                            <Button variant="outline" size="sm" onClick={() => handleEditItem('tag', tag.id)}>
+                                                <Edit className="h-4 w-4 mr-1" /> 수정
+                                            </Button>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteItem('tag', tag.id)}>
+                                                <Trash2 className="h-4 w-4 mr-1" /> 삭제
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground flex justify-between items-center">
+                                        <span>작성자: {tag.user.name} ({tag.user.email})</span>
+                                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleBanUser(tag.user.id, tag.user.name)}>
+                                            <UserX className="h-4 w-4 mr-1" /> 사용자 차단
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
         </main>
     );
 }
