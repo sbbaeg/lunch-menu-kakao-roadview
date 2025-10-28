@@ -6,6 +6,7 @@ import MapPage from './MapPage';
 import FavoritesPage from './FavoritesPage';
 import RoulettePage from './RoulettePage'; // 룰렛 페이지 컴포넌트 import
 import MyPage from './MyPage'; // 마이페이지 컴포넌트 import
+import MyReviewsPage from './MyReviewsPage';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -214,9 +215,13 @@ export default function MobileLayout() {
                         onTagManagement={setTaggingRestaurant}
                     />
                 </main>
-            ) : ( // tagExplore
+            ) : activeView === 'tagExplore' ? ( // ⬅️ 1. 'else'를 'else if'로 변경
                 <main className="absolute inset-0">
                     <TagExplorePage />
+                </main>
+            ) : ( // ⬅️ 2. 'myReviews'를 위한 새로운 'else' 블록 추가
+                <main className="absolute inset-0">
+                    <MyReviewsPage />
                 </main>
             )}
 

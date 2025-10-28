@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,6 +41,7 @@ export default function MyPage({
 }: MyPageProps) {
     const { data: session, status } = useSession();
     const showTagExplore = useAppStore((state) => state.showTagExplore);
+    const showMyReviews = useAppStore((state) => state.showMyReviews);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -144,6 +145,9 @@ export default function MyPage({
                         <h3 className="text-lg font-semibold mb-2">내 활동 관리</h3>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowFavorites}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
+                        </Button>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={showMyReviews}>
+                            <FileText className="mr-2 h-4 w-4" /> 내가 쓴 리뷰
                         </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowBlacklist}>
                             <EyeOff className="mr-2 h-4 w-4" /> 블랙리스트 관리
