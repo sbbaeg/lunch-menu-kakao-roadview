@@ -24,7 +24,7 @@ interface MyReview {
 
 export default function MyReviewsPage() {
     const showRestaurantDetail = useAppStore(state => state.showRestaurantDetail);
-    const hideMyReviews = useAppStore(state => state.hideMyReviews);
+    const goBack = useAppStore(state => state.goBack)
     
     const [reviews, setReviews] = useState<MyReview[]>([]);
     const [loading, setLoading] = useState(true);
@@ -54,7 +54,7 @@ export default function MyReviewsPage() {
     return (
         <div className="p-4 h-full flex flex-col bg-card">
             <header className="flex-shrink-0">
-                <Button variant="ghost" onClick={hideMyReviews} className="w-fit p-0 h-auto text-muted-foreground mb-2">
+                <Button variant="ghost" onClick={goBack} className="w-fit p-0 h-auto text-muted-foreground mb-2">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     마이페이지로
                 </Button>

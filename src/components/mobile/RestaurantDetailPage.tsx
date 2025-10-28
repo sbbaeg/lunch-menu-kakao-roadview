@@ -29,7 +29,7 @@ export default function RestaurantDetailPage({
 }: RestaurantDetailPageProps) {
     const { data: session } = useSession();
     const activeRestaurantId = useAppStore(state => state.activeRestaurantId);
-    const hideRestaurantDetail = useAppStore(state => state.hideRestaurantDetail);
+    const goBack = useAppStore(state => state.goBack)
 
     const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
     const [loading, setLoading] = useState(true);
@@ -102,7 +102,7 @@ export default function RestaurantDetailPage({
     if (error) {
         return (
             <div className="p-4">
-                 <Button variant="ghost" onClick={hideRestaurantDetail} className="w-fit p-0 h-auto text-muted-foreground mb-4">
+                 <Button variant="ghost" onClick={goBack} className="w-fit p-0 h-auto text-muted-foreground mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     뒤로가기
                 </Button>
@@ -114,7 +114,7 @@ export default function RestaurantDetailPage({
     if (!restaurant) {
         return (
             <div className="p-4">
-                <Button variant="ghost" onClick={hideRestaurantDetail} className="w-fit p-0 h-auto text-muted-foreground mb-4">
+                <Button variant="ghost" onClick={goBack} className="w-fit p-0 h-auto text-muted-foreground mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     뒤로가기
                 </Button>
@@ -125,7 +125,7 @@ export default function RestaurantDetailPage({
     return (
         <div className="p-4 h-full flex flex-col">
             <header className="flex-shrink-0 mb-4">
-                <Button variant="ghost" onClick={hideRestaurantDetail} className="w-fit p-0 h-auto text-muted-foreground mb-2">
+                <Button variant="ghost" onClick={goBack} className="w-fit p-0 h-auto text-muted-foreground mb-2">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     뒤로가기
                 </Button>

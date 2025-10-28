@@ -26,7 +26,7 @@ type TagDetailData = Tag & {
 export default function TagDetailPage() {
     const { data: session } = useSession();
     const activeTagId = useAppStore(state => state.activeTagId);
-    const hideTagDetail = useAppStore(state => state.hideTagDetail);
+    const goBack = useAppStore(state => state.goBack);
 
     const [tagData, setTagData] = useState<TagDetailData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -122,7 +122,7 @@ export default function TagDetailPage() {
     if (error) {
         return (
             <div className="p-4">
-                 <Button variant="ghost" onClick={hideTagDetail} className="w-fit p-0 h-auto text-muted-foreground mb-4">
+                 <Button variant="ghost" onClick={goBack} className="w-fit p-0 h-auto text-muted-foreground mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     뒤로가기
                 </Button>
@@ -134,7 +134,7 @@ export default function TagDetailPage() {
     if (!tagData) {
         return (
             <div className="p-4">
-                <Button variant="ghost" onClick={hideTagDetail} className="w-fit p-0 h-auto text-muted-foreground mb-4">
+                <Button variant="ghost" onClick={goBack} className="w-fit p-0 h-auto text-muted-foreground mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     뒤로가기
                 </Button>
@@ -155,7 +155,7 @@ export default function TagDetailPage() {
                 }}
                 onSubscribe={handleSubscribe}
                 onShare={handleShare}
-                onBack={hideTagDetail}
+                onBack={goBack}
                 isMapVisible={isMapVisible}
                 onToggleMap={toggleMap}
             />

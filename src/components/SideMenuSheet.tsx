@@ -30,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Menu, Heart, EyeOff, Tags } from "lucide-react";
+import { Menu, Heart, EyeOff, Tags, FileText } from "lucide-react";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,12 +39,14 @@ interface SideMenuSheetProps {
     onShowFavorites: () => void;
     onShowBlacklist: () => void;
     onShowTagManagement: () => void;
+    onShowMyReviews: () => void;
 }
 
 export function SideMenuSheet({
     onShowFavorites,
     onShowBlacklist,
     onShowTagManagement,
+    onShowMyReviews,
 }: SideMenuSheetProps) {
     const { data: session, status } = useSession();
     const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -177,12 +179,17 @@ export function SideMenuSheet({
                         <Button variant="ghost" className="justify-start" onClick={onShowFavorites}>
                             즐겨찾기 목록
                         </Button>
+                        <Button variant="ghost" className="justify-start" onClick={onShowMyReviews}>
+                            <FileText className="h-4 w-4 mr-2" /> 내가 쓴 리뷰
+                        </Button>
                         <Button variant="ghost" className="justify-start" onClick={onShowBlacklist}>
                             블랙리스트 관리
                         </Button>
                         <Accordion type="single" collapsible className="w-full">
                             <AccordionItem value="item-1" className="border-none">
-                                <AccordionTrigger className="py-2 px-4 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">태그</AccordionTrigger>
+                                <AccordionTrigger className="flex w-full justify-start p-2 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">
+                                    <Tags className="h-4 w-4 mr-2" /> 태그
+                                </AccordionTrigger>
                                 <AccordionContent className="pb-0">
                                     <div className="flex flex-col pl-4 pt-2">
                                         <Button variant="ghost" className="justify-start w-full" onClick={onShowTagManagement}>- 태그 관리</Button>

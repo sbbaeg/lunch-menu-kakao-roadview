@@ -10,6 +10,7 @@ import { MapPanel } from "@/components/MapPanel";  //지도
 import { MainControlPanel } from "@/components/MainControlPanel"; //오른쪽 버튼
 import { RouletteDialog } from "@/components/RouletteDialog"; //룰렛
 import { SideMenuSheet } from "@/components/SideMenuSheet"; //사이드햄버거메뉴
+import { MyReviewsDialog } from "@/components/MyReviewsDialog";
 
 //논리구조 리펙토링
 import { useFavorites } from "@/hooks/useFavorites";
@@ -66,7 +67,6 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 
-
 import {
     AlertDialog,
     AlertDialogAction,
@@ -83,8 +83,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 
 import { Badge } from "@/components/ui/badge";
-
-
 
 // page.tsx 컴포넌트 내부에서만 사용하는 타입들
 interface RouletteOption {
@@ -141,6 +139,7 @@ export default function Home() {
     const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null); // 현재 태그를 편집할 음식점 정보
 
     const [isHelpOpen, setIsHelpOpen] = useState(false);
+    const [isMyReviewsOpen, setIsMyReviewsOpen] = useState(false);
 
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
@@ -276,6 +275,12 @@ export default function Home() {
         updateFavoriteInList(updatedRestaurant);    // 2. useFavorites의 목록 업데이트
     };
 
+    // "내 리뷰" Dialog용 핸들러
+    const handleMyReviewRestaurantSelect = (kakaoPlaceId: string) => {
+        setIsMyReviewsOpen(false); // 1. Dialog 닫기
+        setSelectedItemId(kakaoPlaceId); // 2. 지도/결과 패널에서 해당 음식점 선택
+    };
+
     return (
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
             <div className="absolute top-2 right-2 z-50">
@@ -283,6 +288,7 @@ export default function Home() {
                     onShowFavorites={() => setIsFavoritesListOpen(true)}
                     onShowBlacklist={handleBlacklistClick}
                     onShowTagManagement={() => setIsTagManagementOpen(true)}
+                    onShowMyReviews={() => setIsMyReviewsOpen(true)}
                 />
             </div>
             <div className="w-full max-w-6xl p-6 md:p-8 flex flex-col md:flex-row gap-6">
@@ -359,6 +365,13 @@ export default function Home() {
                 onToggleBlacklist={toggleBlacklist}
                 onTagManagement={setTaggingRestaurant}
             />
+
+            <MyReviewsDialog
+                isOpen={isMyReviewsOpen}
+                onOpenChange={setIsMyReviewsOpen}
+                onRestaurantSelect={handleMyReviewRestaurantSelect}
+            />
+
             <BlacklistDialog
                 isOpen={isBlacklistOpen}
                 onOpenChange={setIsBlacklistOpen}
