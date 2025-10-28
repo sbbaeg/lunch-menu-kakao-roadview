@@ -275,12 +275,6 @@ export default function Home() {
         updateFavoriteInList(updatedRestaurant);    // 2. useFavorites의 목록 업데이트
     };
 
-    // "내 리뷰" Dialog용 핸들러
-    const handleMyReviewRestaurantSelect = (kakaoPlaceId: string) => {
-        setIsMyReviewsOpen(false); // 1. Dialog 닫기
-        setSelectedItemId(kakaoPlaceId); // 2. 지도/결과 패널에서 해당 음식점 선택
-    };
-
     return (
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
             <div className="absolute top-2 right-2 z-50">
@@ -364,12 +358,6 @@ export default function Home() {
                 onToggleFavorite={toggleFavorite}
                 onToggleBlacklist={toggleBlacklist}
                 onTagManagement={setTaggingRestaurant}
-            />
-
-            <MyReviewsDialog
-                isOpen={isMyReviewsOpen}
-                onOpenChange={setIsMyReviewsOpen}
-                onRestaurantSelect={handleMyReviewRestaurantSelect}
             />
 
             <BlacklistDialog

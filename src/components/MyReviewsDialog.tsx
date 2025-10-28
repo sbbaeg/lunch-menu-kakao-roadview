@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     Dialog,
     DialogContent,
@@ -30,11 +31,10 @@ interface MyReview {
 interface MyReviewsDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    // 2단계에서 page.tsx가 처리할 함수
-    onRestaurantSelect: (kakaoPlaceId: string) => void; 
 }
 
-export function MyReviewsDialog({ isOpen, onOpenChange, onRestaurantSelect }: MyReviewsDialogProps) {
+export function MyReviewsDialog({ isOpen, onOpenChange }: MyReviewsDialogProps) {
+    const router = useRouter();
     const [reviews, setReviews] = useState<MyReview[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -61,12 +61,11 @@ export function MyReviewsDialog({ isOpen, onOpenChange, onRestaurantSelect }: My
     }, [isOpen]);
 
     const handleRestaurantClick = (kakaoPlaceId: string) => {
-        // 2. page.tsx로 kakaoPlaceId를 전달하고
-        onRestaurantSelect(kakaoPlaceId);
-        // 3. Dialog를 닫습니다.
+        // 4. Dialog를 닫고,
         onOpenChange(false);
+        // 5. 해당 음식점의 PC 상세 페이지로 URL 이동
+        router.push(`/restaurants/${kakaoPlaceId}`);
     };
-
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-xl h-[70vh] flex flex-col">
