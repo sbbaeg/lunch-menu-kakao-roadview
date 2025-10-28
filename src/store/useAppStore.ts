@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { AppRestaurant, RestaurantWithTags } from '@/lib/types';
 import { FilterState } from '@/components/FilterDialog';
@@ -11,6 +10,7 @@ interface AppState {
   userLocation: { lat: number; lng: number } | null;
   activeTab: 'map' | 'favorites' | 'roulette' | 'my-page';
   activeView: 'tabs' | 'tagDetail' | 'restaurantDetail' | 'tagExplore' | 'myReviews';
+  previousView: AppState['activeView'];
   activeTagId: number | null;
   activeRestaurantId: string | null;
 
@@ -27,17 +27,13 @@ interface AppState {
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
   resetResultPanelState: () => void;
   setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
-  setActiveView: (view: 'tabs' | 'tagDetail' | 'restaurantDetail' | 'tagExplore') => void;
-  setActiveTagId: (tagId: number | null) => void;
+  
+  goBack: () => void;
   showTagDetail: (tagId: number) => void;
-  hideTagDetail: () => void;
-  setActiveRestaurantId: (restaurantId: string | null) => void;
   showRestaurantDetail: (restaurantId: string) => void;
-  hideRestaurantDetail: () => void;
   showTagExplore: () => void;
-  hideTagExplore: () => void;
   showMyReviews: () => void;
-  hideMyReviews: () => void;
+  
   setSelectedItemId: (id: string) => void;
   setRestaurantList: (restaurants: AppRestaurant[]) => void;
   setUserLocation: (location: { lat: number; lng: number } | null) => void;
@@ -55,13 +51,13 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
-  // Initial State
   selectedItemId: '',
   restaurantList: [],
   rouletteItems: [],
   userLocation: null,
   activeTab: 'map',
   activeView: 'tabs',
+  previousView: 'tabs',
   activeTagId: null,
   activeRestaurantId: null,
   
@@ -83,21 +79,47 @@ export const useAppStore = create<AppState>((set, get) => ({
   isMapReady: false,
   resultPanelState: 'default',
 
-  // Actions
-  showMyReviews: () => set({ activeView: 'myReviews' }),
-  hideMyReviews: () => set({ activeView: 'tabs' }),
   setResultPanelState: (state) => set({ resultPanelState: state }),
   resetResultPanelState: () => set({ resultPanelState: 'default' }),
   setActiveTab: (tab) => set({ activeTab: tab }),
-  setActiveView: (view) => set({ activeView: view }),
-  setActiveTagId: (tagId) => set({ activeTagId: tagId }),
-  showTagDetail: (tagId) => set({ activeView: 'tagDetail', activeTagId: tagId }),
-  hideTagDetail: () => set({ activeView: 'tabs', activeTagId: null }),
-  setActiveRestaurantId: (restaurantId) => set({ activeRestaurantId: restaurantId }),
-  showRestaurantDetail: (restaurantId) => set({ activeView: 'restaurantDetail', activeRestaurantId: restaurantId }),
-  hideRestaurantDetail: () => set({ activeView: 'tabs', activeRestaurantId: null }),
-  showTagExplore: () => set({ activeView: 'tagExplore' }),
-  hideTagExplore: () => set({ activeView: 'tabs' }),
+
+  showTagDetail: (tagId) => set(state => ({ 
+    activeView: 'tagDetail', 
+    previousView: state.activeView, 
+    activeTagId: tagId 
+  })),
+  
+  showRestaurantDetail: (restaurantId) => set(state => ({
+    activeView: 'restaurantDetail',
+    previousView: state.activeView,
+    activeRestaurantId: restaurantId
+  })),
+
+  showTagExplore: () => set(state => ({
+    activeView: 'tagExplore',
+    previousView: state.activeView
+  })),
+
+  showMyReviews: () => set(state => ({
+    activeView: 'myReviews',
+    previousView: state.activeView
+  })),
+
+  goBack: () => set(state => {
+    const isReturningFromDetail = state.activeView !== 'tabs';
+    return {
+      activeView: state.previousView, 
+      previousView: 'tabs', 
+      activeTagId: (isReturningFromDetail && state.activeView === 'tagDetail') ? null : state.activeTagId,
+      activeRestaurantId: (isReturningFromDetail && state.activeView === 'restaurantDetail') ? null : state.activeRestaurantId,
+    };
+  }),
+
+  hideTagDetail: () => get().goBack(),
+  hideRestaurantDetail: () => get().goBack(),
+  hideTagExplore: () => get().goBack(),
+  hideMyReviews: () => get().goBack(),
+
   setSelectedItemId: (id) => set({ selectedItemId: id }),
   setRestaurantList: (restaurants) => set({ restaurantList: restaurants }),
   setUserLocation: (location) => set({ userLocation: location }),
@@ -132,7 +154,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         id: place.id,
         kakaoPlaceId: place.id,
         placeName: place.place_name,
-        categoryName: place.category_name,
+        categoryName: place.place_name,
         address: place.road_address_name,
         x: place.x,
         y: place.y,
@@ -199,13 +221,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   
   handleSearchInArea: async (center) => {
-    get().resetResultPanelState(); // 패널 상태 리셋
+    get().resetResultPanelState();
     set({ loading: true });
     get().clearMapAndResults();
     try {
         const restaurants = await get().getNearbyRestaurants(center);
         if (restaurants.length === 0) {
-            // Let component handle alert
         } else {
             const { sortOrder, resultCount } = get().filters;
             const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
@@ -215,16 +236,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
     } catch (error) {
         console.error("Error:", error);
-        // Let component handle alert
+
     } finally {
         set({ loading: false });
     }
   },
 
   handleAddressSearch: async (keyword, center) => {
-    get().resetResultPanelState(); // 패널 상태 리셋
+    get().resetResultPanelState();
     if (!keyword.trim()) {
-      // Let component handle alert
       return;
     }
     set({ loading: true });
@@ -235,10 +255,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         const restaurants = await get().getNearbyRestaurants(center, keyword);
         set({ restaurantList: restaurants });
         if (restaurants.length === 0) {
-            // Let component handle alert
         }
     } catch (error) {
-        // Let component handle alert
+
     } finally {
         set({ loading: false });
     }
@@ -252,7 +271,5 @@ export const useAppStore = create<AppState>((set, get) => ({
     set(state => ({
       restaurantList: state.restaurantList.map(r => r.id === updatedRestaurant.id ? updatedRestaurant : r)
     }));
-    // Note: This store does not manage favorites, so the call to updateFavoriteInList
-    // needs to be handled in the component that uses the useFavorites hook.
   },
 }));

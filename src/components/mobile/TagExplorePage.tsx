@@ -51,7 +51,7 @@ function TagRankingItem({ tag, isSubscribed, onToggleSubscribe, onTagClick, isAu
 
 export default function TagExplorePage() {
   const { status } = useSession();
-  const hideTagExplore = useAppStore((state) => state.hideTagExplore);
+  const goBack = useAppStore((state) => state.goBack);
   const showTagDetail = useAppStore((state) => state.showTagDetail);
 
   const [rankedTags, setRankedTags] = useState<RankedTag[]>([]);
@@ -110,7 +110,7 @@ export default function TagExplorePage() {
   return (
     <div className="p-4 h-full flex flex-col bg-card">
         <header className="flex-shrink-0">
-            <Button variant="ghost" onClick={hideTagExplore} className="w-fit p-0 h-auto text-muted-foreground mb-2">
+            <Button variant="ghost" onClick={goBack} className="w-fit p-0 h-auto text-muted-foreground mb-2">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 뒤로가기
             </Button>
