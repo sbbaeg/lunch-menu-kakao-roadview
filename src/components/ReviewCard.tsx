@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/StarRating";
-import { ThumbsUp, ThumbsDown, Edit, Trash2 } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Edit, Trash2, Flag } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -30,6 +30,8 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
   const [localDownvotes, setLocalDownvotes] = useState(review.downvotes);
   const [localUserVote, setLocalUserVote] = useState(review.currentUserVote);
   const [isVoting, setIsVoting] = useState(false);
+
+  const [isReporting, setIsReporting] = useState(false);
 
   const handleVote = async (voteType: VoteType) => {
     if (!session || isVoting) return;
@@ -60,6 +62,32 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
       alert('투표 처리에 실패했습니다.');
     }
     setIsVoting(false);
+  };
+
+  const handleReport = async () => {
+    if (!session || isAuthor || isReporting) return;
+    
+    if (confirm('이 리뷰를 부적절한 내용으로 신고하시겠습니까?')) {
+      setIsReporting(true);
+      try {
+        const response = await fetch(`/api/reviews/${review.id}/report`, {
+          method: 'POST',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to report');
+        }
+        
+        alert('신고가 접수되었습니다. 관리자 검토 후 조치될 예정입니다.');
+        // (신고 버튼을 숨기거나 비활성화 처리도 가능)
+      
+      } catch (error) {
+        console.error("Failed to report review:", error);
+        alert('신고 처리에 실패했습니다.');
+      } finally {
+        setIsReporting(false);
+      }
+    }
   };
 
   return (
@@ -115,6 +143,18 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
           className={`gap-1 ${localUserVote === 'DOWNVOTE' ? 'bg-destructive/10 border-destructive text-destructive' : ''}`}>
           <ThumbsDown className="h-4 w-4" />
           <span>{localDownvotes}</span>
+        </Button>
+        <div className="flex-grow" /> {/* 버튼을 오른쪽으로 밀기 */}
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleReport}
+          disabled={!session || isAuthor || isReporting}
+          className="text-muted-foreground hover:text-destructive gap-1"
+        >
+          <Flag className="h-4 w-4" />
+          {isReporting ? '신고 중...' : '신고'}
         </Button>
       </div>
     </div>
