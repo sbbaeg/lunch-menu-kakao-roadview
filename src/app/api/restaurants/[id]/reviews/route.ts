@@ -89,7 +89,11 @@ export async function POST(
 
     // 비속어 검사 로직 추가
     const profanityWords = await prisma.profanityWord.findMany();
-    const needsModeration = text ? profanityWords.some(badWord => text.includes(badWord.word)) : false;
+    const lowerCaseText = text ? text.toLowerCase() : '';
+
+    const needsModeration = text ? profanityWords.some(badWord => 
+        lowerCaseText.includes(badWord.word.toLowerCase())
+    ) : false;
 
     // 한 사용자가 한 식당에 대해 리뷰를 작성/수정 (upsert 사용)
     const review = await prisma.review.upsert({
