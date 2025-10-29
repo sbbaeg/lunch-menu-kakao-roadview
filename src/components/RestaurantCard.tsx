@@ -66,7 +66,7 @@ export function RestaurantCard({
   return (
     <AccordionItem value={restaurant.id} key={restaurant.id} className="border-none group">
       <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
-        <AccordionTrigger className="text-left hover:no-underline p-0 [&_svg]:hidden">
+        <AccordionTrigger className="text-left hover:no-underline p-0">
           <div className="w-full">
             <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
               <CardTitle className="text-md">{restaurant.placeName}</CardTitle>
