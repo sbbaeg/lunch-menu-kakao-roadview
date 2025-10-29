@@ -178,19 +178,26 @@ export async function GET(request: Request) {
         // DB에서 태그 정보와 레스토랑 ID를 가져옵니다.
         const dbRestaurants = await prisma.restaurant.findMany({
             where: { kakaoPlaceId: { in: resultIds } },
-            include: {
-                taggedBy: {
-                    include: {
-                        tag: { 
-                            include: { 
-                                user: { select: { id: true, name: true } },
-                                _count: { 
-                                    select: { restaurants: true, subscribers: true }
-                                }
-                            }
-                        }
+            // ⬇️ include 대신 select 사용
+            select: {
+              id: true,            // dbId (리뷰 집계에 필요)
+              kakaoPlaceId: true,
+              likeCount: true,     // 명시적으로 선택
+              dislikeCount: true,  // 명시적으로 선택
+              taggedBy: {          // 관계된 데이터도 select 안에 포함
+                select: {
+                  tag: {           // tag 정보 선택 (필요한 필드만)
+                    select: {
+                      id: true,
+                      name: true,
+                      isPublic: true,
+                      userId: true,
+                      user: { select: { id: true, name: true } },
+                      _count: { select: { restaurants: true, subscribers: true } }
                     }
+                  }
                 }
+              }
             }
         });
         const dbRestaurantMap = new Map(dbRestaurants.map(r => [r.kakaoPlaceId, r]));

@@ -1,5 +1,6 @@
 // src/components/RestaurantInfoPanel.tsx
 "use client";
+// ⬇️ 1. useEffect, VoteType, 아이콘 추가
 import { useState, useEffect } from 'react';
 import { AppRestaurant, GoogleOpeningHours } from "@/lib/types";
 import { Session } from "next-auth";
@@ -12,14 +13,22 @@ import { StarRating } from "./ui/StarRating";
 import { ThumbsUp, ThumbsDown } from 'lucide-react'; // 아이콘 추가
 import { VoteType } from '@prisma/client'; // VoteType 추가
 
+// 기존 getTodaysOpeningHours 함수 (변경 없음)
 const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null => {
+
     if (!openingHours?.weekday_text) return null;
+
     const today = new Date().getDay();
+
     const googleApiIndex = (today + 6) % 7;
+
     const todaysHours = openingHours.weekday_text[googleApiIndex];
+
     return todaysHours ? todaysHours.substring(todaysHours.indexOf(":") + 2) : "정보 없음";
+
 };
 
+// ⬇️ 2. 인터페이스 수정: 좋아요/싫어요 관련 props 추가
 interface RestaurantInfoPanelProps {
   restaurant: AppRestaurant;
   session: Session | null;
@@ -34,6 +43,7 @@ interface RestaurantInfoPanelProps {
   dislikeCount?: number;
   likePercentage?: number | null;
 }
+// ⬆️ 2. 인터페이스 수정 끝
 
 export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
   // ⬇️ 3. props 분해: 새로 추가된 props 받기
@@ -115,10 +125,12 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
       setIsVoting(false);
     }
   };
+  // ⬆️ 6. 함수 추가 끝
 
   return (
     <div className="space-y-6">
 
+      {/* 기존 액션 버튼 (변경 없음) */}
       <div className="flex justify-start">
         {props.session?.user &&
           props.isFavorite &&
@@ -129,6 +141,9 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
             <RestaurantActionButtons {...props} showTextLabels={true} />
           )}
       </div>
+      {/* ⬆️ 기존 코드 끝 */}
+
+      {/* ⬇️ 7. JSX 추가: 좋아요/싫어요 표시 및 버튼 영역 (액션 버튼 다음) */}
       <div className="flex items-center justify-between gap-4 pt-4 border-t">
         {/* 왼쪽: 통계 표시 */}
         <div className="flex items-center gap-3 text-sm text-muted-foreground">

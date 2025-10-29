@@ -47,6 +47,11 @@ export default function RestaurantPage() {
   const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const totalVotes = (restaurant?.likeCount ?? 0) + (restaurant?.dislikeCount ?? 0); // restaurant가 null일 수 있으므로 ?. 사용
+  const likePercentage = totalVotes > 0 
+    ? Math.round(((restaurant?.likeCount ?? 0) / totalVotes) * 100) 
+    : null;
+
   // Hooks for data
   const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
   const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
@@ -226,6 +231,9 @@ export default function RestaurantPage() {
                             onToggleFavorite={toggleFavorite}
                             onToggleBlacklist={toggleBlacklist}
                             onTagManagement={setTaggingRestaurant}
+                            likeCount={restaurant.likeCount}
+                            dislikeCount={restaurant.dislikeCount}
+                            likePercentage={likePercentage}
                         />
                     </div>
                 </div>
