@@ -37,6 +37,7 @@ model User {
   tagSubscriptions TagSubscription[]
   reviews          Review[]
   reviewVotes      ReviewVote[]
+  restaurantVotes  RestaurantVote[]
 }
 
 // 2. 음식점 정보 모델
@@ -56,6 +57,11 @@ model Restaurant {
   blacklist  Blacklist[]
   taggedBy   TagsOnRestaurants[]
   reviews    Review[]
+
+  likeCount    Int @default(0)
+  dislikeCount Int @default(0)
+
+  votes        RestaurantVote[]
 }
 
 // 3. 즐겨찾기 연결 모델 (User와 Restaurant 연결)
@@ -202,4 +208,15 @@ model ProfanityWord {
   id        Int      @id @default(autoincrement())
   word      String   @unique
   createdAt DateTime @default(now())
+}
+
+model RestaurantVote {
+  userId       String
+  restaurantId Int
+  type         VoteType // 'UPVOTE' or 'DOWNVOTE'
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@id([userId, restaurantId]) // 한 사용자는 식당 1곳에 1종류의 투표만 가능
 }

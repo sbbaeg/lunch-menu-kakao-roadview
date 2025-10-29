@@ -102,7 +102,7 @@ export function MyReviewsDialog({ isOpen, onOpenChange }: MyReviewsDialogProps) 
                                         onClick={() => handleRestaurantClick(review.restaurant.kakaoPlaceId)}
                                     >
                                         <Building className="h-4 w-4 mr-2" />
-                                        음식점 정보 보기 (지도에서 선택)
+                                        음식점 정보 보기
                                     </Button>
                                 </div>
                             ))}

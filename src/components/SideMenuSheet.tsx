@@ -202,7 +202,6 @@ export function SideMenuSheet({
                         </Accordion>
 
                         <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-                            {/* ... (도움말 Dialog 부분은 변경 없음) ... */}
                             <DialogTrigger asChild>
                                 <Button variant="ghost" className="justify-start">도움말 및 정보</Button>
                             </DialogTrigger>
