@@ -55,7 +55,7 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
   // 4. useEffect 추가: 컴포넌트 마운트/업데이트 시 상태 초기화
   useEffect(() => {
     // TODO: 실제로는 restaurant 객체에 currentUserVote 포함시켜 전달받는 것이 더 효율적
-    // 예: setCurrentUserVote(restaurant.currentUserVote ?? null);
+    setCurrentUserVote(restaurant.currentUserVote ?? null);
 
     // props로 받은 초기 카운트로 로컬 state 설정
     setLocalLikeCount(initialLikeCount ?? 0);

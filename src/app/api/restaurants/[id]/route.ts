@@ -1,8 +1,12 @@
 // src/app/api/restaurants/[id]/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, VoteType } from '@prisma/client';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 import { KakaoPlaceItem, AppRestaurant } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
 
@@ -15,6 +19,9 @@ export async function GET(
   if (!kakaoPlaceId) {
     return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
   }
+
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
 
   try {
     const restaurantFromDb = await prisma.restaurant.findUnique({
@@ -49,6 +56,16 @@ export async function GET(
       averageRating: reviewAggregations._avg.rating || 0,
       reviewCount: reviewAggregations._count.id,
     };
+
+    let currentUserVote: VoteType | null = null;
+    if (userId && restaurantFromDb) { // userId와 restaurantFromDb.id 둘 다 있어야 조회 가능
+      const vote = await prisma.restaurantVote.findUnique({
+        // userId와 restaurantId 복합 키로 조회
+        where: { userId_restaurantId: { userId: userId, restaurantId: restaurantFromDb.id } },
+        select: { type: true } // 투표 타입('UPVOTE' or 'DOWNVOTE')만 가져옴
+      });
+      currentUserVote = vote?.type || null; // 조회 결과가 있으면 type을, 없으면 null을 할당
+    }
 
     const kakaoPlaceItem: KakaoPlaceItem = {
         id: restaurantFromDb.kakaoPlaceId,
@@ -85,6 +102,12 @@ export async function GET(
       })),
       googleDetails: restaurantWithGoogleDetails.googleDetails,
       appReview: appReview, // 계산된 앱 리뷰 정보 추가
+
+      likeCount: restaurantFromDb.likeCount,
+      dislikeCount: restaurantFromDb.dislikeCount,
+
+      // ⬇️ 6. 4단계에서 조회한 currentUserVote 추가
+      currentUserVote: currentUserVote,
     };
 
     return NextResponse.json(finalRestaurantData);

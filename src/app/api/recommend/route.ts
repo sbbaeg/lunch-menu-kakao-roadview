@@ -211,7 +211,7 @@ export async function GET(request: Request) {
         const reviewAggsMap = new Map(reviewAggregations.map(agg => [agg.restaurantId, agg]));
 
         // 최종 데이터 조합
-        const finalDocuments: RestaurantWithTags[] = sortedResults.map(result => {
+        const finalDocuments: (RestaurantWithTags & { likeCount: number, dislikeCount: number })[] = sortedResults.map(result => {
             const dbRestaurant = dbRestaurantMap.get(result.id);
             const reviewAggs = dbRestaurant ? reviewAggsMap.get(dbRestaurant.id) : null;
 
@@ -230,6 +230,9 @@ export async function GET(request: Request) {
                     averageRating: reviewAggs._avg.rating || 0,
                     reviewCount: reviewAggs._count.id,
                 } : undefined,
+                
+                likeCount: dbRestaurant?.likeCount ?? 0,
+                dislikeCount: dbRestaurant?.dislikeCount ?? 0,
             };
         });
 

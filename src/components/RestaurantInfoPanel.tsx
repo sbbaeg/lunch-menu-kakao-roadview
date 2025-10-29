@@ -9,6 +9,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { StarRating } from "./ui/StarRating";
+import { ThumbsUp, ThumbsDown } from 'lucide-react'; // 아이콘 추가
+import { VoteType } from '@prisma/client'; // VoteType 추가
 
 const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null => {
     if (!openingHours?.weekday_text) return null;
@@ -26,16 +28,93 @@ interface RestaurantInfoPanelProps {
   onToggleFavorite?: (restaurant: AppRestaurant) => void;
   onToggleBlacklist?: (restaurant: AppRestaurant) => void;
   onTagManagement?: (restaurant: AppRestaurant) => void;
+
+  // 좋아요/싫어요 props 추가
+  likeCount?: number;
+  dislikeCount?: number;
+  likePercentage?: number | null;
 }
 
 export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
-  const { restaurant } = props;
-  const details = restaurant.googleDetails;
+  // ⬇️ 3. props 분해: 새로 추가된 props 받기
+  const {
+    restaurant,
+    session, // session은 props에서 직접 받음
+    likeCount: initialLikeCount,
+    dislikeCount: initialDislikeCount,
+    likePercentage,
+    // ... 나머지 props는 RestaurantActionButtons로 전달
+  } = props;
+  // ⬆️ 3. props 분해 끝
 
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
+  const details = restaurant.googleDetails; //
+
+  const [isMounted, setIsMounted] = useState(false); //
+  useEffect(() => { //
     setIsMounted(true);
   }, []);
+
+  // ⬇️ 4. State 추가: 좋아요/싫어요 상태 관리 (Optimistic UI용)
+  const [localLikeCount, setLocalLikeCount] = useState(initialLikeCount ?? 0);
+  const [localDislikeCount, setLocalDislikeCount] = useState(initialDislikeCount ?? 0);
+  const [currentUserVote, setCurrentUserVote] = useState<VoteType | null>(null); // 현재 사용자 투표 상태
+  const [isVoting, setIsVoting] = useState(false);
+  // ⬆️ 4. State 추가 끝
+
+  // ⬇️ 5. useEffect 추가: 컴포넌트 마운트/업데이트 시 상태 초기화
+  useEffect(() => {
+    // TODO: restaurant 객체에 currentUserVote 포함시켜 전달받는 것이 더 효율적
+    // 예: setCurrentUserVote(restaurant.currentUserVote ?? null);
+
+    setLocalLikeCount(initialLikeCount ?? 0);
+    setLocalDislikeCount(initialDislikeCount ?? 0);
+
+    // (현재 사용자 투표 상태를 가져오는 로직 추가 필요 시)
+  }, [restaurant.id, initialLikeCount, initialDislikeCount]);
+  // ⬆️ 5. useEffect 추가 끝
+
+  // ⬇️ 6. 함수 추가: 투표 처리 핸들러 (RestaurantDetails와 동일 로직)
+  const handleVote = async (voteType: VoteType) => {
+    if (!session || isVoting || !restaurant.dbId) return;
+    setIsVoting(true);
+
+    const originalState = { likes: localLikeCount, dislikes: localDislikeCount, vote: currentUserVote };
+
+    // Optimistic UI 업데이트
+    let likeIncrement = 0;
+    let dislikeIncrement = 0;
+    let nextVote: VoteType | null = null;
+    if (currentUserVote === voteType) { // 투표 취소
+      if (voteType === 'UPVOTE') likeIncrement = -1; else dislikeIncrement = -1;
+      nextVote = null;
+    } else { // 신규 또는 변경
+      if (currentUserVote === 'UPVOTE') likeIncrement = -1;
+      if (currentUserVote === 'DOWNVOTE') dislikeIncrement = -1;
+      if (voteType === 'UPVOTE') likeIncrement = 1; else dislikeIncrement = 1;
+      nextVote = voteType;
+    }
+    setLocalLikeCount(c => c + likeIncrement);
+    setLocalDislikeCount(c => c + dislikeIncrement);
+    setCurrentUserVote(nextVote);
+
+    try {
+      // API 호출 (dbId 사용)
+      const response = await fetch(`/api/restaurants/${restaurant.dbId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voteType }),
+      });
+      if (!response.ok) throw new Error('Vote failed');
+    } catch (error) {
+      // 오류 시 롤백
+      setLocalLikeCount(originalState.likes);
+      setLocalDislikeCount(originalState.dislikes);
+      setCurrentUserVote(originalState.vote);
+      alert('투표 처리에 실패했습니다.');
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -49,6 +128,49 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
           props.onTagManagement && (
             <RestaurantActionButtons {...props} showTextLabels={true} />
           )}
+      </div>
+      <div className="flex items-center justify-between gap-4 pt-4 border-t">
+        {/* 왼쪽: 통계 표시 */}
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          {likePercentage !== null ? (
+            <>
+              <div className="flex items-center gap-1" title="좋아요 비율">
+                <ThumbsUp className="h-4 w-4 text-sky-500" />
+                <span className="font-medium text-foreground">{likePercentage}%</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs" title="좋아요 수">
+                <ThumbsUp className="h-3 w-3" /> {localLikeCount}
+              </div>
+              <div className="flex items-center gap-1 text-xs" title="싫어요 수">
+                <ThumbsDown className="h-3 w-3" /> {localDislikeCount}
+              </div>
+            </>
+          ) : (
+            <span className="text-xs">아직 평가가 없습니다.</span>
+          )}
+        </div>
+
+        {/* 오른쪽: 투표 버튼 */}
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleVote('UPVOTE')}
+            disabled={!session || isVoting}
+            className={`gap-1 ${currentUserVote === 'UPVOTE' ? 'bg-primary/10 border-primary text-primary' : ''}`}
+          >
+            <ThumbsUp className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleVote('DOWNVOTE')}
+            disabled={!session || isVoting}
+            className={`gap-1 ${currentUserVote === 'DOWNVOTE' ? 'bg-destructive/10 border-destructive text-destructive' : ''}`}
+          >
+            <ThumbsDown className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4">
