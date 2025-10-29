@@ -66,7 +66,7 @@ export function RestaurantCard({
   return (
     <AccordionItem value={restaurant.id} key={restaurant.id} className="border-none group">
       <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
-        <AccordionTrigger className="text-left hover:no-underline p-0">
+        <AccordionTrigger className="text-left hover:no-underline p-0 [&>svg]:hidden">
           <div className="w-full">
             <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
               <CardTitle className="text-md">{restaurant.placeName}</CardTitle>
@@ -101,8 +101,8 @@ export function RestaurantCard({
                 <div className="flex items-center gap-3 text-sm text-muted-foreground pt-1"> {/* pt-1 추가 */}
                   {/* 좋아요 비율 */}
                   <div className="flex items-center gap-1" title="좋아요 비율">
-                    <ThumbsUp className="h-4 w-4 text-sky-500" />
-                    <span className="font-medium text-sky-500">{likePercentage}%</span>
+                    <ThumbsUp className={`h-4 w-4 ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`} />
+                    <span className={`font-medium ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`}>{likePercentage}%</span>
                   </div>
                   {/* 좋아요 수 */}
                   <div className="flex items-center gap-1 text-xs" title="좋아요 수">
