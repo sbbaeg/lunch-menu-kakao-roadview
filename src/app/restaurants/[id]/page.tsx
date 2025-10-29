@@ -271,6 +271,11 @@ export default function RestaurantPage() {
             onCreateAndLinkTag={handleCreateAndLinkTag}
         />
 
+        <MyReviewsDialog
+            isOpen={isMyReviewsOpen}
+            onOpenChange={setIsMyReviewsOpen}
+        />
+
         <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
             <AlertDialogContent className="max-w-lg">
                 <AlertDialogHeader>
