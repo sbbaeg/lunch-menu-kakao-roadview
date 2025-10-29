@@ -257,11 +257,10 @@ export default function RestaurantDetailPage({
                                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                         {likePercentage !== null ? (
                                             <>
-                                            <div className="flex items-center gap-1" title="좋아요 비율">
-                                                <ThumbsUp className="h-4 w-4 text-sky-500" />
-                                                <span className="font-medium text-foreground">{likePercentage}%</span>
-                                            </div>
-                                            <div className="flex items-center gap-1 text-xs" title="좋아요 수">
+                                                                    <div className="flex items-center gap-1" title="좋아요 비율">
+                                                                        <ThumbsUp className={`h-4 w-4 ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`} />
+                                                                        <span className={`font-medium ${likePercentage >= 50 ? 'text-foreground' : 'text-red-500'}`}>{likePercentage}%</span>
+                                                                    </div>                                            <div className="flex items-center gap-1 text-xs" title="좋아요 수">
                                                 <ThumbsUp className="h-3 w-3" /> {localLikeCount}
                                             </div>
                                             <div className="flex items-center gap-1 text-xs" title="싫어요 수">
