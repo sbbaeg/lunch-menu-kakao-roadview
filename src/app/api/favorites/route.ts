@@ -90,7 +90,11 @@ export async function GET() {
                     isPublic: t.tag.isPublic,
                     creatorId: t.tag.user.id,
                     creatorName: t.tag.user.name,
-                }))
+                })),
+                // ⬇️ dbId, likeCount, dislikeCount 추가
+                dbId: originalFavorite.restaurant.id,
+                likeCount: originalFavorite.restaurant.likeCount,
+                dislikeCount: originalFavorite.restaurant.dislikeCount,
             };
         });
 
