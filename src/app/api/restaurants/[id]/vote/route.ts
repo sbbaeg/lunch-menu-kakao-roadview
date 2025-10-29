@@ -1,4 +1,4 @@
-// src/app/api/restaurants/[dbId]/vote/route.ts
+// src/app/api/restaurants/[id]/vote/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient, VoteType } from '@prisma/client';
 import { getServerSession } from 'next-auth/next';
@@ -8,14 +8,14 @@ const prisma = new PrismaClient();
 
 export async function POST(
   request: Request,
-  { params }: { params: { dbId: string } }
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const restaurantId = parseInt(params.dbId, 10);
+  const restaurantId = parseInt(params.id, 10);
   if (isNaN(restaurantId)) {
     return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
   }
