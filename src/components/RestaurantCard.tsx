@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useAppStore } from '@/store/useAppStore';
 import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 import { RestaurantDetails } from "./RestaurantDetails";
-import { Users, Utensils } from 'lucide-react';
+import { Users, Utensils, ThumbsUp, ThumbsDown } from 'lucide-react';
 
 import {
     Tooltip,
@@ -58,6 +58,11 @@ export function RestaurantCard({
     }
   };
 
+  const totalVotes = (restaurant.likeCount ?? 0) + (restaurant.dislikeCount ?? 0);
+  const likePercentage = totalVotes > 0 
+    ? Math.round(((restaurant.likeCount ?? 0) / totalVotes) * 100) 
+    : null; // 평가가 없으면 null
+
   return (
     <AccordionItem value={restaurant.id} key={restaurant.id} className="border-none group">
       <Card className="mb-2 shadow-sm transition-colors group-data-[state=closed]:hover:bg-accent group-data-[state=open]:bg-muted">
@@ -91,7 +96,30 @@ export function RestaurantCard({
                   )}
                 </div>
               </div>
-              
+
+              {likePercentage !== null && (
+                <TooltipProvider>
+                  <Tooltip delayDuration={100}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1 cursor-default text-sm">
+                          <ThumbsUp className="h-4 w-4 text-sky-500" />
+                          <span className="font-medium text-sky-500">{likePercentage}%</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1">
+                              <ThumbsUp className="h-4 w-4" /> {restaurant.likeCount ?? 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                              <ThumbsDown className="h-4 w-4" /> {restaurant.dislikeCount ?? 0}
+                          </span>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
               <TooltipProvider delayDuration={100}>
                 <div className="flex flex-wrap gap-1">
                   {isMounted && restaurant.tags?.map(tag => {
@@ -130,7 +158,16 @@ export function RestaurantCard({
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          <RestaurantDetails restaurant={restaurant} session={session} onNavigate={onNavigate} {...detailProps} />
+          <RestaurantDetails 
+            restaurant={restaurant} 
+            session={session} 
+            onNavigate={onNavigate} 
+            // 좋아요/싫어요 카운트와 비율을 props로 전달
+            likeCount={restaurant.likeCount}
+            dislikeCount={restaurant.dislikeCount}
+            likePercentage={likePercentage}
+            {...detailProps} // isFavorite, onToggleFavorite 등 전달
+          />
         </AccordionContent>
       </Card>
     </AccordionItem>

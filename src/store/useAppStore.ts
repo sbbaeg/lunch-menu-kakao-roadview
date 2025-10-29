@@ -148,13 +148,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     apiUrl += `&_=${new Date().getTime()}`;
 
     const response = await fetch(apiUrl);
-    const data: { documents?: RestaurantWithTags[], blacklistExcludedCount?: number } = await response.json();
+    const data: { documents?: (RestaurantWithTags & { likeCount?: number, dislikeCount?: number })[], blacklistExcludedCount?: number } = await response.json();
 
     const formattedRestaurants: AppRestaurant[] = (data.documents || []).map(place => ({
         id: place.id,
         kakaoPlaceId: place.id,
         placeName: place.place_name,
-        categoryName: place.place_name,
+        categoryName: place.category_name,
         address: place.road_address_name,
         x: place.x,
         y: place.y,
@@ -162,6 +162,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         distance: place.distance,
         googleDetails: place.googleDetails,
         tags: place.tags,
+        appReview: place.appReview,
+
+        likeCount: place.likeCount ?? 0,
+        dislikeCount: place.dislikeCount ?? 0,
     }));
 
     set({ blacklistExcludedCount: data.blacklistExcludedCount || 0 });
