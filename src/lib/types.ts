@@ -94,4 +94,5 @@ export interface AppRestaurant {
   tags?: Tag[];
   likeCount?: number;   // 우선 옵셔널(?)로 추가 (나중에 필수로 변경 가능)
   dislikeCount?: number; // 우선 옵셔널(?)로 추가 (나중에 필수로 변경 가능)
+  currentUserVote?: VoteType | null;
 }

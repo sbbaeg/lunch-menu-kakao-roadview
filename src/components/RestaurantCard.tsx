@@ -97,16 +97,19 @@ export function RestaurantCard({
                 </div>
               </div>
 
-              {likePercentage !== null && (
+              {likePercentage !== null && ( // likePercentage 계산 로직은 컴포넌트 상단에 있어야 함
                 <TooltipProvider>
                   <Tooltip delayDuration={100}>
                     <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1 cursor-default text-sm">
+                      {/* 버튼 없는 div */}
+                      <div className="flex items-center gap-1 cursor-default text-sm text-muted-foreground">
                           <ThumbsUp className="h-4 w-4 text-sky-500" />
                           <span className="font-medium text-sky-500">{likePercentage}%</span>
+                          {/* (총 투표 수는 툴팁으로) */}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
+                      {/* 툴팁 내용: 좋아요/싫어요 수 */}
                       <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1">
                               <ThumbsUp className="h-4 w-4" /> {restaurant.likeCount ?? 0}
@@ -119,7 +122,6 @@ export function RestaurantCard({
                   </Tooltip>
                 </TooltipProvider>
               )}
-
               <TooltipProvider delayDuration={100}>
                 <div className="flex flex-wrap gap-1">
                   {isMounted && restaurant.tags?.map(tag => {
