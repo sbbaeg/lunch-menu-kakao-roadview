@@ -26,13 +26,30 @@ export async function GET(
   try {
     const restaurantFromDb = await prisma.restaurant.findUnique({
       where: { kakaoPlaceId },
-      include: {
-        taggedBy: {
-          include: {
-            tag: true,
-          },
-        },
-      },
+      // ⬇️ include 대신 select 사용
+      select: {
+        id: true,              // dbId
+        kakaoPlaceId: true,
+        placeName: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        categoryName: true,
+        likeCount: true,       // 명시적으로 선택
+        dislikeCount: true,    // 명시적으로 선택
+        taggedBy: {            // 관계된 데이터도 select 안에 포함
+          select: {
+            tag: {             // tag 정보 선택
+              select: {
+                id: true,
+                name: true,
+                isPublic: true,
+                userId: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!restaurantFromDb) {
