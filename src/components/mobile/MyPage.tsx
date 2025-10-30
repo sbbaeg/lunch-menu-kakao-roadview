@@ -160,7 +160,7 @@ export default function MyPage({
                         <Accordion type="single" collapsible>
                             <AccordionItem value="item-1" className="border-none">
                                 <AccordionTrigger className="w-full p-2 pl-3 text-sm font-medium hover:no-underline hover:bg-accent rounded-md justify-between">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center" style={{ gap: '1.125rem' }}>
                                         <Tags className="h-4 w-4" />
                                         <span>태그</span>
                                     </div>

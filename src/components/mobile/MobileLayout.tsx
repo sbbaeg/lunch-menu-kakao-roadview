@@ -262,6 +262,7 @@ export default function MobileLayout() {
             <LikedRestaurantsDialog
                 isOpen={isLikedRestaurantsOpen}
                 onOpenChange={setIsLikedRestaurantsOpen}
+                onNavigate={() => setIsLikedRestaurantsOpen(false)} // 네비게이트 시 다이얼로그 닫기
                 session={session}
                 subscribedTagIds={subscribedTagIds}
                 selectedItemId={selectedItemId}

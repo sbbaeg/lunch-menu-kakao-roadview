@@ -393,6 +393,7 @@ export default function Home() {
             <LikedRestaurantsDialog
                 isOpen={isLikedRestaurantsOpen}
                 onOpenChange={setIsLikedRestaurantsOpen}
+                onNavigate={() => setIsLikedRestaurantsOpen(false)}
                 session={session}
                 subscribedTagIds={subscribedTagIds}
                 selectedItemId={selectedItemId}
