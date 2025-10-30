@@ -37,6 +37,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useBlacklist } from "@/hooks/useBlacklist";
 import { useUserTags } from "@/hooks/useUserTags";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useLikedRestaurants } from "@/hooks/useLikedRestaurants";
 import { useAppStore } from '@/store/useAppStore';
 import TagDetailPage from './TagDetailPage';
 import RestaurantDetailPage from './RestaurantDetailPage';
@@ -83,6 +84,7 @@ export default function MobileLayout() {
     const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
     const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
+    const { likedRestaurants, isLoading: isLoadingLiked } = useLikedRestaurants();
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -263,6 +265,8 @@ export default function MobileLayout() {
                 isOpen={isLikedRestaurantsOpen}
                 onOpenChange={setIsLikedRestaurantsOpen}
                 onNavigate={() => setIsLikedRestaurantsOpen(false)} // 네비게이트 시 다이얼로그 닫기
+                likedRestaurants={likedRestaurants}
+                isLoading={isLoadingLiked}
                 session={session}
                 subscribedTagIds={subscribedTagIds}
                 selectedItemId={selectedItemId}
