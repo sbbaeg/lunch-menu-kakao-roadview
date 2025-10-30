@@ -40,7 +40,7 @@ interface SideMenuSheetProps {
     onShowBlacklist: () => void;
     onShowTagManagement: () => void;
     onShowMyReviews: () => void;
-    onShowLikedRestaurants: () => void; // 1. Prop 추가
+    onShowLikedRestaurants?: () => void; // 1. Prop 선택적으로 변경
 }
 
 export function SideMenuSheet({
@@ -177,13 +177,15 @@ export function SideMenuSheet({
                     <Separator className="my-4" />
 
                     <div className="flex flex-col gap-2 px-4">
-                        {/* ... (이하 즐겨찾기, 블랙리스트, 태그 버튼 등은 변경 없음) ... */}
                         <Button variant="ghost" className="justify-start" onClick={onShowFavorites}>
                             즐겨찾기 목록
                         </Button>
-                        <Button variant="ghost" className="justify-start" onClick={onShowLikedRestaurants}>
-                            좋아요한 음식점
-                        </Button>
+                        {/* 3. 버튼 조건부 렌더링 */}
+                        {onShowLikedRestaurants && (
+                            <Button variant="ghost" className="justify-start" onClick={onShowLikedRestaurants}>
+                                좋아요한 음식점
+                            </Button>
+                        )}
                         <Button variant="ghost" className="justify-start" onClick={onShowMyReviews}>
                             내 리뷰
                         </Button>
