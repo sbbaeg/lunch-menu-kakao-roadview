@@ -42,6 +42,7 @@ import { useAppStore } from '@/store/useAppStore';
 import TagDetailPage from './TagDetailPage';
 import RestaurantDetailPage from './RestaurantDetailPage';
 import TagExplorePage from './TagExplorePage';
+import RankingPage from '@/app/ranking/page'; // 1. Import RankingPage
 import { AppRestaurant, Tag } from '@/lib/types';
 import { useSession } from "next-auth/react";
 import {
@@ -60,6 +61,7 @@ export default function MobileLayout() {
     const setActiveTab = useAppStore((state) => state.setActiveTab);
     const isMapReady = useAppStore((state) => state.isMapReady);
     const setIsMapReady = useAppStore((state) => state.setIsMapReady);
+    const showRanking = useAppStore((state) => state.showRanking); // 2. Get action from store
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
@@ -185,6 +187,7 @@ export default function MobileLayout() {
         onShowBlacklist: () => setIsBlacklistOpen(true),
         onShowTagManagement: () => setIsTagManagementOpen(true),
         onShowLikedRestaurants: () => setIsLikedRestaurantsOpen(true),
+        onShowRanking: showRanking, // 3. Pass action to MyPage
     };
 
     return (
@@ -220,15 +223,19 @@ export default function MobileLayout() {
                         onTagManagement={setTaggingRestaurant}
                     />
                 </main>
-            ) : activeView === 'tagExplore' ? ( // ⬅️ 1. 'else'를 'else if'로 변경
+            ) : activeView === 'tagExplore' ? (
                 <main className="absolute inset-0">
                     <TagExplorePage />
                 </main>
-            ) : ( // ⬅️ 2. 'myReviews'를 위한 새로운 'else' 블록 추가
+            ) : activeView === 'myReviews' ? (
                 <main className="absolute inset-0">
                     <MyReviewsPage />
                 </main>
-            )}
+            ) : activeView === 'ranking' ? ( // 4. Add ranking view to router
+                <main className="absolute inset-0">
+                    <RankingPage />
+                </main>
+            ) : null}
 
             {/* 다이얼로그들은 레이아웃 흐름에 영향을 주지 않음 */}
             <FilterDialog

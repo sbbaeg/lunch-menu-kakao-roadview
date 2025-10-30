@@ -203,6 +203,9 @@ export function SideMenuSheet({
                                         <Link href="/tags/explore" passHref>
                                             <Button variant="ghost" className="justify-start w-full">- 태그 탐색</Button>
                                         </Link>
+                                        <Link href="/ranking" passHref>
+                                            <Button variant="ghost" className="justify-start w-full">- 음식점 랭킹</Button>
+                                        </Link>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
