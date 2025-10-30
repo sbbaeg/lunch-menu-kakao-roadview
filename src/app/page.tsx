@@ -18,6 +18,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useBlacklist } from "@/hooks/useBlacklist";
 import { useUserTags } from "@/hooks/useUserTags";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useLikedRestaurants } from "@/hooks/useLikedRestaurants";
 
 
 import { useAppStore } from '@/store/useAppStore';
@@ -124,6 +125,7 @@ export default function Home() {
     const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
     const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
+    const { likedRestaurants, isLoading: isLoadingLiked } = useLikedRestaurants();
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
 
@@ -361,6 +363,7 @@ export default function Home() {
                 onToggleFavorite={toggleFavorite}
                 onToggleBlacklist={toggleBlacklist}
                 onTagManagement={setTaggingRestaurant}
+                onNavigate={() => setIsFavoritesListOpen(false)}
             />
 
             <BlacklistDialog
@@ -394,6 +397,8 @@ export default function Home() {
                 isOpen={isLikedRestaurantsOpen}
                 onOpenChange={setIsLikedRestaurantsOpen}
                 onNavigate={() => setIsLikedRestaurantsOpen(false)}
+                likedRestaurants={likedRestaurants}
+                isLoading={isLoadingLiked}
                 session={session}
                 subscribedTagIds={subscribedTagIds}
                 selectedItemId={selectedItemId}

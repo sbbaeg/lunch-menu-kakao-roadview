@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +15,8 @@ import { Skeleton } from './ui/skeleton';
 interface LikedRestaurantsDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  likedRestaurants: AppRestaurant[]; // 1. Prop으로 받기
+  isLoading: boolean; // 1. Prop으로 받기
   session: Session | null;
   subscribedTagIds: number[];
   selectedItemId: string;
@@ -31,37 +32,13 @@ interface LikedRestaurantsDialogProps {
 export function LikedRestaurantsDialog({
   isOpen,
   onOpenChange,
+  likedRestaurants,
+  isLoading,
   selectedItemId,
   setSelectedItemId,
   onNavigate,
   ...cardProps
 }: LikedRestaurantsDialogProps) {
-  const [likedRestaurants, setLikedRestaurants] = useState<AppRestaurant[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      const fetchLikedRestaurants = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const response = await fetch('/api/users/me/liked-restaurants');
-          if (!response.ok) {
-            throw new Error('좋아요한 음식점 목록을 불러오는 데 실패했습니다.');
-          }
-          const data = await response.json();
-          setLikedRestaurants(data);
-        } catch (e: any) {
-          setError(e.message);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      fetchLikedRestaurants();
-    }
-  }, [isOpen]);
 
   const renderContent = () => {
     if (isLoading) {
@@ -70,14 +47,6 @@ export function LikedRestaurantsDialog({
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="text-center py-8 text-red-500">
-          <p>{error}</p>
         </div>
       );
     }
