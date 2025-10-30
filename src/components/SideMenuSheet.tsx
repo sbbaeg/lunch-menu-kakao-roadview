@@ -187,7 +187,7 @@ export function SideMenuSheet({
                         </Button>
                         <Accordion type="single" collapsible className="w-full">
                             <AccordionItem value="item-1" className="border-none">
-                                <AccordionTrigger className="flex w-full justify-start p-2 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">
+                                <AccordionTrigger className="flex w-full p-2 text-sm font-medium hover:no-underline hover:bg-accent rounded-md" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
                                     태그
                                 </AccordionTrigger>
                                 <AccordionContent className="pb-0">
