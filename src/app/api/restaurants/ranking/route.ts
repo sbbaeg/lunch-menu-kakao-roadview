@@ -6,7 +6,7 @@ import { AppRestaurant, KakaoPlaceItem } from '@/lib/types';
 
 const prisma = new PrismaClient();
 
-const MIN_LIKE_COUNT_THRESHOLD = 1; // 최소 좋아요 개수
+const MIN_LIKE_COUNT_THRESHOLD = 5; // 최소 좋아요 개수
 const TOP_N = 20; // 상위 N개
 
 export async function GET(request: Request) {

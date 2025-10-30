@@ -210,10 +210,18 @@ export function SideMenuSheet({
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>
+                    </div>
+                    <Separator className="my-4" />
 
+                    <div className="px-4 flex items-center justify-between">
+                        <span className="text-sm font-medium">테마 변경</span>
+                        <ThemeToggle />
+                    </div>
+
+                    <div className="px-4 mt-4">
                         <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="ghost" className="justify-start">도움말 및 정보</Button>
+                                <Button variant="ghost" className="justify-start w-full">도움말 및 정보</Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-lg flex flex-col h-[85vh] p-0">
                                 <DialogHeader className="p-6 pb-2">
@@ -323,13 +331,7 @@ export function SideMenuSheet({
                                     </TabsContent>
                                 </Tabs>
                             </DialogContent>
-                        </Dialog>
-                    </div>
-                    <Separator className="my-4" />
-
-                    <div className="px-4 flex items-center justify-between">
-                        <span className="text-sm font-medium">테마 변경</span>
-                        <ThemeToggle />
+                        </Dialog> 
                     </div>
                 </div>
             </SheetContent>
