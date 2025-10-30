@@ -155,7 +155,9 @@ export default function MyPage({
                         <Accordion type="single" collapsible>
                             <AccordionItem value="item-1" className="border-none">
                                 <AccordionTrigger className="flex w-full p-2 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">
-                                    <Tags className="mr-2 h-4 w-4" /> 태그
+                                    <div className="flex items-center">
+                                        <Tags className="mr-2 h-4 w-4" /> 태그
+                                    </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="pb-0">
                                     <div className="flex flex-col pl-4 pt-2">
