@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags, FileText, ThumbsUp } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +33,7 @@ interface MyPageProps {
     onShowBlacklist: () => void;
     onShowTagManagement: () => void;
     onShowLikedRestaurants: () => void;
+    onShowRanking: () => void;
 }
 
 export default function MyPage({ 
@@ -40,6 +41,7 @@ export default function MyPage({
     onShowBlacklist,
     onShowTagManagement,
     onShowLikedRestaurants,
+    onShowRanking,
 }: MyPageProps) {
     const { data: session, status } = useSession();
     const showTagExplore = useAppStore((state) => state.showTagExplore);
@@ -173,6 +175,15 @@ export default function MyPage({
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>
+                    </div>
+
+                    <Separator className="my-4" />
+
+                    <div className="flex flex-col gap-2 px-4">
+                        <h3 className="text-lg font-semibold mb-2">탐색</h3>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowRanking}>
+                            <Trophy className="mr-2 h-4 w-4" /> 음식점 랭킹
+                        </Button>
                     </div>
 
                     <Separator className="my-4" />
