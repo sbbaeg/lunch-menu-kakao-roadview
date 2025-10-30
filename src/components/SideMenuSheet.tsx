@@ -219,7 +219,7 @@ export function SideMenuSheet({
                     </div>
 
                     <div className="px-4 mt-4">
-                        <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+                                                <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="ghost" className="justify-start w-full">도움말 및 정보</Button>
                             </DialogTrigger>
@@ -231,55 +231,61 @@ export function SideMenuSheet({
                                     본 앱의 주요 기능과 사용법을 안내합니다.
                                 </p>
                                 <Tabs defaultValue="quickstart" className="w-full flex flex-col flex-1 min-h-0 pt-4" ref={scrollRef}>
-                                    <TabsList className="grid w-full grid-cols-4 mx-6 w-auto">
-                                        <TabsTrigger value="quickstart">기본 사용법</TabsTrigger>
-                                        <TabsTrigger value="personal">개인화 기능</TabsTrigger>
-                                        <TabsTrigger value="reviews">리뷰/별점</TabsTrigger>
-                                        <TabsTrigger value="map">지도 기능</TabsTrigger>
+                                    <TabsList className="grid w-full grid-cols-5 mx-6 w-auto">
+                                        <TabsTrigger value="quickstart">기본</TabsTrigger>
+                                        <TabsTrigger value="map">지도</TabsTrigger>
+                                        <TabsTrigger value="personal">개인화</TabsTrigger>
+                                        <TabsTrigger value="reviews">리뷰/평가</TabsTrigger>
+                                        <TabsTrigger value="explore">탐색</TabsTrigger>
                                     </TabsList>
 
                                     <TabsContent value="quickstart" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
                                         <div className="space-y-4">
                                             <div className="p-4 bg-muted/50 rounded-lg">
                                                 <h4 className="font-semibold mb-2">필터</h4>
-                                                <p className="text-sm text-muted-foreground">'필터' 기능은 음식 종류, 거리, 별점 등의 조건으로 검색 결과를 제한합니다.</p>
+                                                <p className="text-sm text-muted-foreground">음식 종류, 거리, 별점, 태그 등 다양한 조건으로 검색 결과를 제한합니다.</p>
                                             </div>
                                             <div className="p-4 bg-muted/50 rounded-lg">
                                                 <h4 className="font-semibold mb-2">검색</h4>
-                                                <p className="text-sm text-muted-foreground">'검색' 기능은 설정된 필터 조건에 맞는 음식점 목록을 반환합니다.</p>
+                                                <p className="text-sm text-muted-foreground">설정된 필터 조건에 맞는 음식점 목록을 지도와 목록에 표시합니다.</p>
                                             </div>
                                             <div className="p-4 bg-muted/50 rounded-lg">
                                                 <h4 className="font-semibold mb-2">룰렛</h4>
-                                                <p className="text-sm text-muted-foreground">'룰렛' 기능은 검색된 결과 내에서 무작위로 하나의 음식점을 선택하여 제시합니다.</p>
-                                            </div>
-                                            <div className="p-4 bg-muted/50 rounded-lg">
-                                                <h4 className="font-semibold mb-2">결과</h4>
-                                                <p className="text-sm text-muted-foreground">검색 결과는 지도와 목록에 동시 출력되며, 목록의 항목 선택 시 지도에서 해당 위치를 표시합니다.</p>
+                                                <p className="text-sm text-muted-foreground">검색된 결과 내에서 무작위로 하나의 음식점을 선택하여 제시합니다.</p>
                                             </div>
                                         </div>
                                     </TabsContent>
+
+                                    <TabsContent value="map" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">지도 영역 검색</h4>
+                                                <p className="text-sm text-muted-foreground">지도를 이동하면 '현 지도에서 검색' 버튼이 활성화됩니다. 이 버튼을 사용하면 현재 보이는 지도 영역 내에서 다시 검색을 수행합니다.</p>
+                                            </div>
+                                            <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">검색 모드 전환</h4>
+                                                <p className="text-sm text-muted-foreground">지도 상단 검색창 옆의 스위치를 사용하여 '장소' 또는 '음식점' 검색 모드를 선택할 수 있습니다.</p>
+                                                <ul className="mt-2 space-y-1 list-disc list-inside text-sm text-muted-foreground">
+                                                    <li><strong>장소 검색:</strong> 특정 지역이나 장소 이름으로 검색하여 지도를 해당 위치로 이동시킬 수 있습니다.</li>
+                                                    <li><strong>음식점 검색:</strong> 원하는 메뉴나 식당 이름으로 검색하여 현재 지도 영역 내의 관련 음식점을 찾을 수 있습니다.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
                                     <TabsContent value="personal" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
                                         <div className="space-y-4">
                                             <div className="p-4 bg-muted/50 rounded-lg">
-                                                <div className="flex items-center font-semibold mb-2">
-                                                    <Heart className="mr-2 h-5 w-5 text-red-500 fill-red-500" />
-                                                    <span>즐겨찾기</span>
-                                                </div>
-                                                <p className="text-sm text-muted-foreground">특정 음식점을 즐겨찾기에 추가하여 관리할 수 있습니다. 즐겨찾기 목록은 사이드 메뉴에서 접근 가능합니다.</p>
+                                                <h4 className="font-semibold mb-2">즐겨찾기</h4>
+                                                <p className="text-sm text-muted-foreground">특정 음식점을 즐겨찾기에 추가하여 빠르게 다시 찾거나, 필터에서 '즐겨찾기에서만 검색' 옵션을 사용할 수 있습니다.</p>
                                             </div>
                                             <div className="p-4 bg-muted/50 rounded-lg">
-                                                <div className="flex items-center font-semibold mb-2">
-                                                    <EyeOff className="mr-2 h-5 w-5" />
-                                                    <span>블랙리스트</span>
-                                                </div>
-                                                <p className="text-sm text-muted-foreground">특정 음식점을 블랙리스트에 추가할 수 있습니다. 블랙리스트에 추가된 음식점은 모든 검색 결과에서 제외됩니다.</p>
+                                                <h4 className="font-semibold mb-2">블랙리스트</h4>
+                                                <p className="text-sm text-muted-foreground">특정 음식점을 블랙리스트에 추가하면, 모든 검색 결과에서 해당 음식점이 제외됩니다.</p>
                                             </div>
                                             <div className="p-4 bg-muted/50 rounded-lg">
-                                                <div className="flex items-center font-semibold mb-2">
-                                                    <Tags className="mr-2 h-5 w-5 text-sky-500" />
-                                                    <span>태그</span>
-                                                </div>
-                                                <p className="text-sm text-muted-foreground mb-3">사용자는 직접 태그를 생성하여 음식점을 분류하고 관리할 수 있습니다. 태그는 뱃지(Badge) 형태로 표시되며, 아이콘과 스타일로 종류를 구분할 수 있습니다.</p>
+                                                <h4 className="font-semibold mb-2">태그 관리</h4>
+                                                <p className="text-sm text-muted-foreground mb-3">사용자는 직접 태그를 생성하여 음식점을 분류하고 관리할 수 있습니다. 태그는 공개/비공개로 설정할 수 있으며, 사이드 메뉴의 '태그 관리'에서 내가 만든 모든 태그를 수정하거나 삭제할 수 있습니다.</p>
                                                 <div className="space-y-2">
                                                     <div className="flex items-center gap-2">
                                                         <Badge variant="default" className="shrink-0">★ 구독 태그</Badge>
@@ -297,6 +303,7 @@ export function SideMenuSheet({
                                             </div>
                                         </div>
                                     </TabsContent>
+
                                     <TabsContent value="reviews" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
                                         <div className="space-y-4">
                                             <div className="p-4 bg-muted/50 rounded-lg">
@@ -308,24 +315,25 @@ export function SideMenuSheet({
                                                 <p className="text-sm text-muted-foreground">각 음식점의 상세 페이지에서 해당 음식점에 대한 사용자 리뷰를 조회하고 작성할 수 있습니다.</p>
                                             </div>
                                             <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">좋아요/싫어요</h4>
+                                                <p className="text-sm text-muted-foreground">음식점 상세 정보에서 해당 음식점에 대한 선호도를 '좋아요' 또는 '싫어요'로 표시할 수 있습니다. 이 평가는 '명예의 전당' 랭킹에 반영됩니다.</p>
+                                            </div>
+                                            <div className="p-4 bg-muted/50 rounded-lg">
                                                 <h4 className="font-semibold mb-2">베스트 리뷰</h4>
                                                 <p className="text-sm text-muted-foreground">다른 사용자에게 '추천'을 많이 받은 리뷰는 '베스트 리뷰'로 선정되어, 정렬 순서와 관계없이 항상 리뷰 목록 최상단에 노출됩니다.</p>
                                             </div>
                                         </div>
                                     </TabsContent>
-                                    <TabsContent value="map" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
+
+                                    <TabsContent value="explore" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
                                         <div className="space-y-4">
                                             <div className="p-4 bg-muted/50 rounded-lg">
-                                                <h4 className="font-semibold mb-2">지도 영역 검색</h4>
-                                                <p className="text-sm text-muted-foreground">지도를 이동하면 '현 지도에서 검색' 버튼이 활성화됩니다. 이 버튼을 사용하면 현재 보이는 지도 영역 내에서 다시 검색을 수행합니다.</p>
+                                                <h4 className="font-semibold mb-2">명예의 전당</h4>
+                                                <p className="text-sm text-muted-foreground">사용자들의 '좋아요' 평가를 기반으로 인기 음식점의 순위를 보여줍니다. '좋아요'를 5개 이상 받은 음식점 중에서 '좋아요 비율'이 높은 순서대로 정렬됩니다.</p>
                                             </div>
                                             <div className="p-4 bg-muted/50 rounded-lg">
-                                                <h4 className="font-semibold mb-2">검색 모드 전환</h4>
-                                                <p className="text-sm text-muted-foreground">지도 상단 검색창 옆의 스위치를 사용하여 '장소' 또는 '음식점' 검색 모드를 선택할 수 있습니다.</p>
-                                                <ul className="mt-2 space-y-1 list-disc list-inside text-sm text-muted-foreground">
-                                                    <li><strong>장소 검색:</strong> '장소' 모드에서는 '강남역'과 같이 특정 지역이나 장소 이름으로 검색하여 지도를 해당 위치로 이동시킬 수 있습니다.</li>
-                                                    <li><strong>음식점 검색:</strong> '음식점' 모드에서는 '마라탕'과 같이 원하는 메뉴나 식당 이름으로 검색하여 현재 지도 영역 내의 관련 음식점을 찾을 수 있습니다.</li>
-                                                </ul>
+                                                <h4 className="font-semibold mb-2">태그 탐색</h4>
+                                                <p className="text-sm text-muted-foreground">다른 사용자들이 만들고 공개한 모든 태그들을 둘러보고, 구독자 수와 등록된 음식점 수를 기준으로 정렬하여 유용한 태그를 찾아 구독할 수 있습니다.</p>
                                             </div>
                                         </div>
                                     </TabsContent>
