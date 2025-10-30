@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags, FileText } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText, ThumbsUp } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,12 +32,14 @@ interface MyPageProps {
     onShowFavorites: () => void;
     onShowBlacklist: () => void;
     onShowTagManagement: () => void;
+    onShowLikedRestaurants: () => void;
 }
 
 export default function MyPage({ 
     onShowFavorites,
     onShowBlacklist,
     onShowTagManagement,
+    onShowLikedRestaurants,
 }: MyPageProps) {
     const { data: session, status } = useSession();
     const showTagExplore = useAppStore((state) => state.showTagExplore);
@@ -146,6 +148,9 @@ export default function MyPage({
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowFavorites}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
                         </Button>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowLikedRestaurants}>
+                            <ThumbsUp className="mr-2 h-4 w-4" /> 좋아요한 음식점
+                        </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={showMyReviews}>
                             <FileText className="mr-2 h-4 w-4" /> 내 리뷰
                         </Button>
@@ -154,9 +159,10 @@ export default function MyPage({
                         </Button>
                         <Accordion type="single" collapsible>
                             <AccordionItem value="item-1" className="border-none">
-                                <AccordionTrigger className="flex w-full p-2 text-sm font-medium hover:no-underline hover:bg-accent rounded-md">
-                                    <div className="flex items-center">
-                                        <Tags className="mr-2 h-4 w-4" /> 태그
+                                <AccordionTrigger className="w-full p-2 pl-3 text-sm font-medium hover:no-underline hover:bg-accent rounded-md justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Tags className="h-4 w-4" />
+                                        <span>태그</span>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="pb-0">

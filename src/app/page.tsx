@@ -11,6 +11,7 @@ import { MainControlPanel } from "@/components/MainControlPanel"; //오른쪽 �
 import { RouletteDialog } from "@/components/RouletteDialog"; //룰렛
 import { SideMenuSheet } from "@/components/SideMenuSheet"; //사이드햄버거메뉴
 import { MyReviewsDialog } from "@/components/MyReviewsDialog";
+import { LikedRestaurantsDialog } from "@/components/LikedRestaurantsDialog"; // 1. 컴포넌트 임포트
 
 //논리구조 리펙토링
 import { useFavorites } from "@/hooks/useFavorites";
@@ -140,6 +141,7 @@ export default function Home() {
 
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMyReviewsOpen, setIsMyReviewsOpen] = useState(false);
+    const [isLikedRestaurantsOpen, setIsLikedRestaurantsOpen] = useState(false); // 2. 상태 추가
 
     useEffect(() => {
         console.log("CCTV 2: 'favorites' 상태 변경됨", favorites);
@@ -283,6 +285,7 @@ export default function Home() {
                     onShowBlacklist={handleBlacklistClick}
                     onShowTagManagement={() => setIsTagManagementOpen(true)}
                     onShowMyReviews={() => setIsMyReviewsOpen(true)}
+                    onShowLikedRestaurants={() => setIsLikedRestaurantsOpen(true)} // 3. 핸들러 전달
                 />
             </div>
             <div className="w-full max-w-6xl p-6 md:p-8 flex flex-col md:flex-row gap-6">
@@ -384,6 +387,21 @@ export default function Home() {
             <MyReviewsDialog
                 isOpen={isMyReviewsOpen}
                 onOpenChange={setIsMyReviewsOpen}
+            />
+
+            {/* 4. 다이얼로그 렌더링 */}
+            <LikedRestaurantsDialog
+                isOpen={isLikedRestaurantsOpen}
+                onOpenChange={setIsLikedRestaurantsOpen}
+                session={session}
+                subscribedTagIds={subscribedTagIds}
+                selectedItemId={selectedItemId}
+                setSelectedItemId={setSelectedItemId}
+                isFavorite={isFavorite}
+                isBlacklisted={isBlacklisted}
+                onToggleFavorite={toggleFavorite}
+                onToggleBlacklist={toggleBlacklist}
+                onTagManagement={setTaggingRestaurant}
             />
 
             <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>

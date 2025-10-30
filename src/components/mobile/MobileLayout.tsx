@@ -32,6 +32,7 @@ import { BlacklistDialog } from "@/components/BlacklistDialog";
 import { TagManagementDialog } from "@/components/TagManagementDialog";
 import { TaggingDialog } from "@/components/TaggingDialog";
 import { RouletteDialog } from "@/components/RouletteDialog";
+import { LikedRestaurantsDialog } from "@/components/LikedRestaurantsDialog";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useBlacklist } from "@/hooks/useBlacklist";
 import { useUserTags } from "@/hooks/useUserTags";
@@ -90,6 +91,7 @@ export default function MobileLayout() {
     const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
     const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
+    const [isLikedRestaurantsOpen, setIsLikedRestaurantsOpen] = useState(false);
 
     // Handlers
     const handleTagsChange = (updatedRestaurant: AppRestaurant) => {
@@ -180,6 +182,7 @@ export default function MobileLayout() {
         onShowFavorites: () => setIsFavoritesListOpen(true),
         onShowBlacklist: () => setIsBlacklistOpen(true),
         onShowTagManagement: () => setIsTagManagementOpen(true),
+        onShowLikedRestaurants: () => setIsLikedRestaurantsOpen(true),
     };
 
     return (
@@ -246,6 +249,19 @@ export default function MobileLayout() {
                 onOpenChange={setIsFavoritesListOpen}
                 onNavigate={() => setIsFavoritesListOpen(false)} // 네비게이트 시 다이얼로그 닫기
                 favorites={favorites}
+                session={session}
+                subscribedTagIds={subscribedTagIds}
+                selectedItemId={selectedItemId}
+                setSelectedItemId={setSelectedItemId}
+                isFavorite={isFavorite}
+                isBlacklisted={isBlacklisted}
+                onToggleFavorite={toggleFavorite}
+                onToggleBlacklist={toggleBlacklist}
+                onTagManagement={setTaggingRestaurant}
+            />
+            <LikedRestaurantsDialog
+                isOpen={isLikedRestaurantsOpen}
+                onOpenChange={setIsLikedRestaurantsOpen}
                 session={session}
                 subscribedTagIds={subscribedTagIds}
                 selectedItemId={selectedItemId}
