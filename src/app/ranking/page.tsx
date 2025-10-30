@@ -111,17 +111,23 @@ export default function RankingPage() {
     return (
         <div className="h-full w-full flex flex-col">
              <header className="p-4 border-b flex-shrink-0 flex items-center gap-4">
-                {isStandalone && (
+                {isStandalone ? (
                      <Button variant="ghost" size="icon" onClick={goBack}>
                         <ArrowLeft />
                     </Button>
+                ) : (
+                    <Link href="/">
+                        <Button variant="outline" size="icon">
+                            <ArrowLeft />
+                        </Button>
+                    </Link>
                 )}
                 <div className="flex items-center gap-2 text-2xl font-bold">
                     <Trophy className="text-yellow-500" />
                     <h1>음식점 명예의 전당</h1>
                 </div>
             </header>
-            <main className="flex-1 overflow-y-auto p-4 min-h-0">
+            <main className="flex-1 overflow-y-auto p-4 min-h-0 max-w-3xl w-full mx-auto">
                 {renderContent()}
             </main>
         </div>
