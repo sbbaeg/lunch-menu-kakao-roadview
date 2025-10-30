@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Edit, UserX } from 'lucide-react';
+import { Trash2, Edit, UserX, Users, Utensils, MessageSquare, Tag, ThumbsUp, GitCompareArrows } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AdminEditDialog } from '@/components/ui/AdminEditDialog';
 import {
@@ -20,55 +20,57 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from '@/components/ui/skeleton';
 
-// ... (interface definitions remain the same) ...
-interface ProfanityWord {
-    id: number;
-    word: string;
-    createdAt: string;
-}
-
-interface ModerationUser {
-    id: string;
-    name: string | null;
-    email: string | null;
-}
-interface ModerationTag {
-    id: number;
-    name: string;
-    user: ModerationUser;
-}
+// --- TYPE DEFINITIONS ---
+interface ProfanityWord { id: number; word: string; createdAt: string; }
+interface ModerationUser { id: string; name: string | null; email: string | null; }
+interface ModerationTag { id: number; name: string; user: ModerationUser; }
 interface ModerationReview {
     id: number;
     text: string | null;
     rating: number;
     user: ModerationUser;
-    restaurant: {
-        id: number;
-        placeName: string;
-    };
+    restaurant: { id: number; placeName: string; };
 }
-
+interface AdminStats {
+    users: number; restaurants: number; reviews: number; tags: number;
+    restaurantVotes: number; reviewVotes: number;
+}
 type ItemToEdit = { type: 'tag' | 'review'; id: number; text: string; } | null;
 type ItemToDelete = { type: 'tag' | 'review'; id: number; } | null;
 
+// --- CHILD COMPONENTS ---
+const StatCard = ({ title, value, icon }: { title: string; value: number | string; icon: ReactNode }) => (
+    <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            {icon}
+        </CardHeader>
+        <CardContent>
+            <div className="text-2xl font-bold">{value}</div>
+        </CardContent>
+    </Card>
+);
 
 export default function AdminPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
+
+    // State
+    const [stats, setStats] = useState<AdminStats | null>(null);
     const [words, setWords] = useState<ProfanityWord[]>([]);
     const [newWord, setNewWord] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [tagsToModerate, setTagsToModerate] = useState<ModerationTag[]>([]);
     const [reviewsToModerate, setReviewsToModerate] = useState<ModerationReview[]>([]);
-
     const [itemToEdit, setItemToEdit] = useState<ItemToEdit>(null);
     const [itemToDelete, setItemToDelete] = useState<ItemToDelete>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
+    // Data Fetching
     useEffect(() => {
         if (status === 'loading') return;
-
         if (status === 'unauthenticated' || !session?.user?.isAdmin) {
             router.push('/');
             return;
@@ -77,19 +79,22 @@ export default function AdminPage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [profanityRes, moderationRes] = await Promise.all([
+                const [profanityRes, moderationRes, statsRes] = await Promise.all([
                     fetch('/api/admin/profanity'),
-                    fetch('/api/admin/moderation')
+                    fetch('/api/admin/moderation'),
+                    fetch('/api/admin/stats')
                 ]);
 
                 if (!profanityRes.ok) throw new Error('비속어를 불러오는 데 실패했습니다.');
-                const profanityData = await profanityRes.json();
-                setWords(profanityData);
+                setWords(await profanityRes.json());
 
                 if (!moderationRes.ok) throw new Error('검토 목록을 불러오는 데 실패했습니다.');
                 const moderationData = await moderationRes.json();
                 setTagsToModerate(moderationData.tags);
                 setReviewsToModerate(moderationData.reviews);
+
+                if (!statsRes.ok) throw new Error('통계 정보를 불러오는 데 실패했습니다.');
+                setStats(await statsRes.json());
 
             } catch (e: any) {
                 setError(e.message);
@@ -101,24 +106,44 @@ export default function AdminPage() {
         fetchData();
     }, [session, status, router]);
 
-    const handleAddWord = async () => {
-        // ... (same as before)
+    // Handlers (CRUD operations for profanity, tags, reviews)
+        const handleAddWord = async () => {
+            if (!newWord.trim()) return;
+            try {
+                const res = await fetch('/api/admin/profanity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ word: newWord }),
+                });
+                if (!res.ok) {
+                    throw new Error('단어 추가에 실패했습니다.');
+                }
+                const addedWord = await res.json();
+                setWords([addedWord, ...words]);
+                setNewWord('');
+            } catch (e: any) {
+                setError(e.message);
+            }
+        };
+    
+        const handleDeleteWord = async (id: number) => {
+            try {
+                const res = await fetch('/api/admin/profanity', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id }),
+                });
+                if (!res.ok) {
+                    throw new Error('단어 삭제에 실패했습니다.');
+                }
+                setWords(words.filter(w => w.id !== id));
+            } catch (e: any) {
+                setError(e.message);
+            }
+        };
+    const handleEditItem = (type: 'tag' | 'review', id: number, currentText: string) => {
+        setItemToEdit({ type, id, text: currentText });
     };
-
-    const handleDeleteWord = async (id: number) => {
-        // ... (same as before)
-    };
-
-    const handleEditItem = (type: 'tag' | 'review', id: number) => {
-        if (type === 'tag') {
-            const tag = tagsToModerate.find(t => t.id === id);
-            if (tag) setItemToEdit({ type, id, text: tag.name });
-        } else {
-            const review = reviewsToModerate.find(r => r.id === id);
-            if (review) setItemToEdit({ type, id, text: review.text || '' });
-        }
-    };
-
     const handleSaveItem = async (newText: string) => {
         if (!itemToEdit) return;
         const { type, id } = itemToEdit;
@@ -177,129 +202,139 @@ export default function AdminPage() {
             setError(e.message);
         }
     };
-    
     const handleBanUser = (userId: string, userName: string | null) => {
         alert(`[구현 필요] 사용자 ${userName}(${userId}) 차단`);
     };
 
+    // Render
     if (status === 'loading' || isLoading) {
-        return <div className="p-8">Loading...</div>;
+        return <div className="p-8"><Skeleton className="h-screen w-full"/></div>;
     }
-
     if (!session?.user?.isAdmin) {
-        return null;
+        return null; // Redirecting
     }
 
     return (
         <>
             <main className="container mx-auto p-4 md:p-8">
-                <h1 className="text-3xl font-bold mb-6">관리자 페이지</h1>
-                
+                <h1 className="text-3xl font-bold mb-6">관리자 대시보드</h1>
                 {error && <p className="text-red-500 mb-4" onClick={() => setError(null)}>오류: {error} (클릭하여 닫기)</p>}
 
-                {/* 비속어 관리 카드 ... (same as before) */}
+                {/* Stats Section */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-8">
+                    <StatCard title="총 사용자" value={stats?.users ?? '-'} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
+                    <StatCard title="총 음식점" value={stats?.restaurants ?? '-'} icon={<Utensils className="h-4 w-4 text-muted-foreground" />} />
+                    <StatCard title="총 리뷰" value={stats?.reviews ?? '-'} icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />} />
+                    <StatCard title="총 태그" value={stats?.tags ?? '-'} icon={<Tag className="h-4 w-4 text-muted-foreground" />} />
+                    <StatCard title="음식점 투표" value={stats?.restaurantVotes ?? '-'} icon={<ThumbsUp className="h-4 w-4 text-muted-foreground" />} />
+                    <StatCard title="리뷰 투표" value={stats?.reviewVotes ?? '-'} icon={<GitCompareArrows className="h-4 w-4 text-muted-foreground" />} />
+                </div>
 
-                <Card className="mb-8">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            검토가 필요한 태그
-                            <Badge variant="destructive">{tagsToModerate.length}</Badge>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {tagsToModerate.length === 0 ? (
-                                <p className="text-muted-foreground">검토가 필요한 태그가 없습니다.</p>
-                            ) : (
-                                tagsToModerate.map(tag => (
-                                    <div key={tag.id} className="p-3 border rounded-md">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <p className="text-lg font-semibold">{tag.name}</p>
-                                            <div className="flex gap-1">
-                                                <Button variant="outline" size="sm" onClick={() => handleEditItem('tag', tag.id)}>
-                                                    <Edit className="h-4 w-4 mr-1" /> 수정
-                                                </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteItem('tag', tag.id)}>
-                                                    <Trash2 className="h-4 w-4 mr-1" /> 삭제
+                {/* Main Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column: Moderation */}
+                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">검토가 필요한 태그<Badge variant="destructive">{tagsToModerate.length}</Badge></CardTitle>
+                            </CardHeader>
+                            <CardContent className="max-h-96 overflow-y-auto">
+                                {tagsToModerate.length === 0 
+                                    ? <p className="text-muted-foreground">검토가 필요한 태그가 없습니다.</p>
+                                    : tagsToModerate.map(tag => (
+                                        <div key={tag.id} className="p-3 border rounded-md mb-3">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <p className="text-lg font-semibold">{tag.name}</p>
+                                                <div className="flex gap-1">
+                                                    <Button variant="outline" size="sm" onClick={() => handleEditItem('tag', tag.id, tag.name)}>
+                                                        <Edit className="h-4 w-4 mr-1" /> 수정
+                                                    </Button>
+                                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteItem('tag', tag.id)}>
+                                                        <Trash2 className="h-4 w-4 mr-1" /> 삭제
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-muted-foreground flex justify-between items-center">
+                                                <span>작성자: {tag.user.name} ({tag.user.email})</span>
+                                                <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleBanUser(tag.user.id, tag.user.name)}>
+                                                    <UserX className="h-4 w-4 mr-1" /> 사용자 차단
                                                 </Button>
                                             </div>
                                         </div>
-                                        <div className="text-sm text-muted-foreground flex justify-between items-center">
-                                            <span>작성자: {tag.user.name} ({tag.user.email})</span>
-                                            <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleBanUser(tag.user.id, tag.user.name)}>
-                                                <UserX className="h-4 w-4 mr-1" /> 사용자 차단
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            검토가 필요한 리뷰
-                            <Badge variant="destructive">{reviewsToModerate.length}</Badge>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {reviewsToModerate.length === 0 ? (
-                                <p className="text-muted-foreground">검토가 필요한 리뷰가 없습니다.</p>
-                            ) : (
-                                reviewsToModerate.map(review => (
-                                    <div key={review.id} className="p-3 border rounded-md">
-                                        <div className="mb-2">
-                                            <span className="font-semibold">음식점:</span> {review.restaurant.placeName} (별점: {review.rating}점)
-                                        </div>
-                                        <blockquote className="p-2 border-l-4 bg-muted text-foreground mb-2">
-                                            {review.text || "(리뷰 내용 없음)"}
-                                        </blockquote>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <div/>
-                                            <div className="flex gap-1">
-                                                <Button variant="outline" size="sm" onClick={() => handleEditItem('review', review.id)}>
-                                                    <Edit className="h-4 w-4 mr-1" /> 수정
-                                                </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDeleteItem('review', review.id)}>
-                                                    <Trash2 className="h-4 w-4 mr-1" /> 삭제
+                                    ))
+                                }
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">검토가 필요한 리뷰<Badge variant="destructive">{reviewsToModerate.length}</Badge></CardTitle>
+                            </CardHeader>
+                            <CardContent className="max-h-96 overflow-y-auto">
+                                {reviewsToModerate.length === 0
+                                    ? <p className="text-muted-foreground">검토가 필요한 리뷰가 없습니다.</p>
+                                    : reviewsToModerate.map(review => (
+                                        <div key={review.id} className="p-3 border rounded-md mb-3">
+                                            <div className="mb-2">
+                                                <span className="font-semibold">음식점:</span> {review.restaurant.placeName} (별점: {review.rating}점)
+                                            </div>
+                                            <blockquote className="p-2 border-l-4 bg-muted text-foreground mb-2">
+                                                {review.text || "(리뷰 내용 없음)"}
+                                            </blockquote>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <div/>
+                                                <div className="flex gap-1">
+                                                    <Button variant="outline" size="sm" onClick={() => handleEditItem('review', review.id, review.text || '')}>
+                                                        <Edit className="h-4 w-4 mr-1" /> 수정
+                                                    </Button>
+                                                    <Button variant="destructive" size="sm" onClick={() => handleDeleteItem('review', review.id)}>
+                                                        <Trash2 className="h-4 w-4 mr-1" /> 삭제
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-muted-foreground flex justify-between items-center">
+                                                <span>작성자: {review.user.name} ({review.user.email})</span>
+                                                <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleBanUser(review.user.id, review.user.name)}>
+                                                    <UserX className="h-4 w-4 mr-1" /> 사용자 차단
                                                 </Button>
                                             </div>
                                         </div>
-                                        <div className="text-sm text-muted-foreground flex justify-between items-center">
-                                            <span>작성자: {review.user.name} ({review.user.email})</span>
-                                            <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleBanUser(review.user.id, review.user.name)}>
-                                                <UserX className="h-4 w-4 mr-1" /> 사용자 차단
-                                            </Button>
-                                        </div>
+                                    ))
+                                }
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Right Column: Profanity */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>비속어 단어 관리</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex gap-2 mb-4">
+                                <Input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} placeholder="추가할 단어..." onKeyDown={(e) => e.key === 'Enter' && handleAddWord()} />
+                                <Button onClick={handleAddWord}>추가</Button>
+                            </div>
+                            <div className="max-h-80 overflow-y-auto space-y-2">
+                                {words.map(word => (
+                                    <div key={word.id} className="flex items-center justify-between p-2 border rounded-md">
+                                        <span>{word.word}</span>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteWord(word.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                                     </div>
-                                ))
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </main>
 
-            {itemToEdit && (
-                <AdminEditDialog
-                    isOpen={!!itemToEdit}
-                    onClose={() => setItemToEdit(null)}
-                    itemType={itemToEdit.type}
-                    initialText={itemToEdit.text}
-                    onSave={handleSaveItem}
-                />
-            )}
-
+            {/* Dialogs */}
+            {itemToEdit && <AdminEditDialog isOpen={!!itemToEdit} onClose={() => setItemToEdit(null)} itemType={itemToEdit.type} initialText={itemToEdit.text} onSave={handleSaveItem} />}
             {itemToDelete && (
                 <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                이 작업은 되돌릴 수 없습니다. 선택한 {itemToDelete.type === 'tag' ? '태그가' : '리뷰가'} 영구적으로 삭제됩니다.
-                            </AlertDialogDescription>
+                            <AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 선택한 항목이 영구적으로 삭제됩니다.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel onClick={() => setItemToDelete(null)}>취소</AlertDialogCancel>
