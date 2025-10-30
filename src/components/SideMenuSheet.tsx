@@ -192,6 +192,9 @@ export function SideMenuSheet({
                         <Button variant="ghost" className="justify-start" onClick={onShowBlacklist}>
                             블랙리스트 관리
                         </Button>
+                        <Link href="/ranking" passHref>
+                            <Button variant="ghost" className="justify-start w-full">음식점 랭킹</Button>
+                        </Link>
                         <Accordion type="single" collapsible className="w-full">
                             <AccordionItem value="item-1" className="border-none">
                                 <AccordionTrigger className="flex w-full p-2 text-sm font-medium hover:no-underline hover:bg-accent rounded-md" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
@@ -202,9 +205,6 @@ export function SideMenuSheet({
                                         <Button variant="ghost" className="justify-start w-full" onClick={onShowTagManagement}>- 태그 관리</Button>
                                         <Link href="/tags/explore" passHref>
                                             <Button variant="ghost" className="justify-start w-full">- 태그 탐색</Button>
-                                        </Link>
-                                        <Link href="/ranking" passHref>
-                                            <Button variant="ghost" className="justify-start w-full">- 음식점 랭킹</Button>
                                         </Link>
                                     </div>
                                 </AccordionContent>
