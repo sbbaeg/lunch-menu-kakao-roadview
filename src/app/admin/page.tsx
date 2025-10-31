@@ -137,10 +137,14 @@ export default function AdminPage() {
                 setStats(await statsRes.json());
 
                 if (!usersRes.ok) throw new Error('사용자 목록을 불러오는 데 실패했습니다.');
-                setUsers(await usersRes.json());
+                const usersData = await usersRes.json();
+                console.log('All Users from API:', usersData);
+                setUsers(usersData);
 
                 if (!bannedUsersRes.ok) throw new Error('차단된 사용자 목록을 불러오는 데 실패했습니다.');
-                setBannedUsers(await bannedUsersRes.json());
+                const bannedUsersData = await bannedUsersRes.json();
+                console.log('Banned Users from API:', bannedUsersData);
+                setBannedUsers(bannedUsersData);
 
             } catch (e: any) {
                 setError(e.message);
