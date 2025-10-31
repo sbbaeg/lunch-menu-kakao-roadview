@@ -25,6 +25,7 @@ model User {
   emailVerified DateTime?
   image         String?
   isAdmin       Boolean   @default(false)
+  isBanned      Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -115,6 +116,7 @@ model ReviewVote {
   userId   String
   reviewId Int
   type     VoteType
+  createdAt DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
@@ -169,6 +171,7 @@ model Tag {
   userId String // 생성한 사용자 ID
   isPublic Boolean @default(false)
   needsModeration Boolean @default(false)
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
@@ -210,13 +213,44 @@ model ProfanityWord {
   createdAt DateTime @default(now())
 }
 
+
+
 model RestaurantVote {
+
   userId       String
+
   restaurantId Int
+
   type         VoteType // 'UPVOTE' or 'DOWNVOTE'
+  createdAt DateTime @default(now())
+
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
+
+
   @@id([userId, restaurantId]) // 한 사용자는 식당 1곳에 1종류의 투표만 가능
+
+}
+
+
+
+model DailyStat {
+
+  id                 Int      @id @default(autoincrement())
+
+  date               DateTime @unique @db.Date
+
+  newUsers           Int      @default(0)
+
+  newReviews         Int      @default(0)
+
+  newTags            Int      @default(0)
+
+  newRestaurantVotes Int      @default(0)
+
+  newReviewVotes     Int      @default(0)
+
 }
