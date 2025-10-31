@@ -30,10 +30,23 @@ interface ProfanityWord { id: number; word: string; }
 interface ModerationUser { id: string; name: string | null; email: string | null; }
 interface ModerationTag { id: number; name: string; user: ModerationUser; }
 interface ModerationReview { id: number; text: string | null; rating: number; user: ModerationUser; restaurant: { id: number; placeName: string; }; }
-interface TimeSeriesData { date: string; users?: number; reviews?: number; }
+interface TimeSeriesData {
+    date: string;
+    users: number;
+    reviews: number;
+    tags: number;
+    restaurantVotes: number;
+    reviewVotes: number;
+}
 interface AdminStats {
-    totals: { users: number; restaurants: number; reviews: number; tags: number; restaurantVotes: number; reviewVotes: number; };
-    timeSeries: { dailyNewUsers: TimeSeriesData[]; dailyNewReviews: TimeSeriesData[]; };
+    totals: {
+        users: number;
+        reviews: number;
+        tags: number;
+        restaurantVotes: number;
+        reviewVotes: number;
+    };
+    timeSeries: TimeSeriesData[];
 }
 interface UserForManagement {
     id: string;
@@ -44,7 +57,9 @@ interface UserForManagement {
 }
 type ItemToEdit = { type: 'tag' | 'review'; id: number; text: string; } | null;
 type ItemToDelete = { type: 'tag' | 'review'; id: number; } | null;
-type ActiveChart = 'users' | 'reviews';
+type ActiveChart = 'users' | 'reviews' | 'tags' | 'restaurantVotes' | 'reviewVotes';
+
+// --- CHILD COMPONENTS ---
 
 // --- CHILD COMPONENTS ---
 const StatCard = ({ title, value, icon, onClick, isActive }: { title: string; value: number | string; icon: ReactNode; onClick?: () => void; isActive?: boolean; }) => (
@@ -59,7 +74,7 @@ const StatCard = ({ title, value, icon, onClick, isActive }: { title: string; va
     </Card>
 );
 
-const DashboardChart = ({ data, dataKey, title }: { data: TimeSeriesData[]; dataKey: 'users' | 'reviews'; title: string; }) => (
+const DashboardChart = ({ data, dataKey, title }: { data: any[]; dataKey: string; title: string; }) => (
     <Card>
         <CardHeader>
             <CardTitle>{title}</CardTitle>
@@ -97,6 +112,7 @@ export default function AdminPage() {
     const [itemToEdit, setItemToEdit] = useState<ItemToEdit>(null);
     const [itemToDelete, setItemToDelete] = useState<ItemToDelete>(null);
     const [activeChart, setActiveChart] = useState<ActiveChart>('users');
+    const [chartPeriod, setChartPeriod] = useState('daily');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [users, setUsers] = useState<UserForManagement[]>([]);
@@ -270,6 +286,56 @@ export default function AdminPage() {
         }
     };
 
+    const chartTitles: { [key in ActiveChart]: string } = {
+        users: '신규 사용자',
+        reviews: '신규 리뷰',
+        tags: '신규 태그',
+        restaurantVotes: '음식점 투표',
+        reviewVotes: '리뷰 투표',
+    };
+
+    const getChartData = () => {
+        if (!stats) return [];
+        if (chartPeriod === 'weekly') {
+            return aggregateData(stats.timeSeries, 'weekly');
+        }
+        if (chartPeriod === 'monthly') {
+            return aggregateData(stats.timeSeries, 'monthly');
+        }
+        return stats.timeSeries;
+    };
+
+    const aggregateData = (data: TimeSeriesData[], period: 'weekly' | 'monthly') => {
+        if (!data) return [];
+        const aggregationMap = new Map<string, any>();
+        const key = period === 'weekly' ? 'w' : 'm';
+
+        data.forEach(item => {
+            const date = new Date(item.date);
+            let periodKey: string;
+            if (period === 'weekly') {
+                const weekStart = new Date(date.setDate(date.getDate() - date.getDay()));
+                periodKey = weekStart.toISOString().split('T')[0];
+            } else { // monthly
+                periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            if (!aggregationMap.has(periodKey)) {
+                aggregationMap.set(periodKey, { date: periodKey, users: 0, reviews: 0, tags: 0, restaurantVotes: 0, reviewVotes: 0 });
+            }
+            const current = aggregationMap.get(periodKey);
+            aggregationMap.set(periodKey, {
+                ...current,
+                users: current.users + item.users,
+                reviews: current.reviews + item.reviews,
+                tags: current.tags + item.tags,
+                restaurantVotes: current.restaurantVotes + item.restaurantVotes,
+                reviewVotes: current.reviewVotes + item.reviewVotes,
+            });
+        });
+        return Array.from(aggregationMap.values());
+    };
+
     if (status === 'loading' || isLoading) {
         return <div className="p-8"><Skeleton className="h-screen w-full"/></div>;
     }
@@ -291,16 +357,21 @@ export default function AdminPage() {
 
                     <TabsContent value="dashboard">
                         <div className="space-y-6">
-                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                                 <StatCard title="총 사용자" value={stats?.totals.users ?? '-'} icon={<Users className="h-4 w-4 text-muted-foreground" />} onClick={() => setActiveChart('users')} isActive={activeChart === 'users'} />
                                 <StatCard title="총 리뷰" value={stats?.totals.reviews ?? '-'} icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />} onClick={() => setActiveChart('reviews')} isActive={activeChart === 'reviews'} />
-                                <StatCard title="총 음식점" value={stats?.totals.restaurants ?? '-'} icon={<Utensils className="h-4 w-4 text-muted-foreground" />} />
-                                <StatCard title="총 태그" value={stats?.totals.tags ?? '-'} icon={<Tag className="h-4 w-4 text-muted-foreground" />} />
-                                <StatCard title="음식점 투표" value={stats?.totals.restaurantVotes ?? '-'} icon={<ThumbsUp className="h-4 w-4 text-muted-foreground" />} />
-                                <StatCard title="리뷰 투표" value={stats?.totals.reviewVotes ?? '-'} icon={<GitCompareArrows className="h-4 w-4 text-muted-foreground" />} />
+                                <StatCard title="총 태그" value={stats?.totals.tags ?? '-'} icon={<Tag className="h-4 w-4 text-muted-foreground" />} onClick={() => setActiveChart('tags')} isActive={activeChart === 'tags'} />
+                                <StatCard title="음식점 투표" value={stats?.totals.restaurantVotes ?? '-'} icon={<ThumbsUp className="h-4 w-4 text-muted-foreground" />} onClick={() => setActiveChart('restaurantVotes')} isActive={activeChart === 'restaurantVotes'} />
+                                <StatCard title="리뷰 투표" value={stats?.totals.reviewVotes ?? '-'} icon={<GitCompareArrows className="h-4 w-4 text-muted-foreground" />} onClick={() => setActiveChart('reviewVotes')} isActive={activeChart === 'reviewVotes'} />
                             </div>
-                            {stats && activeChart === 'users' && <DashboardChart data={stats.timeSeries.dailyNewUsers} dataKey="users" title="신규 사용자 (지난 30일)" />}
-                            {stats && activeChart === 'reviews' && <DashboardChart data={stats.timeSeries.dailyNewReviews} dataKey="reviews" title="신규 리뷰 (지난 30일)" />}
+                            <Tabs value={chartPeriod} onValueChange={(value) => setChartPeriod(value)}>
+                                <TabsList>
+                                    <TabsTrigger value="daily">일간</TabsTrigger>
+                                    <TabsTrigger value="weekly">주간</TabsTrigger>
+                                    <TabsTrigger value="monthly">월간</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                            {stats && <DashboardChart data={getChartData()} dataKey={activeChart} title={`${chartTitles[activeChart]} (${chartPeriod === 'daily' ? '일간' : chartPeriod === 'weekly' ? '주간' : '월간'})`} />}
                         </div>
                     </TabsContent>
 
