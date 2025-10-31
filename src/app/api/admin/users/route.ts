@@ -30,9 +30,6 @@ export async function GET(req: NextRequest) {
     try {
         const users = await prisma.user.findMany({
             where,
-            orderBy: {
-                createdAt: 'desc',
-            }
         });
         return NextResponse.json(users);
     } catch (error) {
