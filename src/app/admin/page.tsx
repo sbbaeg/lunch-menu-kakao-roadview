@@ -336,6 +336,22 @@ export default function AdminPage() {
         return Array.from(aggregationMap.values());
     };
 
+    const handleCreateSnapshot = async () => {
+        try {
+            const res = await fetch('/api/admin/stats/snapshot', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || '통계 생성에 실패했습니다.');
+            }
+            alert(data.message || '통계가 성공적으로 생성되었습니다.');
+            // Refresh stats after creation
+            const statsRes = await fetch('/api/admin/stats');
+            setStats(await statsRes.json());
+        } catch (e: any) {
+            alert(`오류: ${e.message}`);
+        }
+    };
+
     if (status === 'loading' || isLoading) {
         return <div className="p-8"><Skeleton className="h-screen w-full"/></div>;
     }
@@ -364,13 +380,16 @@ export default function AdminPage() {
                                 <StatCard title="음식점 투표" value={stats?.totals.restaurantVotes ?? '-'} icon={<ThumbsUp className="h-4 w-4 text-muted-foreground" />} onClick={() => setActiveChart('restaurantVotes')} isActive={activeChart === 'restaurantVotes'} />
                                 <StatCard title="리뷰 투표" value={stats?.totals.reviewVotes ?? '-'} icon={<GitCompareArrows className="h-4 w-4 text-muted-foreground" />} onClick={() => setActiveChart('reviewVotes')} isActive={activeChart === 'reviewVotes'} />
                             </div>
-                            <Tabs value={chartPeriod} onValueChange={(value) => setChartPeriod(value)}>
-                                <TabsList>
-                                    <TabsTrigger value="daily">일간</TabsTrigger>
-                                    <TabsTrigger value="weekly">주간</TabsTrigger>
-                                    <TabsTrigger value="monthly">월간</TabsTrigger>
-                                </TabsList>
-                            </Tabs>
+                            <div className="flex items-center gap-4">
+                                <Tabs value={chartPeriod} onValueChange={(value) => setChartPeriod(value)}>
+                                    <TabsList>
+                                        <TabsTrigger value="daily">일간</TabsTrigger>
+                                        <TabsTrigger value="weekly">주간</TabsTrigger>
+                                        <TabsTrigger value="monthly">월간</TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                                <Button onClick={handleCreateSnapshot} variant="outline">어제 통계 수동 생성</Button>
+                            </div>
                             {stats && <DashboardChart data={getChartData()} dataKey={activeChart} title={`${chartTitles[activeChart]} (${chartPeriod === 'daily' ? '일간' : chartPeriod === 'weekly' ? '주간' : '월간'})`} />}
                         </div>
                     </TabsContent>
