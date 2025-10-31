@@ -4,12 +4,13 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Trash2, Edit, UserX, Users, Utensils, MessageSquare, Tag, ThumbsUp, GitCompareArrows } from 'lucide-react';
+import { Trash2, Edit, UserX, Users, Utensils, MessageSquare, Tag, ThumbsUp, GitCompareArrows, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AdminEditDialog } from '@/components/ui/AdminEditDialog';
 import {
@@ -33,6 +34,13 @@ interface TimeSeriesData { date: string; users?: number; reviews?: number; }
 interface AdminStats {
     totals: { users: number; restaurants: number; reviews: number; tags: number; restaurantVotes: number; reviewVotes: number; };
     timeSeries: { dailyNewUsers: TimeSeriesData[]; dailyNewReviews: TimeSeriesData[]; };
+}
+interface UserForManagement {
+    id: string;
+    name: string | null;
+    email: string | null;
+    isAdmin: boolean;
+    isBanned: boolean;
 }
 type ItemToEdit = { type: 'tag' | 'review'; id: number; text: string; } | null;
 type ItemToDelete = { type: 'tag' | 'review'; id: number; } | null;
@@ -91,6 +99,8 @@ export default function AdminPage() {
     const [activeChart, setActiveChart] = useState<ActiveChart>('users');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [users, setUsers] = useState<UserForManagement[]>([]);
+    const [userSearchTerm, setUserSearchTerm] = useState('');
 
     // Data Fetching
     useEffect(() => {
@@ -103,10 +113,11 @@ export default function AdminPage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [profanityRes, moderationRes, statsRes] = await Promise.all([
+                const [profanityRes, moderationRes, statsRes, usersRes] = await Promise.all([
                     fetch('/api/admin/profanity'),
                     fetch('/api/admin/moderation'),
-                    fetch('/api/admin/stats')
+                    fetch('/api/admin/stats'),
+                    fetch('/api/admin/users')
                 ]);
 
                 if (!profanityRes.ok) throw new Error('비속어를 불러오는 데 실패했습니다.');
@@ -120,6 +131,9 @@ export default function AdminPage() {
                 if (!statsRes.ok) throw new Error('통계 정보를 불러오는 데 실패했습니다.');
                 setStats(await statsRes.json());
 
+                if (!usersRes.ok) throw new Error('사용자 목록을 불러오는 데 실패했습니다.');
+                setUsers(await usersRes.json());
+
             } catch (e: any) {
                 setError(e.message);
             } finally {
@@ -130,8 +144,6 @@ export default function AdminPage() {
         fetchData();
     }, [session, status, router]);
 
-    // Handlers are intentionally omitted for brevity in this refactoring view
-    // but they are the same as the previous version.
     const handleAddWord = async () => {
         if (!newWord.trim()) return;
         try {
@@ -212,8 +224,12 @@ export default function AdminPage() {
         } catch (e: any) { setError(e.message); }
     };
 
-    const handleBanUser = (userId: string, userName: string | null) => {
-        alert(`[구현 필요] 사용자 ${userName}(${userId}) 차단`);
+    const handleUserSearch = async () => {
+        try {
+            const res = await fetch(`/api/admin/users?search=${userSearchTerm}`);
+            if (!res.ok) throw new Error('사용자 검색에 실패했습니다.');
+            setUsers(await res.json());
+        } catch (e: any) { setError(e.message); }
     };
 
     if (status === 'loading' || isLoading) {
@@ -232,9 +248,9 @@ export default function AdminPage() {
                     <TabsList className="mb-4">
                         <TabsTrigger value="dashboard">대시보드</TabsTrigger>
                         <TabsTrigger value="management">콘텐츠 관리</TabsTrigger>
+                        <TabsTrigger value="users">사용자 관리</TabsTrigger>
                     </TabsList>
 
-                    {/* Dashboard Tab */}
                     <TabsContent value="dashboard">
                         <div className="space-y-6">
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -250,7 +266,6 @@ export default function AdminPage() {
                         </div>
                     </TabsContent>
 
-                    {/* Content Management Tab */}
                     <TabsContent value="management">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -269,8 +284,10 @@ export default function AdminPage() {
                                                         </div>
                                                     </div>
                                                     <div className="text-xs text-muted-foreground flex justify-between items-center">
-                                                        <span className="truncate">by {tag.user.name} ({tag.user.email})</span>
-                                                        <Button variant="ghost" size="sm" className="text-red-500 h-auto p-0" onClick={() => handleBanUser(tag.user.id, tag.user.name)}><UserX className="h-3 w-3" /></Button>
+                                                        <Link href={`/admin/users/${tag.user.id}`} className="truncate hover:underline">
+                                                            by {tag.user.name} ({tag.user.email})
+                                                        </Link>
+                                                        <Button variant="ghost" size="sm" className="text-red-500 h-auto p-0" onClick={() => router.push(`/admin/users/${tag.user.id}`)}><UserX className="h-3 w-3" /></Button>
                                                     </div>
                                                 </div>
                                             ))
@@ -298,8 +315,10 @@ export default function AdminPage() {
                                                         </div>
                                                     </div>
                                                     <div className="text-xs text-muted-foreground flex justify-between items-center">
-                                                        <span className="truncate">by {review.user.name} ({review.user.email})</span>
-                                                        <Button variant="ghost" size="sm" className="text-red-500 h-auto p-0" onClick={() => handleBanUser(review.user.id, review.user.name)}><UserX className="h-3 w-3" /></Button>
+                                                        <Link href={`/admin/users/${review.user.id}`} className="truncate hover:underline">
+                                                            by {review.user.name} ({review.user.email})
+                                                        </Link>
+                                                        <Button variant="ghost" size="sm" className="text-red-500 h-auto p-0" onClick={() => router.push(`/admin/users/${review.user.id}`)}><UserX className="h-3 w-3" /></Button>
                                                     </div>
                                                 </div>
                                             ))
@@ -326,10 +345,47 @@ export default function AdminPage() {
                             </Card>
                         </div>
                     </TabsContent>
+
+                    <TabsContent value="users">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>사용자 검색 및 관리</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex gap-2 mb-4">
+                                    <Input
+                                        type="text"
+                                        value={userSearchTerm}
+                                        onChange={(e) => setUserSearchTerm(e.target.value)}
+                                        placeholder="이름 또는 이메일로 검색..."
+                                        onKeyDown={(e) => e.key === 'Enter' && handleUserSearch()}
+                                    />
+                                    <Button onClick={handleUserSearch}><Search className="h-4 w-4" /></Button>
+                                </div>
+                                <div className="max-h-[600px] overflow-y-auto space-y-2 pr-2">
+                                    {users.map(user => (
+                                        <div key={user.id} className="p-3 border rounded-md flex justify-between items-center">
+                                            <div>
+                                                <Link href={`/admin/users/${user.id}`} className="font-semibold truncate hover:underline">
+                                                    {user.name || '이름 없음'}
+                                                </Link>
+                                                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {user.isAdmin && <Badge variant="secondary">Admin</Badge>}
+                                                {user.isBanned && <Badge variant="destructive">Banned</Badge>}
+                                                <Button variant="outline" size="sm" onClick={() => router.push(`/admin/users/${user.id}`)}>상세보기</Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
                 </Tabs>
             </main>
 
-            {/* Dialogs */}
             {itemToEdit && <AdminEditDialog isOpen={!!itemToEdit} onClose={() => setItemToEdit(null)} itemType={itemToEdit.type} initialText={itemToEdit.text} onSave={handleSaveItem} />}
             {itemToDelete && (
                 <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>

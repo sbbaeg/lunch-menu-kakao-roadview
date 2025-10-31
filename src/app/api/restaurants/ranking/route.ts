@@ -4,6 +4,8 @@ import { PrismaClient } from '@prisma/client';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 import { AppRestaurant, KakaoPlaceItem } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 const prisma = new PrismaClient();
 
 const MIN_LIKE_COUNT_THRESHOLD = 5; // 최소 좋아요 개수
