@@ -304,6 +304,7 @@ export default function TagProfilePage() {
                 userTags={userTags}
                 onToggleTagLink={handleToggleTagLink}
                 onCreateAndLinkTag={handleCreateAndLinkTag}
+                isBanned={session?.user?.isBanned ?? false}
             />
 
             <MyReviewsDialog
