@@ -6,12 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AppReview } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+import { toast } from "@/components/ui/toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMediaQuery } from '@/hooks/use-media-query';
+
 
 interface ReviewFormProps {
   restaurantId: number;
   existingReview?: AppReview | null;
   onReviewSubmit: () => void; // To refresh the list after submission
   onCancelEdit?: () => void;
+  isBanned: boolean;
 }
 
 // A simple star component for the form
@@ -31,10 +36,11 @@ const StarInput = ({ rating, setRating }: { rating: number, setRating: (r: numbe
   );
 };
 
-export function ReviewForm({ restaurantId, existingReview, onReviewSubmit, onCancelEdit }: ReviewFormProps) {
+export function ReviewForm({ restaurantId, existingReview, onReviewSubmit, onCancelEdit, isBanned }: ReviewFormProps) {
   const [rating, setRating] = useState(existingReview?.rating || 0);
   const [text, setText] = useState(existingReview?.text || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   // If the user starts editing another review, reset the form
   useEffect(() => {
@@ -60,24 +66,69 @@ export function ReviewForm({ restaurantId, existingReview, onReviewSubmit, onCan
       );
 
       if (!response.ok) {
-        throw new Error('Failed to submit review');
-      }
-
-      onReviewSubmit(); // Refresh the reviews list
-      if (existingReview) {
-        onCancelEdit?.(); // Exit edit mode
+        const errorData = await response.json();
+        if (response.status === 403) { // Banned user error
+          toast.error("작성 제한", {
+            description: "차단된 사용자는 리뷰를 작성할 수 없습니다.",
+          });
+        } else {
+          throw new Error(errorData.error || 'Failed to submit review');
+        }
       } else {
-        // Reset form after new submission
-        setRating(0);
-        setText('');
+        onReviewSubmit(); // Refresh the reviews list
+        if (existingReview) {
+          onCancelEdit?.(); // Exit edit mode
+        } else {
+          // Reset form after new submission
+          setRating(0);
+          setText('');
+        }
       }
-
     } catch (error) {
       console.error(error);
       alert('리뷰를 등록하는 데 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const BannedFeedbackButton = () => {
+    const button = (
+      <Button type="button" disabled>
+        {existingReview ? '수정하기' : '작성하기'}
+      </Button>
+    );
+
+    if (isDesktop) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {button}
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>차단된 사용자는 리뷰를 작성할 수 없습니다.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    // Mobile: button is not technically disabled to allow click for toast
+    return (
+      <Button
+        type="button"
+        aria-disabled="true"
+        className="opacity-50 cursor-not-allowed"
+        onClick={() => {
+          toast.error("작성 제한", {
+            description: "차단된 사용자는 리뷰를 작성할 수 없습니다.",
+          });
+        }}
+      >
+        {existingReview ? '수정하기' : '작성하기'}
+      </Button>
+    );
   };
 
   return (
@@ -94,6 +145,7 @@ export function ReviewForm({ restaurantId, existingReview, onReviewSubmit, onCan
           onChange={(e) => setText(e.target.value)}
           placeholder="음식점에 대한 솔직한 리뷰를 남겨주세요."
           rows={4}
+          disabled={isBanned}
         />
       </div>
       <div className="flex justify-end gap-2">
@@ -102,10 +154,14 @@ export function ReviewForm({ restaurantId, existingReview, onReviewSubmit, onCan
             취소
           </Button>
         )}
-        <Button type="submit" disabled={isSubmitting || rating === 0}>
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {existingReview ? '수정하기' : '작성하기'}
-        </Button>
+        {isBanned ? (
+          <BannedFeedbackButton />
+        ) : (
+          <Button type="submit" disabled={isSubmitting || rating === 0}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {existingReview ? '수정하기' : '작성하기'}
+          </Button>
+        )}
       </div>
     </form>
   );

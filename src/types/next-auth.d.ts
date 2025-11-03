@@ -8,6 +8,7 @@ declare module "next-auth" {
     user: {
       id: string;
       isAdmin: boolean;
+      isBanned: boolean;
     } & DefaultSession["user"];
   }
 
@@ -17,5 +18,6 @@ declare module "next-auth" {
   interface User extends DefaultUser {
     id: string;
     isAdmin: boolean;
+    isBanned: boolean;
   }
 }

@@ -6,6 +6,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppShell } from "@/components/AppShell";
 import Providers from './providers'; // <--- 1. 이 줄을 추가합니다.
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -64,6 +65,7 @@ export default function RootLayout({
           <Providers>
             <AppShell>{children}</AppShell>
           </Providers>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

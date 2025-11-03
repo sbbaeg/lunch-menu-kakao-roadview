@@ -26,6 +26,7 @@ export const authOptions: NextAuthOptions = {
           email: profile.kakao_account?.email ?? `${profile.id}@kakao.local`,
           image: profile.kakao_account?.profile?.profile_image_url,
           isAdmin: false, // isAdmin 기본값 추가
+          isBanned: false, // isBanned 기본값 추가
         };
       },
     }),
@@ -38,6 +39,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = user.id;
         session.user.isAdmin = (user as any).isAdmin; // Add isAdmin flag
+        session.user.isBanned = (user as any).isBanned; // Add isBanned flag
       }
       return session;
     },
