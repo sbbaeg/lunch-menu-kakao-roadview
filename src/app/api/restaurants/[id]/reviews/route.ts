@@ -74,6 +74,11 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Banned user check
+  if (session.user.isBanned) {
+    return NextResponse.json({ error: 'Banned users cannot post reviews.' }, { status: 403 });
+  }
+
   const restaurantId = parseInt(params.id, 10);
   if (isNaN(restaurantId)) {
     return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });

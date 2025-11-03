@@ -125,6 +125,7 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
           existingReview={editingReview}
           onReviewSubmit={() => { setEditingReview(null); fetchReviews(); }}
           onCancelEdit={() => setEditingReview(null)}
+          isBanned={session?.user?.isBanned ?? false}
         />
       )}
 
