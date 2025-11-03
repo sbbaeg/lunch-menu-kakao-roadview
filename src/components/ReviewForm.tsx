@@ -7,9 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AppReview } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { toast } from "@/components/ui/toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useMediaQuery } from '@/hooks/use-media-query';
-
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface ReviewFormProps {
   restaurantId: number;
@@ -93,28 +91,15 @@ export function ReviewForm({ restaurantId, existingReview, onReviewSubmit, onCan
   };
 
   const BannedFeedbackButton = () => {
-    const button = (
-      <Button type="button" disabled>
-        {existingReview ? '수정하기' : '작성하기'}
-      </Button>
-    );
-
     if (isDesktop) {
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {button}
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>차단된 사용자는 리뷰를 작성할 수 없습니다.</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Button type="button" disabled>
+          차단된 사용자
+        </Button>
       );
     }
 
-    // Mobile: button is not technically disabled to allow click for toast
+    // Mobile
     return (
       <Button
         type="button"

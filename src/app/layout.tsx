@@ -65,7 +65,7 @@ export default function RootLayout({
           <Providers>
             <AppShell>{children}</AppShell>
           </Providers>
-          <Toaster />
+          <Toaster position="top-center" />
         </ThemeProvider>
       </body>
     </html>
