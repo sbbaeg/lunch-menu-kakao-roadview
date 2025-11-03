@@ -385,6 +385,7 @@ export default function Home() {
                 userTags={userTags}
                 onToggleTagLink={handleToggleTagLink}
                 onCreateAndLinkTag={handleCreateTag}
+                isBanned={session?.user?.isBanned ?? false}
             />
             
             <MyReviewsDialog
