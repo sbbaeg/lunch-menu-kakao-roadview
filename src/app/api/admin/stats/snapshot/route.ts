@@ -3,13 +3,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from "next-auth/next"
 import { authOptions } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user?.isAdmin) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authHeader = headers().get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+
+    const isCron = cronSecret && authHeader === `Bearer ${cronSecret}`;
+
+    if (!isCron) {
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user?.isAdmin) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
     }
 
     const today = new Date();
