@@ -35,6 +35,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
     }
 
+    // Banned user check
+    if (session.user.isBanned) {
+        return NextResponse.json({ error: 'Banned users cannot create tags.' }, { status: 403 });
+    }
+
     try {
         const { name } = await request.json();
         const trimmedName = name?.trim();

@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AppRestaurant, Tag } from "@/lib/types";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { toast } from "@/components/ui/toast";
 
 interface TaggingDialogProps {
   restaurant: AppRestaurant | null;
@@ -17,6 +19,7 @@ interface TaggingDialogProps {
   userTags: Tag[];
   onToggleTagLink: (tag: Tag) => void;
   onCreateAndLinkTag: (tagName: string) => Promise<void>;
+  isBanned: boolean;
 }
 
 export function TaggingDialog({
@@ -25,9 +28,11 @@ export function TaggingDialog({
   userTags,
   onToggleTagLink,
   onCreateAndLinkTag,
+  isBanned,
 }: TaggingDialogProps) {
   const [newTagName, setNewTagName] = useState("");
   const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const handleCreate = async () => {
     if (!newTagName.trim() || isCreatingTag) return;
@@ -35,16 +40,37 @@ export function TaggingDialog({
     await onCreateAndLinkTag(newTagName);
     setIsCreatingTag(false);
     setNewTagName("");
-    // 성공 시 다이얼로그를 닫을 수도 있습니다. 이건 선택사항입니다.
-    // onOpenChange(false);
   };
 
   const filteredTags = newTagName.trim() === ''
     ? userTags
     : userTags.filter(tag => tag.name.toLowerCase().includes(newTagName.trim().toLowerCase()));
 
-  // isOpen 상태는 restaurant prop의 존재 여부로 결정합니다.
   const isOpen = !!restaurant;
+
+  const AddTagButton = () => {
+    if (isBanned) {
+      if (isDesktop) {
+        return <Button disabled>차단된 사용자</Button>;
+      }
+      return (
+        <Button
+          type="button"
+          aria-disabled="true"
+          className="opacity-50 cursor-not-allowed"
+          onClick={() => toast.error("생성 제한", { description: "차단된 사용자는 태그를 생성할 수 없습니다." })}
+        >
+          추가
+        </Button>
+      );
+    }
+
+    return (
+      <Button onClick={handleCreate} disabled={isCreatingTag}>
+        {isCreatingTag ? '추가 중...' : '추가'}
+      </Button>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -60,11 +86,9 @@ export function TaggingDialog({
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              disabled={isCreatingTag}
+              disabled={isCreatingTag || isBanned}
             />
-            <Button onClick={handleCreate} disabled={isCreatingTag}>
-              {isCreatingTag ? '추가 중...' : '추가'}
-            </Button>
+            <AddTagButton />
           </div>
           <div className="max-h-60 overflow-y-auto space-y-2">
             <p className="text-sm font-medium text-muted-foreground">내 태그 목록</p>
@@ -74,8 +98,9 @@ export function TaggingDialog({
                   id={`tag-${tag.id}`}
                   checked={restaurant?.tags?.some(rt => rt.id === tag.id)}
                   onCheckedChange={() => onToggleTagLink(tag)}
+                  disabled={isBanned}
                 />
-                <Label htmlFor={`tag-${tag.id}`} className="cursor-pointer">
+                <Label htmlFor={`tag-${tag.id}`} className={`cursor-pointer ${isBanned ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   {tag.name}
                 </Label>
               </div>
