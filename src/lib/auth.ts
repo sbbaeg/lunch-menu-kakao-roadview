@@ -36,6 +36,7 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async session({ session, user }) {
+      console.log("SESSION CALLBACK USER:", user);
       if (session.user) {
         session.user.id = user.id;
         session.user.isAdmin = (user as any).isAdmin; // Add isAdmin flag
