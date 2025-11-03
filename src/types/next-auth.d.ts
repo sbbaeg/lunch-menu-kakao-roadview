@@ -1,4 +1,5 @@
 import { DefaultSession, DefaultUser } from "next-auth";
+import { JWT } from "next-auth/jwt";
 
 declare module "next-auth" {
   /**
@@ -16,6 +17,14 @@ declare module "next-auth" {
    * `user` 객체에 `isAdmin` 프로퍼티를 추가합니다.
    */
   interface User extends DefaultUser {
+    id: string;
+    isAdmin: boolean;
+    isBanned: boolean;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
     id: string;
     isAdmin: boolean;
     isBanned: boolean;
