@@ -32,15 +32,23 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
   callbacks: {
-    async session({ session, user }) {
-      console.log("SESSION CALLBACK USER:", user);
+    async jwt({ token, user }) {
+      // Initial sign in
+      if (user) {
+        token.id = user.id;
+        token.isAdmin = (user as any).isAdmin;
+        token.isBanned = (user as any).isBanned;
+      }
+      return token;
+    },
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id;
-        session.user.isAdmin = (user as any).isAdmin; // Add isAdmin flag
-        session.user.isBanned = (user as any).isBanned; // Add isBanned flag
+        session.user.id = token.id;
+        session.user.isAdmin = token.isAdmin;
+        session.user.isBanned = token.isBanned;
       }
       return session;
     },
