@@ -277,6 +277,7 @@ export default function RestaurantPage() {
             userTags={userTags}
             onToggleTagLink={handleToggleTagLink}
             onCreateAndLinkTag={handleCreateAndLinkTag}
+            isBanned={session?.user?.isBanned ?? false}
         />
 
         <MyReviewsDialog
