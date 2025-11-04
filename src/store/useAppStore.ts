@@ -9,7 +9,7 @@ interface AppState {
   rouletteItems: AppRestaurant[];
   userLocation: { lat: number; lng: number } | null;
   activeTab: 'map' | 'favorites' | 'roulette' | 'my-page';
-  activeView: 'tabs' | 'tagDetail' | 'restaurantDetail' | 'tagExplore' | 'myReviews' | 'ranking';
+  activeView: 'tabs' | 'tagDetail' | 'restaurantDetail' | 'tagExplore' | 'myReviews' | 'ranking' | 'notifications';
   previousView: AppState['activeView'];
   activeTagId: number | null;
   activeRestaurantId: string | null;
@@ -34,6 +34,7 @@ interface AppState {
   showTagExplore: () => void;
   showMyReviews: () => void;
   showRanking: () => void;
+  showNotifications: () => void;
   
   setSelectedItemId: (id: string) => void;
   setRestaurantList: (restaurants: AppRestaurant[]) => void;
@@ -108,6 +109,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   showRanking: () => set(state => ({
     activeView: 'ranking',
+    previousView: state.activeView
+  })),
+
+  showNotifications: () => set(state => ({
+    activeView: 'notifications',
     previousView: state.activeView
   })),
 

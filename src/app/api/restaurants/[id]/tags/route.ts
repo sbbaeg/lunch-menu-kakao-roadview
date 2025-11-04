@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, NotificationType } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { AppRestaurant } from '@/lib/types'; // Restaurant 타입을 가져옵니다.
 
@@ -70,6 +70,28 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                     tagId: tagId,
                 },
             });
+
+            // Find the tag and its subscribers
+            const tagWithSubscribers = await prisma.tag.findUnique({
+                where: { id: tagId },
+                include: { 
+                    subscribers: true,
+                    user: true // for tag name
+                },
+            });
+
+            if (tagWithSubscribers && tagWithSubscribers.subscribers.length > 0) {
+                const notifications = tagWithSubscribers.subscribers.map(subscription => ({
+                    userId: subscription.userId,
+                    type: NotificationType.TAG_SUBSCRIPTION,
+                    message: `'${tagWithSubscribers.name}' 태그에 '${dbRestaurant.placeName}'이(가) 추가되었습니다.`,
+                }));
+
+                await prisma.notification.createMany({
+                    data: notifications,
+                });
+            }
+
             return NextResponse.json({ message: '태그가 음식점에 추가되었습니다.', action: 'attached' });
         }
     } catch (error) {
