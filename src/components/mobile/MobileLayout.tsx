@@ -302,6 +302,7 @@ export default function MobileLayout() {
                 userTags={userTags}
                 onToggleTagLink={handleToggleTagLink}
                 onCreateAndLinkTag={handleCreateTag}
+                isBanned={session?.user?.isBanned ?? false}
             />
             <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
                 <AlertDialogContent className="max-w-lg">
