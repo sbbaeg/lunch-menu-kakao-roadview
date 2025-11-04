@@ -17,6 +17,13 @@ enum VoteType {
   DOWNVOTE
 }
 
+enum NotificationType {
+  BANNED
+  TAG_SUBSCRIPTION
+  MODERATION
+  GENERAL
+}
+
 // 1. 사용자 계정 모델 (NextAuth.js와 연동)
 model User {
   id            String    @id @default(cuid())
@@ -39,6 +46,7 @@ model User {
   reviews          Review[]
   reviewVotes      ReviewVote[]
   restaurantVotes  RestaurantVote[]
+  notifications    Notification[]
 }
 
 // 2. 음식점 정보 모델
@@ -253,4 +261,18 @@ model DailyStat {
 
   newReviewVotes     Int      @default(0)
 
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    String
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

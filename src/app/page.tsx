@@ -12,6 +12,7 @@ import { RouletteDialog } from "@/components/RouletteDialog"; //룰렛
 import { SideMenuSheet } from "@/components/SideMenuSheet"; //사이드햄버거메뉴
 import { MyReviewsDialog } from "@/components/MyReviewsDialog";
 import { LikedRestaurantsDialog } from "@/components/LikedRestaurantsDialog"; // 1. 컴포넌트 임포트
+import { NotificationPopover } from "@/components/ui/NotificationPopover";
 
 //논리구조 리펙토링
 import { useFavorites } from "@/hooks/useFavorites";
@@ -281,7 +282,8 @@ export default function Home() {
 
     return (
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
-            <div className="absolute top-2 right-2 z-50">
+            <div className="absolute top-2 right-2 z-50 flex items-center">
+                <NotificationPopover />
                 <SideMenuSheet
                     onShowFavorites={() => setIsFavoritesListOpen(true)}
                     onShowBlacklist={handleBlacklistClick}

@@ -21,12 +21,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useAppStore } from "@/store/useAppStore";
+import { useNotifications } from "@/hooks/useNotifications"; // 알림 훅 임포트
 
 interface MyPageProps {
     onShowFavorites: () => void;
@@ -34,6 +35,7 @@ interface MyPageProps {
     onShowTagManagement: () => void;
     onShowLikedRestaurants: () => void;
     onShowRanking: () => void;
+    onShowNotifications: () => void; // 알림 핸들러 추가
 }
 
 export default function MyPage({ 
@@ -42,10 +44,12 @@ export default function MyPage({
     onShowTagManagement,
     onShowLikedRestaurants,
     onShowRanking,
+    onShowNotifications,
 }: MyPageProps) {
     const { data: session, status } = useSession();
     const showTagExplore = useAppStore((state) => state.showTagExplore);
     const showMyReviews = useAppStore((state) => state.showMyReviews);
+    const { unreadCount } = useNotifications(); // 읽지 않은 알림 수 가져오기
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -147,6 +151,11 @@ export default function MyPage({
 
                     <div className="flex flex-col gap-2 px-4">
                         <h3 className="text-lg font-semibold mb-2">내 활동 관리</h3>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowNotifications}>
+                            <Bell className="mr-2 h-4 w-4" /> 
+                            알림
+                            {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
+                        </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowFavorites}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
                         </Button>
