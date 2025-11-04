@@ -1,4 +1,7 @@
-import withPWA from 'next-pwa';
+// next.config.mjs
+
+// import withPWA from 'next-pwa'; // PWA 비활성화
+// import runtimeCaching from "next-pwa/cache.js"; // PWA 비활성화
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -6,11 +9,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'maps.googleapis.com', // 기존에 있던 설정
+        hostname: 'maps.googleapis.com',
         port: '',
         pathname: '/maps/api/place/photo/**',
       },
-      { //(리뷰어 프로필 사진용)
+      {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
         port: '',
@@ -20,11 +23,14 @@ const nextConfig = {
   },
 };
 
-const pwaConfig = {
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-};
+// PWA is disabled for now to allow build to complete on low-resource server
+// const pwaConfig = {
+//   dest: 'public',
+//   register: true,
+//   skipWaiting: true,
+//   disable: process.env.NODE_ENV === 'development',
+//   runtimeCaching,
+// };
 
-export default withPWA(pwaConfig)(nextConfig);
+// export default withPWA(pwaConfig)(nextConfig); // PWA 비활성화
+export default nextConfig;
