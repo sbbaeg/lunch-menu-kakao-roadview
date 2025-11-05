@@ -133,11 +133,7 @@ export default function TagExplorePage() {
             {showSearchResults ? (
                 <div>
                     <h3 className="text-lg font-semibold mb-2">검색 결과</h3>
-                    {isSearching ? (
-                    <ul className="space-y-2 mt-4">
-                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
-                    </ul>
-                    ) : searchResults.length > 0 ? (
+                    {searchResults.length > 0 ? (
                     <ul className="space-y-2 mt-4">
                         {searchResults.map(tag => (
                         <TagRankingItem 
@@ -161,11 +157,6 @@ export default function TagExplorePage() {
                     <TabsTrigger value="subscribers">구독자순</TabsTrigger>
                     </TabsList>
                     <TabsContent value="popular" className="mt-4">
-                    {isLoading ? (
-                        <ul className="space-y-2">
-                        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
-                        </ul>
-                    ) : (
                         <ul className="space-y-2">
                         {rankedTags.map(tag => (
                             <TagRankingItem 
@@ -178,14 +169,8 @@ export default function TagExplorePage() {
                             />
                         ))}
                         </ul>
-                    )}
                     </TabsContent>
                     <TabsContent value="subscribers" className="mt-4">
-                    {isLoading ? (
-                        <ul className="space-y-2">
-                        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
-                        </ul>
-                    ) : (
                         <ul className="space-y-2">
                         {rankedTags.map(tag => (
                             <TagRankingItem 
@@ -198,7 +183,6 @@ export default function TagExplorePage() {
                             />
                         ))}
                         </ul>
-                    )}
                     </TabsContent>
                 </Tabs>
             )}
