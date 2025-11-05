@@ -283,7 +283,6 @@ export default function Home() {
     return (
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
             <div className="absolute top-2 right-2 z-50 flex items-center">
-                <button onClick={() => alert('Test Click!')}>Test</button>
                 <NotificationPopover />
                 <SideMenuSheet
                     onShowFavorites={() => setIsFavoritesListOpen(true)}
