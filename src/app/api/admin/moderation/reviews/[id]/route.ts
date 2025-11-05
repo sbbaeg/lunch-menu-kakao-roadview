@@ -33,6 +33,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 text,
                 needsModeration: false,
             },
+            include: {
+                restaurant: {
+                    select: {
+                        placeName: true,
+                    }
+                }
+            }
+        });
+
+        // Create notification for the user
+        await prisma.notification.create({
+            data: {
+                userId: updatedReview.userId,
+                type: 'MODERATION',
+                message: `관리자에 의해 회원님의 \'${updatedReview.restaurant.placeName}\' 리뷰가 수정되었습니다.`,
+            }
         });
 
         return NextResponse.json(updatedReview);
@@ -55,8 +71,33 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
             return NextResponse.json({ error: 'Invalid review ID' }, { status: 400 });
         }
 
+        // First, find the review to get authorId and restaurant name for notification
+        const review = await prisma.review.findUnique({
+            where: { id: reviewId },
+            include: {
+                restaurant: {
+                    select: {
+                        placeName: true,
+                    }
+                }
+            }
+        });
+
+        if (!review) {
+            return NextResponse.json({ error: 'Review not found' }, { status: 404 });
+        }
+
         await prisma.review.delete({
             where: { id: reviewId },
+        });
+
+        // Create notification for the user
+        await prisma.notification.create({
+            data: {
+                userId: review.userId,
+                type: 'MODERATION',
+                message: `관리자에 의해 회원님의 \'${review.restaurant.placeName}\' 리뷰가 삭제되었습니다.`,
+            }
         });
 
         return NextResponse.json({ message: 'Review deleted successfully' }, { status: 200 });

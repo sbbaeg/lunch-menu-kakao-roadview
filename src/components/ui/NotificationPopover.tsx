@@ -14,12 +14,17 @@ import Link from "next/link";
 const NotificationItem = ({ notification, onDelete }: { notification: any, onDelete: (id: number) => void }) => {
   let messageContent = notification.message;
   let tagId = null;
+  let restaurantId = null;
 
-  if (notification.type === 'TAG_SUBSCRIPTION') {
+  if (notification.type === 'TAG_SUBSCRIPTION' || notification.type === 'REVIEW_UPVOTE' || notification.type === 'BEST_REVIEW') {
     try {
       const parsed = JSON.parse(notification.message);
       messageContent = parsed.text;
-      tagId = parsed.tagId;
+      if (notification.type === 'TAG_SUBSCRIPTION') {
+        tagId = parsed.tagId;
+      } else {
+        restaurantId = parsed.restaurantId;
+      }
     } catch (e) {
       // Keep messageContent as is if parsing fails (for backward compatibility)
     }
@@ -47,6 +52,13 @@ const NotificationItem = ({ notification, onDelete }: { notification: any, onDel
           <Link href={`/tags/${tagId}`} className="w-full">
             <Button variant="outline" size="sm" className="w-full mt-2">
               태그 상세 보기
+            </Button>
+          </Link>
+        )}
+        {restaurantId && (
+          <Link href={`/restaurants/${restaurantId}`} className="w-full">
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              음식점 상세 보기
             </Button>
           </Link>
         )}
