@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, X } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
 
 function getNotificationMessage(notification: any) {
     switch (notification.type) {
       case 'BANNED':
-        return `관리자에 의해 계정이 차단되었습니다. 사유: ${notification.message}`;
+        return notification.message;
       case 'TAG_SUBSCRIPTION':
         return `팔로우 중인 태그에 새로운 장소가 추가되었습니다: ${notification.message}`;
       case 'MODERATION':
@@ -23,7 +24,7 @@ function getNotificationMessage(notification: any) {
   }
 
 export default function NotificationsPage() {
-  const { notifications, isLoading, deleteNotifications } = useNotifications();
+  const { notifications, isLoading, deleteNotifications, markAsRead } = useNotifications();
   const goBack = useAppStore((state) => state.goBack);
 
   const hasReadNotifications = notifications.some(n => n.read);
@@ -31,6 +32,17 @@ export default function NotificationsPage() {
   const handleGoBack = () => {
     goBack();
   };
+
+  useEffect(() => {
+    // Mark notifications as read when the page is viewed
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length > 0) {
+      markAsRead(unreadIds);
+    }
+    // We only want this to run when the notifications array is first populated.
+    // Adding markAsRead to the dependency array would cause a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications]);
 
   return (
     <div className="h-full w-full flex flex-col bg-background">

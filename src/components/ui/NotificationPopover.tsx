@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 function getNotificationMessage(notification: any) {
   switch (notification.type) {
     case 'BANNED':
-      return `관리자에 의해 계정이 차단되었습니다. 사유: ${notification.message}`;
+      return notification.message;
     case 'TAG_SUBSCRIPTION':
       return `팔로우 중인 태그에 새로운 장소가 추가되었습니다: ${notification.message}`;
     case 'MODERATION':
