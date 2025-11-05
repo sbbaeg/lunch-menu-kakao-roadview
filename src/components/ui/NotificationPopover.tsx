@@ -37,10 +37,10 @@ export function NotificationPopover() {
   };
 
   return (
-    <Popover onOpenChange={handleOpenChange}>
+    <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-6 w-6" />
+        <Button variant="ghost" className="relative h-11 w-11">
+          <Bell style={{ width: '38px', height: '38px' }} />
           {unreadCount > 0 && (
             <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-red-500" />
           )}
