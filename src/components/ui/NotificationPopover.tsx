@@ -8,19 +8,53 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
-function getNotificationMessage(notification: any) {
-  switch (notification.type) {
-    case 'BANNED':
-      return notification.message;
-    case 'TAG_SUBSCRIPTION':
-      return `팔로우 중인 태그에 새로운 장소가 추가되었습니다: ${notification.message}`;
-    case 'MODERATION':
-        return notification.message;
-    default:
-      return notification.message;
+
+// Helper component to render each notification
+const NotificationItem = ({ notification, onDelete }: { notification: any, onDelete: (id: number) => void }) => {
+  let messageContent = notification.message;
+  let tagId = null;
+
+  if (notification.type === 'TAG_SUBSCRIPTION') {
+    try {
+      const parsed = JSON.parse(notification.message);
+      messageContent = parsed.text;
+      tagId = parsed.tagId;
+    } catch (e) {
+      // Keep messageContent as is if parsing fails (for backward compatibility)
+    }
   }
-}
+
+  return (
+    <div
+      key={notification.id}
+      className={cn(
+        "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
+        !notification.read && "bg-accent"
+      )}
+    >
+      <div className="flex w-full flex-col gap-1">
+        <div className="flex items-center">
+          <div className="font-semibold flex-grow">{messageContent}</div>
+          <div className={cn("ml-auto text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
+            {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 flex-shrink-0" onClick={() => onDelete(notification.id)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        {tagId && (
+          <Link href={`/tags/${tagId}`} className="w-full">
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              태그 상세 보기
+            </Button>
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export function NotificationPopover() {
   const { notifications, unreadCount, markAsRead, fetchNotifications, deleteNotifications } = useNotifications();
@@ -87,30 +121,14 @@ export function NotificationPopover() {
               <div className="grid gap-2">
                 {notifications.length > 0 ? (
                   notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={cn(
-                        "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
-                        !notification.read && "bg-accent"
-                      )}
-                    >
-                      <div className="flex w-full flex-col gap-1">
-                          <div className="flex items-center">
-                              <div className="flex items-center gap-2">
-                                  <div className="font-semibold">{getNotificationMessage(notification)}</div>
-                              </div>
-                              <div className={cn("ml-auto text-xs", !notification.read ? "text-foreground" : "text-muted-foreground")}>
-                                  {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
-                              </div>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 ml-2" onClick={() => deleteNotifications([notification.id])}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                          </div>
-                      </div>
-                    </div>
+                    <NotificationItem 
+                      key={notification.id} 
+                      notification={notification} 
+                      onDelete={() => deleteNotifications([notification.id])} 
+                    />
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">새로운 알림이 없습니다.</p>
+                  <p className="text-sm text-muted-foreground p-4 text-center">새로운 알림이 없습니다.</p>
                 )}
               </div>
             </ScrollArea>

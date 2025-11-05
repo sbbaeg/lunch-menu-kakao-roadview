@@ -89,7 +89,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                     const notifications = subscribersToNotify.map(subscription => ({
                         userId: subscription.userId,
                         type: NotificationType.TAG_SUBSCRIPTION,
-                        message: `'${tagWithSubscribers.name}' 태그에 '${dbRestaurant.placeName}'이(가) 추가되었습니다.`,
+                        message: JSON.stringify({
+                            text: `'${tagWithSubscribers.name}' 태그에 '${dbRestaurant.placeName}'이(가) 추가되었습니다.`,
+                            tagId: tagId,
+                        }),
                     }));
 
                     await prisma.notification.createMany({

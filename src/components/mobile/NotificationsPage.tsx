@@ -10,18 +10,51 @@ import { useAppStore } from "@/store/useAppStore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect } from "react";
 
-function getNotificationMessage(notification: any) {
-    switch (notification.type) {
-      case 'BANNED':
-        return notification.message;
-      case 'TAG_SUBSCRIPTION':
-        return `팔로우 중인 태그에 새로운 장소가 추가되었습니다: ${notification.message}`;
-      case 'MODERATION':
-        return notification.message;
-      default:
-        return notification.message;
+
+// Helper component to render each notification
+const NotificationItem = ({ notification, onDelete }: { notification: any, onDelete: (id: number) => void }) => {
+  const showTagDetail = useAppStore((state) => state.showTagDetail);
+  
+  let messageContent = notification.message;
+  let tagId = null;
+
+  if (notification.type === 'TAG_SUBSCRIPTION') {
+    try {
+      const parsed = JSON.parse(notification.message);
+      messageContent = parsed.text;
+      tagId = parsed.tagId;
+    } catch (e) {
+      // Keep messageContent as is for backward compatibility
     }
   }
+
+  return (
+    <div
+      key={notification.id}
+      className={cn(
+        "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
+        !notification.read && "bg-accent"
+      )}
+    >
+      <div className="flex w-full flex-col gap-1">
+        <div className="flex items-center">
+          <div className="font-semibold flex-grow mr-2">{messageContent}</div>
+          <div className={cn("ml-auto text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
+            {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 flex-shrink-0" onClick={() => onDelete(notification.id)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        {tagId && (
+          <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => showTagDetail(tagId)}>
+            태그 상세 보기
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function NotificationsPage() {
   const { notifications, isLoading, deleteNotifications, markAsRead } = useNotifications();
@@ -63,31 +96,15 @@ export default function NotificationsPage() {
         {notifications.length > 0 ? (
           <div className="grid gap-2 p-4">
             {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={cn(
-                  "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
-                  !notification.read && "bg-accent"
-                )}
-              >
-                <div className="flex w-full flex-col gap-1">
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 mr-4">
-                            <div className="font-semibold">{getNotificationMessage(notification)}</div>
-                        </div>
-                        <div className={cn("ml-auto text-xs", !notification.read ? "text-foreground" : "text-muted-foreground")}>
-                            {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 ml-2" onClick={() => deleteNotifications([notification.id])}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-              </div>
+              <NotificationItem 
+                key={notification.id} 
+                notification={notification} 
+                onDelete={() => deleteNotifications([notification.id])} 
+              />
             ))}
           </div>
         ) : (
-          <p className="p-4 text-sm text-muted-foreground">새로운 알림이 없습니다.</p>
+          <p className="p-4 text-sm text-muted-foreground text-center">새로운 알림이 없습니다.</p>
         )}
       </main>
     </div>
