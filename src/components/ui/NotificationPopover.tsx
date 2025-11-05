@@ -7,7 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useState, useEffect, useRef } from "react";
-import { PopoverContent } from "@/components/ui/popover"; // Keep PopoverContent for styling
 
 function getNotificationMessage(notification: any) {
   switch (notification.type) {
@@ -72,7 +71,7 @@ export function NotificationPopover() {
         )}
       </Button>
       {isOpen && (
-        <PopoverContent className="w-80 absolute right-0 z-10 mt-2">
+        <div className="w-80 absolute right-0 z-50 mt-2 bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-none">
           <div className="grid gap-4">
             <div className="space-y-2">
               <h4 className="font-medium leading-none">알림</h4>
@@ -81,7 +80,7 @@ export function NotificationPopover() {
               </p>
             </div>
             <ScrollArea className="h-[300px]">
-              <div className="grid gap-2 p-4">
+              <div className="grid gap-2">
                 {notifications.length > 0 ? (
                   notifications.map((notification) => (
                     <div
@@ -109,7 +108,7 @@ export function NotificationPopover() {
               </div>
             </ScrollArea>
           </div>
-        </PopoverContent>
+        </div>
       )}
     </div>
   );
