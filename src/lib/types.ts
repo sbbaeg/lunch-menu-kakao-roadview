@@ -47,6 +47,21 @@ export interface AppReview {
   currentUserVote: VoteType | null;
 }
 
+// 우리 앱의 태그 리뷰 정보 타입 (프론트엔드용)
+export interface AppTagReview {
+  id: number;
+  rating: number;
+  text: string | null;
+  createdAt: string; // ISO 8601 date string
+  updatedAt: string; // ISO 8601 date string
+  userId: string;
+  user: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+}
+
 // 카카오 API 원본 데이터 타입
 export interface KakaoPlaceItem {
   id: string;

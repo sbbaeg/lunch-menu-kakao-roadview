@@ -9,6 +9,7 @@ import { useSession } from 'next-auth/react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppRestaurant, Tag } from '@/lib/types'; 
 import { TagHeader } from "@/components/TagHeader";
+import { TagReviewSection } from "@/components/TagReviewSection";
 import { MapPanel } from '@/components/MapPanel';
 import { Accordion } from '@/components/ui/accordion';
 import { RestaurantCard } from '@/components/RestaurantCard';
@@ -267,6 +268,10 @@ export default function TagProfilePage() {
                         </Accordion>
                     </div>
                 </div>
+
+                <Separator className="my-8" />
+
+                <TagReviewSection tagId={tagData.id} />
             </div>
 
             {/* Dialogs */}
