@@ -1,4 +1,4 @@
-"use client";
+'''"use client";
 
 import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { format } from "date-fns";
 import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-
 
 // Helper component to render each notification
 const NotificationItem = ({ notification, onDelete }: { notification: any, onDelete: (id: number) => void }) => {
@@ -153,3 +152,4 @@ export function NotificationPopover() {
     </div>
   );
 }
+'''
