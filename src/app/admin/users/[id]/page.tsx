@@ -11,6 +11,17 @@ import { Shield, ShieldOff, ArrowLeft } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 // --- TYPE DEFINITIONS ---
 interface UserDetails {
@@ -31,6 +42,8 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
   const [user, setUser] = useState<UserDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBanDialog, setShowBanDialog] = useState(false);
+  const [banReason, setBanReason] = useState("");
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -57,13 +70,13 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
     }
   }, [session, status, router, userId]);
 
-  const handleToggleStatus = async (type: 'isAdmin' | 'isBanned', currentValue: boolean) => {
+  const handleToggleStatus = async (type: 'isAdmin' | 'isBanned', currentValue: boolean, reason?: string) => {
     if (!user) return;
     try {
       const res = await fetch(`/api/admin/users/${user.id}/toggle`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, status: !currentValue }),
+        body: JSON.stringify({ type, status: !currentValue, reason }),
       });
       if (!res.ok) throw new Error('상태 변경에 실패했습니다.');
       const updatedUser = await res.json();
@@ -71,6 +84,22 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
     } catch (e: any) {
       setError(e.message);
     }
+  };
+
+  const handleBanSwitchChange = (isBanned: boolean) => {
+    if (isBanned) {
+      // Unbanning the user
+      handleToggleStatus('isBanned', true);
+    } else {
+      // Banning the user, open dialog
+      setShowBanDialog(true);
+    }
+  };
+
+  const handleConfirmBan = () => {
+    handleToggleStatus('isBanned', false, banReason);
+    setShowBanDialog(false);
+    setBanReason("");
   };
 
   if (status === 'loading' || isLoading) {
@@ -112,7 +141,7 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
                 <Switch
                   id="isBanned"
                   checked={user.isBanned}
-                  onCheckedChange={() => handleToggleStatus('isBanned', user.isBanned)}
+                  onCheckedChange={() => handleBanSwitchChange(user.isBanned)}
                   disabled={user.id === session?.user?.id}
                 />
                 <label htmlFor="isBanned" className="flex items-center gap-1 font-medium text-red-500"><ShieldOff className="h-4 w-4" /> 차단</label>
@@ -147,6 +176,27 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
           </Tabs>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showBanDialog} onOpenChange={setShowBanDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>사용자 차단</AlertDialogTitle>
+            <AlertDialogDescription>
+              사용자를 차단하는 사유를 입력해주세요. 이 사유는 사용자에게 알림으로 전달됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            placeholder="예: 스팸 리뷰 작성"
+            value={banReason}
+            onChange={(e) => setBanReason(e.target.value)}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmBan}>차단 확인</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </main>
   );
 }
