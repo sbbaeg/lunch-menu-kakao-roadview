@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,14 +16,14 @@ function getNotificationMessage(notification: any) {
     case 'TAG_SUBSCRIPTION':
       return `팔로우 중인 태그에 새로운 장소가 추가되었습니다: ${notification.message}`;
     case 'MODERATION':
-        return `관리자 알림: ${notification.message}`;
+        return notification.message;
     default:
       return notification.message;
   }
 }
 
 export function NotificationPopover() {
-  const { notifications, unreadCount, markAsRead, fetchNotifications, deleteReadNotifications } = useNotifications();
+  const { notifications, unreadCount, markAsRead, fetchNotifications, deleteNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +102,9 @@ export function NotificationPopover() {
                               <div className={cn("ml-auto text-xs", !notification.read ? "text-foreground" : "text-muted-foreground")}>
                                   {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
                               </div>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 ml-2" onClick={() => deleteNotifications([notification.id])}>
+                                <X className="h-4 w-4" />
+                              </Button>
                           </div>
                       </div>
                     </div>
@@ -119,7 +122,7 @@ export function NotificationPopover() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => deleteReadNotifications()}
+                    onClick={() => deleteNotifications()}
                   >
                     읽은 알림 모두 삭제
                   </Button>
