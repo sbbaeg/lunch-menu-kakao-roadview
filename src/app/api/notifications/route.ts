@@ -71,3 +71,28 @@ export async function PATCH(req: Request) {
     );
   }
 }
+
+// DELETE /api/notifications - 읽은 알림 삭제
+export async function DELETE(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await prisma.notification.deleteMany({
+      where: {
+        userId: session.user.id,
+        read: true,
+      },
+    });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting read notifications:", error);
+    return NextResponse.json(
+      { error: "Failed to delete notifications" },
+      { status: 500 }
+    );
+  }
+}

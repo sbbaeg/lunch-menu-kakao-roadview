@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useState, useEffect, useRef } from "react";
+import { Separator } from "@/components/ui/separator";
 
 function getNotificationMessage(notification: any) {
   switch (notification.type) {
@@ -22,9 +23,12 @@ function getNotificationMessage(notification: any) {
 }
 
 export function NotificationPopover() {
-  const { notifications, unreadCount, markAsRead, fetchNotifications } = useNotifications();
+  const { notifications, unreadCount, markAsRead, fetchNotifications, deleteReadNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  const hasReadNotifications = notifications.some(n => n.read);
+
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
@@ -107,6 +111,21 @@ export function NotificationPopover() {
                 )}
               </div>
             </ScrollArea>
+            {hasReadNotifications && (
+              <>
+                <Separator />
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => deleteReadNotifications()}
+                  >
+                    읽은 알림 모두 삭제
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
