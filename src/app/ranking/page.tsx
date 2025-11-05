@@ -81,16 +81,6 @@ export default function RankingPage() {
     }, []);
 
     const renderContent = () => {
-        if (isLoading) {
-            return (
-                <div className="space-y-3">
-                    {[...Array(10)].map((_, i) => (
-                        <Skeleton key={i} className="h-20 w-full" />
-                    ))}
-                </div>
-            );
-        }
-
         if (error) {
             return <p className="text-center text-red-500">{error}</p>;
         }

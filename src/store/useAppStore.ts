@@ -97,25 +97,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     activeRestaurantId: restaurantId
   })),
 
-  showTagExplore: () => set(state => ({
-    activeView: 'tagExplore',
-    previousView: state.activeView
-  })),
+  showTagExplore: () => set({ activeView: 'tagExplore', previousView: 'tabs' }),
 
-  showMyReviews: () => set(state => ({
-    activeView: 'myReviews',
-    previousView: state.activeView
-  })),
+  showMyReviews: () => set({ activeView: 'myReviews', previousView: 'tabs' }),
 
-  showRanking: () => set(state => ({
-    activeView: 'ranking',
-    previousView: state.activeView
-  })),
+  showRanking: () => set({ activeView: 'ranking', previousView: 'tabs' }),
 
-  showNotifications: () => set(state => ({
-    activeView: 'notifications',
-    previousView: state.activeView
-  })),
+  showNotifications: () => set({ activeView: 'notifications', previousView: 'tabs' }),
 
   goBack: () => set(state => {
     const isReturningFromDetail = state.activeView !== 'tabs';

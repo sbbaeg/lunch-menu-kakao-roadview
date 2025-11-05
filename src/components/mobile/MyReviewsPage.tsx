@@ -62,13 +62,7 @@ export default function MyReviewsPage() {
             </header>
 
             <main className="flex-1 min-h-0 overflow-y-auto mt-4">
-                {loading ? (
-                    <div className="space-y-4">
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                    </div>
-                ) : reviews.length === 0 ? (
+                {reviews.length === 0 ? (
                     <p className="text-center text-muted-foreground py-16">작성한 리뷰가 없습니다.</p>
                 ) : (
                     <div className="space-y-3">

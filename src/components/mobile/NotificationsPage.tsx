@@ -60,14 +60,7 @@ export default function NotificationsPage() {
         )}
       </header>
       <main className="flex-1 overflow-y-auto">
-        {isLoading ? (
-            <div className="p-4 space-y-4">
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-            </div>
-        ) : notifications.length > 0 ? (
+        {notifications.length > 0 ? (
           <div className="grid gap-2 p-4">
             {notifications.map((notification) => (
               <div
