@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore } from '@/store/useAppStore';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Map, Heart, Search, Dices, User } from 'lucide-react';
 
 // 탭 종류를 타입으로 정의
@@ -12,23 +13,28 @@ interface BottomTabBarProps {
 }
 
 // 일반 탭 아이템을 위한 재사용 컴포넌트
-const TabItem = ({ icon, label, isActive, onClick }: {
+const TabItem = ({ icon, label, isActive, onClick, hasNotification }: {
   icon: React.ReactNode;
   label: string;
   isActive: boolean;
   onClick: () => void;
+  hasNotification?: boolean;
 }) => (
   <button 
     onClick={onClick} 
-    className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+    className={`relative flex flex-col items-center justify-center gap-1 w-full h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
     {icon}
     <span className="text-xs font-medium">{label}</span>
+    {hasNotification && (
+        <span className="absolute top-2 right-4 block h-2 w-2 rounded-full bg-red-500" />
+    )}
   </button>
 );
 
 export default function BottomTabBar({ onSearchClick }: BottomTabBarProps) {
   const activeTab = useAppStore((state) => state.activeTab);
   const setActiveTab = useAppStore((state) => state.setActiveTab);
+  const { unreadCount } = useNotifications();
 
   return (
     <footer className="relative h-20 w-full border-t bg-background shadow-inner">
@@ -77,6 +83,7 @@ export default function BottomTabBar({ onSearchClick }: BottomTabBarProps) {
             label="마이페이지"
             isActive={activeTab === 'my-page'}
             onClick={() => setActiveTab('my-page')}
+            hasNotification={unreadCount > 0}
           />
         </div>
       </div>
