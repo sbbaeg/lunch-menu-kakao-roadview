@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const userId = params.id;
     const body = await req.json();
-    const { type, status } = body;
+    const { type, status, reason } = body;
 
     if (!['isAdmin', 'isBanned'].includes(type) || typeof status !== 'boolean') {
         return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
@@ -54,11 +54,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
         // If the user is being banned, create a notification
         if (type === 'isBanned' && status === true) {
+            const notificationMessage = reason && typeof reason === 'string' && reason.trim() !== ''
+                ? `관리자에 의해 계정이 차단되었습니다. 사유: ${reason}`
+                : '관리자에 의해 계정이 차단되었습니다.';
+
             await prisma.notification.create({
                 data: {
                     userId: userId,
                     type: 'BANNED',
-                    message: '관리자에 의해 계정이 차단되었습니다.', // Generic message
+                    message: notificationMessage,
                 },
             });
         }
