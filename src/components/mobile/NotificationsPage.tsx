@@ -5,7 +5,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -16,15 +16,17 @@ function getNotificationMessage(notification: any) {
       case 'TAG_SUBSCRIPTION':
         return `팔로우 중인 태그에 새로운 장소가 추가되었습니다: ${notification.message}`;
       case 'MODERATION':
-          return `관리자 알림: ${notification.message}`;
+        return notification.message;
       default:
         return notification.message;
     }
   }
 
 export default function NotificationsPage() {
-  const { notifications, isLoading } = useNotifications();
+  const { notifications, isLoading, deleteNotifications } = useNotifications();
   const goBack = useAppStore((state) => state.goBack);
+
+  const hasReadNotifications = notifications.some(n => n.read);
 
   const handleGoBack = () => {
     goBack();
@@ -32,11 +34,18 @@ export default function NotificationsPage() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <header className="p-4 border-b flex-shrink-0 flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={handleGoBack}>
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
-        <h1 className="text-2xl font-bold">알림</h1>
+      <header className="p-4 border-b flex-shrink-0 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={handleGoBack}>
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-2xl font-bold">알림</h1>
+        </div>
+        {hasReadNotifications && (
+            <Button variant="outline" size="sm" onClick={() => deleteNotifications()}>
+                읽은 알림 삭제
+            </Button>
+        )}
       </header>
       <main className="flex-1 overflow-y-auto">
         {isLoading ? (
@@ -58,12 +67,15 @@ export default function NotificationsPage() {
               >
                 <div className="flex w-full flex-col gap-1">
                     <div className="flex items-center">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mr-4">
                             <div className="font-semibold">{getNotificationMessage(notification)}</div>
                         </div>
                         <div className={cn("ml-auto text-xs", !notification.read ? "text-foreground" : "text-muted-foreground")}>
                             {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
                         </div>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 ml-2" onClick={() => deleteNotifications([notification.id])}>
+                            <X className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
               </div>

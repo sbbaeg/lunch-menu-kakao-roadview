@@ -56,18 +56,27 @@ export function useNotifications() {
     }
   };
 
-  const deleteReadNotifications = async () => {
+  const deleteNotifications = async (notificationIds?: number[]) => {
     try {
       const response = await fetch('/api/notifications', {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: notificationIds ? JSON.stringify({ notificationIds }) : undefined,
       });
 
       if (!response.ok) {
-        throw new Error('읽은 알림을 삭제하는데 실패했습니다.');
+        throw new Error('알림을 삭제하는데 실패했습니다.');
       }
 
       // 로컬 상태 업데이트
-      setNotifications(prev => prev.filter(n => !n.read));
+      if (notificationIds) {
+        setNotifications(prev => prev.filter(n => !notificationIds.includes(n.id)));
+      } else {
+        setNotifications(prev => prev.filter(n => !n.read));
+      }
+      
       return { success: true };
     } catch (err: any) {
       setError(err.message);
@@ -84,6 +93,6 @@ export function useNotifications() {
     error, 
     fetchNotifications, 
     markAsRead,
-    deleteReadNotifications
+    deleteNotifications
   };
 }

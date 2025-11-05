@@ -72,7 +72,7 @@ export async function PATCH(req: Request) {
   }
 }
 
-// DELETE /api/notifications - 읽은 알림 삭제
+// DELETE /api/notifications - 읽은 알림 또는 특정 알림 삭제
 export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions);
 
@@ -81,15 +81,30 @@ export async function DELETE(req: Request) {
   }
 
   try {
+    let whereClause: any = { userId: session.user.id };
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      // Body is empty or not valid JSON, proceed with deleting all read
+      body = null;
+    }
+
+    if (body && Array.isArray(body.notificationIds) && body.notificationIds.length > 0) {
+      // Delete specific notifications by ID
+      whereClause.id = { in: body.notificationIds };
+    } else {
+      // Delete all read notifications
+      whereClause.read = true;
+    }
+
     await prisma.notification.deleteMany({
-      where: {
-        userId: session.user.id,
-        read: true,
-      },
+      where: whereClause,
     });
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting read notifications:", error);
+    console.error("Error deleting notifications:", error);
     return NextResponse.json(
       { error: "Failed to delete notifications" },
       { status: 500 }
