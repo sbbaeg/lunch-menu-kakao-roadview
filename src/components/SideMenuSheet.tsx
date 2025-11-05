@@ -237,6 +237,7 @@ export function SideMenuSheet({
                                         <TabsTrigger value="personal">개인화</TabsTrigger>
                                         <TabsTrigger value="reviews">리뷰/평가</TabsTrigger>
                                         <TabsTrigger value="explore">탐색</TabsTrigger>
+                                        <TabsTrigger value="notifications">알림</TabsTrigger>
                                     </TabsList>
 
                                     <TabsContent value="quickstart" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
@@ -334,6 +335,23 @@ export function SideMenuSheet({
                                             <div className="p-4 bg-muted/50 rounded-lg">
                                                 <h4 className="font-semibold mb-2">태그 탐색</h4>
                                                 <p className="text-sm text-muted-foreground">다른 사용자들이 만들고 공개한 모든 태그들을 둘러보고, 구독자 수와 등록된 음식점 수를 기준으로 정렬하여 유용한 태그를 찾아 구독할 수 있습니다.</p>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="notifications" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">알림 종류</h4>
+                                                <p className="text-sm text-muted-foreground">계정 상태 변경(차단/해제) 또는 구독 중인 태그에 새로운 장소가 추가될 경우 알림을 받게 됩니다.</p>
+                                            </div>
+                                            <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">읽음 처리</h4>
+                                                <p className="text-sm text-muted-foreground">알림 아이콘을 클릭하여 목록을 열면, 읽지 않은 모든 알림은 자동으로 '읽음' 상태로 변경됩니다.</p>
+                                            </div>
+                                            <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">알림 삭제</h4>
+                                                <p className="text-sm text-muted-foreground">개별 알림 옆의 'X' 버튼을 눌러 특정 알림만 삭제하거나, 목록 하단의 '읽은 알림 모두 삭제' 버튼으로 읽은 알림들을 한 번에 정리할 수 있습니다.</p>
                                             </div>
                                         </div>
                                     </TabsContent>
