@@ -51,6 +51,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
                 },
             },
         });
+
+        // If the user is being banned, create a notification
+        if (type === 'isBanned' && status === true) {
+            await prisma.notification.create({
+                data: {
+                    userId: userId,
+                    type: 'BANNED',
+                    message: '관리자에 의해 계정이 차단되었습니다.', // Generic message
+                },
+            });
+        }
+
         return NextResponse.json(updatedUser);
     } catch (error) {
         console.error(`Error updating user ${userId}:`, error);
