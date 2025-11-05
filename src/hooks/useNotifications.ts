@@ -55,6 +55,25 @@ export function useNotifications() {
       return { success: false, error: err.message };
     }
   };
+
+  const deleteReadNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('읽은 알림을 삭제하는데 실패했습니다.');
+      }
+
+      // 로컬 상태 업데이트
+      setNotifications(prev => prev.filter(n => !n.read));
+      return { success: true };
+    } catch (err: any) {
+      setError(err.message);
+      return { success: false, error: err.message };
+    }
+  };
   
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -64,6 +83,7 @@ export function useNotifications() {
     isLoading, 
     error, 
     fetchNotifications, 
-    markAsRead 
+    markAsRead,
+    deleteReadNotifications
   };
 }

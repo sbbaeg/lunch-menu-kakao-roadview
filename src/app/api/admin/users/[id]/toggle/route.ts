@@ -65,6 +65,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
                     message: notificationMessage,
                 },
             });
+        } else if (type === 'isBanned' && status === false) {
+            // If the user is being unbanned, create a notification
+            await prisma.notification.create({
+                data: {
+                    userId: userId,
+                    type: 'MODERATION',
+                    message: '계정 차단이 해제되었습니다.',
+                },
+            });
         }
 
         return NextResponse.json(updatedUser);
