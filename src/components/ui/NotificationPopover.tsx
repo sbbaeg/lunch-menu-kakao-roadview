@@ -1,4 +1,4 @@
-'''"use client";
+"use client";
 
 import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -152,4 +152,3 @@ export function NotificationPopover() {
     </div>
   );
 }
-'''
