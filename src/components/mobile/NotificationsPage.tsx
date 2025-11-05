@@ -14,15 +14,21 @@ import { useEffect } from "react";
 // Helper component to render each notification
 const NotificationItem = ({ notification, onDelete }: { notification: any, onDelete: (id: number) => void }) => {
   const showTagDetail = useAppStore((state) => state.showTagDetail);
+  const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
   
   let messageContent = notification.message;
   let tagId = null;
+  let restaurantId = null;
 
-  if (notification.type === 'TAG_SUBSCRIPTION') {
+  if (notification.type === 'TAG_SUBSCRIPTION' || notification.type === 'REVIEW_UPVOTE' || notification.type === 'BEST_REVIEW') {
     try {
       const parsed = JSON.parse(notification.message);
       messageContent = parsed.text;
-      tagId = parsed.tagId;
+      if (notification.type === 'TAG_SUBSCRIPTION') {
+        tagId = parsed.tagId;
+      } else {
+        restaurantId = parsed.restaurantId;
+      }
     } catch (e) {
       // Keep messageContent as is for backward compatibility
     }
@@ -49,6 +55,11 @@ const NotificationItem = ({ notification, onDelete }: { notification: any, onDel
         {tagId && (
           <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => showTagDetail(tagId)}>
             태그 상세 보기
+          </Button>
+        )}
+        {restaurantId && (
+          <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => showRestaurantDetail(restaurantId)}>
+            음식점 상세 보기
           </Button>
         )}
       </div>

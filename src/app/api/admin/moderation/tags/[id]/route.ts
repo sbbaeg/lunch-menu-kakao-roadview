@@ -35,6 +35,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             },
         });
 
+        // Create notification for the user
+        await prisma.notification.create({
+            data: {
+                userId: updatedTag.userId,
+                type: 'MODERATION',
+                message: `관리자에 의해 회원님의 태그가 \'${updatedTag.name}\'(으)로 수정되었습니다.`,
+            }
+        });
+
         return NextResponse.json(updatedTag);
     } catch (error) {
         console.error('Error updating tag:', error);
@@ -55,8 +64,26 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
             return NextResponse.json({ error: 'Invalid tag ID' }, { status: 400 });
         }
 
+        // First, find the tag to get creatorId and name for notification
+        const tag = await prisma.tag.findUnique({
+            where: { id: tagId },
+        });
+
+        if (!tag) {
+            return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
+        }
+
         await prisma.tag.delete({
             where: { id: tagId },
+        });
+
+        // Create notification for the user
+        await prisma.notification.create({
+            data: {
+                userId: tag.userId,
+                type: 'MODERATION',
+                message: `관리자에 의해 회원님의 \'${tag.name}\' 태그가 삭제되었습니다.`,
+            }
         });
 
         return NextResponse.json({ message: 'Tag deleted successfully' }, { status: 200 });

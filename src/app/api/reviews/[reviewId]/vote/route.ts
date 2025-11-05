@@ -31,7 +31,15 @@ export async function POST(
     // 자신의 리뷰에는 투표할 수 없도록 체크
     const review = await prisma.review.findUnique({
       where: { id: reviewId },
-      select: { userId: true },
+      select: { 
+        userId: true,
+        restaurant: {
+          select: {
+            placeName: true,
+            kakaoPlaceId: true,
+          }
+        }
+      },
     });
 
     if (!review) {
@@ -41,6 +49,14 @@ export async function POST(
     if (review.userId === userId) {
       return NextResponse.json({ error: 'You cannot vote on your own review' }, { status: 403 });
     }
+
+    // Get vote counts before the change
+    const initialVoteCounts = await prisma.reviewVote.groupBy({
+      by: ['type'],
+      where: { reviewId },
+      _count: { type: true },
+    });
+    const previousUpvotes = initialVoteCounts.find(vc => vc.type === 'UPVOTE')?._count.type || 0;
 
     const existingVote = await prisma.reviewVote.findUnique({
       where: {
@@ -103,6 +119,35 @@ export async function POST(
 
     const upvotes = voteCounts.find(vc => vc.type === 'UPVOTE')?._count.type || 0;
     const downvotes = voteCounts.find(vc => vc.type === 'DOWNVOTE')?._count.type || 0;
+
+    // Send notification on new upvote
+    if ((action === 'created' || action === 'updated') && voteType === 'UPVOTE') {
+      await prisma.notification.create({
+        data: {
+          userId: review.userId,
+          type: 'REVIEW_UPVOTE',
+          message: JSON.stringify({
+            text: `'${review.restaurant.placeName}'에 대한 회원님의 리뷰를 다른 사용자가 추천했습니다.`,
+            restaurantId: review.restaurant.kakaoPlaceId,
+          }),
+        },
+      });
+
+      // Check for Best Review status
+      const BEST_REVIEW_THRESHOLD = 5;
+      if (upvotes >= BEST_REVIEW_THRESHOLD && previousUpvotes < BEST_REVIEW_THRESHOLD) {
+        await prisma.notification.create({
+          data: {
+            userId: review.userId,
+            type: 'BEST_REVIEW',
+            message: JSON.stringify({
+              text: `'${review.restaurant.placeName}'에 대한 회원님의 리뷰가 베스트 리뷰로 선정되었습니다.`,
+              restaurantId: review.restaurant.kakaoPlaceId,
+            }),
+          },
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,
