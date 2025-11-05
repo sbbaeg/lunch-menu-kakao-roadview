@@ -11,6 +11,8 @@ import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { MapPanel } from '@/components/MapPanel';
+import { TagReviewSection } from '@/components/TagReviewSection';
+import { Separator } from '@/components/ui/separator';
 
 type TagDetailData = Tag & {
     restaurants: AppRestaurant[];
@@ -188,6 +190,12 @@ export default function TagDetailPage() {
                         />
                     ))}
                 </Accordion>
+
+                <Separator className="my-6" />
+
+                <div className="px-1">
+                    <TagReviewSection tagId={tagData.id} />
+                </div>
             </div>
         </div>
     );
