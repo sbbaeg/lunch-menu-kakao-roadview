@@ -13,6 +13,7 @@ import { TagReviewSection } from "@/components/TagReviewSection";
 import { MapPanel } from '@/components/MapPanel';
 import { Accordion } from '@/components/ui/accordion';
 import { RestaurantCard } from '@/components/RestaurantCard';
+import { Separator } from "@/components/ui/separator";
 
 // Hooks
 import { useFavorites } from '@/hooks/useFavorites';
