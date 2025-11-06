@@ -34,6 +34,7 @@ import { Menu, Heart, EyeOff, Tags, FileText } from "lucide-react";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import BadgeManagementDialog from "@/components/BadgeManagementDialog";
 import BadgeDisplay from "@/components/BadgeDisplay";
 
 interface SideMenuSheetProps {
@@ -52,6 +53,7 @@ export function SideMenuSheet({
     onShowLikedRestaurants, // 2. Prop 받기
 }: SideMenuSheetProps) {
     const { data: session, status } = useSession();
+    const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
 
     const [isMounted, setIsMounted] = useState(false);
@@ -193,6 +195,9 @@ export function SideMenuSheet({
                         </Button>
                         <Button variant="ghost" className="justify-start" onClick={onShowBlacklist}>
                             블랙리스트 관리
+                        </Button>
+                        <Button variant="ghost" className="justify-start" onClick={() => setIsBadgeManagementOpen(true)}>
+                            내 뱃지 관리
                         </Button>
                         <Link href="/ranking" passHref>
                             <Button variant="ghost" className="justify-start w-full">음식점 랭킹</Button>
@@ -363,6 +368,7 @@ export function SideMenuSheet({
                     </div>
                 </div>
             </SheetContent>
+                    <BadgeManagementDialog isOpen={isBadgeManagementOpen} onOpenChange={setIsBadgeManagementOpen} />
         </Sheet>
     );
 }
