@@ -1,10 +1,8 @@
 // src/app/api/users/me/reviews/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 /**
  * GET: 현재 로그인한 사용자가 작성한 모든 리뷰를 조회합니다.

@@ -2,10 +2,8 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 /**
  * PATCH: 특정 태그의 공개(isPublic) 상태를 토글합니다.

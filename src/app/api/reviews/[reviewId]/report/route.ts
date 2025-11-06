@@ -1,10 +1,8 @@
 // src/app/api/reviews/[reviewId]/report/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 /**
  * POST: 특정 리뷰를 "검토 필요(needsModeration)"로 신고합니다.

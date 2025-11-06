@@ -2,12 +2,10 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
-
-const prisma = new PrismaClient();
 
 /**
  * GET: 관리자용. 검토가 필요한(needsModeration=true) 모든 태그와 리뷰 목록을 조회합니다.

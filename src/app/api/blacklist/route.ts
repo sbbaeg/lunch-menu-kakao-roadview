@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { AppRestaurant } from '@/lib/types';
-
-const prisma = new PrismaClient();
 
 /**
  * GET: 현재 사용자의 블랙리스트 목록을 반환합니다.

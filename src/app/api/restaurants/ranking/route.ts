@@ -1,12 +1,10 @@
 
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 import { AppRestaurant, KakaoPlaceItem } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
-
-const prisma = new PrismaClient();
 
 const MIN_LIKE_COUNT_THRESHOLD = 5; // 최소 좋아요 개수
 const TOP_N = 20; // 상위 N개

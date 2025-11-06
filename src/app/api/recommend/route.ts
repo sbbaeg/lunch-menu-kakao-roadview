@@ -2,14 +2,12 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 import { KakaoPlaceItem, RestaurantWithTags } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
-
-const prisma = new PrismaClient();
 
 // 두 지점 간의 거리를 미터(m) 단위로 계산하는 함수
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {

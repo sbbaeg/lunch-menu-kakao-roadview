@@ -1,9 +1,7 @@
 // src/app/api/restaurants/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { AppRestaurant } from '@/lib/types';
-
-const prisma = new PrismaClient();
 
 // 식당 정보를 DB에 생성하거나 업데이트하는 POST 요청 핸들러
 export async function POST(request: Request) {

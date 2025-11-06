@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient, Prisma } from '@prisma/client'; 
+import { Prisma } from '@prisma/client'; 
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { AppRestaurant, KakaoPlaceItem } from '@/lib/types'; 
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
-
-const prisma = new PrismaClient();
 
 type FavoriteWithTags = Prisma.FavoriteGetPayload<{
     include: { 

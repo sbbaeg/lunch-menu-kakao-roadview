@@ -1,14 +1,13 @@
 // src/app/api/restaurants/[id]/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient, VoteType } from '@prisma/client';
+import { VoteType } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 import { KakaoPlaceItem, AppRestaurant } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
-
-const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,

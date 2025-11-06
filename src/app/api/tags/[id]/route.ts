@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient, type Restaurant } from '@prisma/client';
+import { type Restaurant } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps'; // ✅ Google 상세 정보 조회를 위해 import
 import { AppRestaurant } from '@/lib/types';
-
-
-const prisma = new PrismaClient();
 
 export async function GET(
     request: Request,

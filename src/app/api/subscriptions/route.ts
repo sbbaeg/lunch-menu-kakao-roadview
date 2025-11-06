@@ -2,10 +2,8 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 /**
  * GET: 현재 로그인한 사용자가 구독한 모든 태그 목록을 조회합니다.

@@ -1,10 +1,8 @@
 // src/app/api/restaurants/[id]/reviews/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 // 특정 식당의 모든 리뷰를 가져오는 GET 핸들러
 export async function GET(
