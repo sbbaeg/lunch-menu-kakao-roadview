@@ -128,6 +128,76 @@ export async function POST(
       },
     });
 
+    // --- Badge Awarding Logic for '첫 발자국' ---
+    const reviewCount = await prisma.review.count({
+      where: { userId: userId },
+    });
+
+    if (reviewCount === 1) {
+      const firstStepBadge = await prisma.badge.findUnique({
+        where: { name: '첫 발자국' },
+      });
+
+      if (firstStepBadge) {
+        // 혹시 모를 중복 방지를 위해 create 대신 upsert 사용도 고려할 수 있으나,
+        // reviewCount가 1일 때만 실행되므로 create로도 충분합니다.
+        await prisma.userBadge.create({
+          data: {
+            userId: userId,
+            badgeId: firstStepBadge.id,
+          },
+        });
+      }
+    }
+    // --- End of Badge Logic for '첫 발자국' ---
+
+    // --- Badge Awarding Logic for '리뷰어' (10 reviews) ---
+    if (reviewCount === 10) { // Check if this is their 10th review
+      const reviewerBadge = await prisma.badge.findUnique({
+        where: { name: '리뷰어' },
+      });
+
+      if (reviewerBadge) {
+        // Check if user already has this badge to prevent duplicates
+        const hasBadge = await prisma.userBadge.findUnique({
+          where: { userId_badgeId: { userId: userId, badgeId: reviewerBadge.id } },
+        });
+
+        if (!hasBadge) { // Only award if they don't have it yet
+          await prisma.userBadge.create({
+            data: {
+              userId: userId,
+              badgeId: reviewerBadge.id,
+            },
+          });
+        }
+      }
+    }
+    // --- End of Badge Logic for '리뷰어' ---
+
+    // --- Badge Awarding Logic for '프로 리뷰어' (50 reviews) ---
+    if (reviewCount === 50) {
+      const proReviewerBadge = await prisma.badge.findUnique({
+        where: { name: '프로 리뷰어' },
+      });
+
+      if (proReviewerBadge) {
+        const hasBadge = await prisma.userBadge.findUnique({
+          where: { userId_badgeId: { userId: userId, badgeId: proReviewerBadge.id } },
+        });
+
+        if (!hasBadge) {
+          await prisma.userBadge.create({
+            data: {
+              userId: userId,
+              badgeId: proReviewerBadge.id,
+            },
+          });
+        }
+      }
+    }
+    // --- End of Badge Logic for '프로 리뷰어' ---
+
     return NextResponse.json(review);
   } catch (error) {
     console.error('Failed to post review:', error);
