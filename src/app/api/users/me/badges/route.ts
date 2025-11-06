@@ -24,10 +24,13 @@ export async function GET(request: Request) {
       },
     });
 
-    // Return only the badge objects, not the join table records
-    const badges = userBadges.map(userBadge => userBadge.badge);
+    // Return badge objects with their featured status
+    const badgesWithFeaturedStatus = userBadges.map(userBadge => ({
+      ...userBadge.badge,
+      isFeatured: userBadge.isFeatured,
+    }));
 
-    return NextResponse.json(badges);
+    return NextResponse.json(badgesWithFeaturedStatus);
 
   } catch (error) {
     console.error("Failed to fetch user's badges:", error);

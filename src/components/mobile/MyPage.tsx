@@ -29,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppStore } from "@/store/useAppStore";
 import { useNotifications } from "@/hooks/useNotifications"; // 알림 훅 임포트
 import BadgeDisplay from "@/components/BadgeDisplay";
+import BadgeManagementDialog from "@/components/BadgeManagementDialog";
 
 interface MyPageProps {
     onShowFavorites: () => void;
@@ -51,6 +52,7 @@ export default function MyPage({
     const showTagExplore = useAppStore((state) => state.showTagExplore);
     const showMyReviews = useAppStore((state) => state.showMyReviews);
     const { unreadCount } = useNotifications(); // 읽지 않은 알림 수 가져오기
+    const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -169,6 +171,9 @@ export default function MyPage({
                         </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowBlacklist}>
                             <EyeOff className="mr-2 h-4 w-4" /> 블랙리스트 관리
+                        </Button>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={() => setIsBadgeManagementOpen(true)}>
+                            <Trophy className="mr-2 h-4 w-4" /> 내 뱃지 관리
                         </Button>
                         <Accordion type="single" collapsible>
                             <AccordionItem value="item-1" className="border-none">
@@ -352,6 +357,7 @@ export default function MyPage({
                     </div>
                 </div>
             </main>
+            <BadgeManagementDialog isOpen={isBadgeManagementOpen} onOpenChange={setIsBadgeManagementOpen} />
         </div>
     );
 }
