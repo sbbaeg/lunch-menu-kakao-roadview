@@ -1,10 +1,8 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 // 관리자만 접근 가능한 API
 

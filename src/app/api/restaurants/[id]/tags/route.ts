@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { PrismaClient, NotificationType } from '@prisma/client';
+import { NotificationType } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { AppRestaurant } from '@/lib/types'; // Restaurant 타입을 가져옵니다.
-
-const prisma = new PrismaClient();
 
 // 타입을 별도로 정의
 type RouteContext = {

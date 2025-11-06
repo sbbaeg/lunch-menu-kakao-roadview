@@ -1,11 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next"
 import { authOptions } from '@/lib/auth';
 import { headers } from 'next/headers';
-
-const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
     const authHeader = headers().get('authorization');

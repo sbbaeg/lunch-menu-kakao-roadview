@@ -1,10 +1,9 @@
 // src/app/api/reviews/[reviewId]/vote/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient, VoteType } from '@prisma/client';
+import { VoteType } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 export async function POST(
   request: Request,

@@ -1,10 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, VoteType } from '@prisma/client'; // 1. VoteType 임포트
+import { VoteType } from '@prisma/client'; // 1. VoteType 임포트
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);

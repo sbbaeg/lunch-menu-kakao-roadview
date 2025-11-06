@@ -1,54 +1,9 @@
 // src/app/api/tags/[id]/reviews/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const tagId = parseInt(params.id, 10);
-  if (isNaN(tagId)) {
-    return NextResponse.json({ error: 'Invalid tag ID' }, { status: 400 });
-  }
-
-  try {
-    const reviews = await prisma.tagReview.findMany({
-      where: { tagId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    // Calculate average rating
-    const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
-    const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
-
-    return NextResponse.json({ 
-      reviews,
-      averageRating: parseFloat(averageRating.toFixed(1)),
-      reviewCount: reviews.length,
-    });
-
-  } catch (error) {
-    console.error(`Failed to fetch reviews for tag ${tagId}:`, error);
-    return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
-  }
-}
+import prisma from '@/lib/prisma';
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
