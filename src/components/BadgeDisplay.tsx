@@ -63,7 +63,7 @@ export default function BadgeDisplay({ userId }: BadgeDisplayProps) {
 
   return (
     <div className="mt-4 px-4">
-      <h3 className="text-lg font-semibold mb-2">내 뱃지</h3>
+      
       <div className="flex flex-wrap gap-2 items-center">
         {displayedBadges.map((badge) => (
           <TooltipProvider key={badge.id}>
