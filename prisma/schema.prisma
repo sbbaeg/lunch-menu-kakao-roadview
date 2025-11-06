@@ -50,6 +50,11 @@ model User {
   restaurantVotes  RestaurantVote[]
   notifications    Notification[]
   tagReviews       TagReview[]
+
+  score            Int @default(0)
+  userBadges       UserBadge[]
+  reportsMade      Report[]      @relation("Reporter")
+  reportsReceived  Report[]      @relation("ReportedUser")
 }
 
 // 2. 음식점 정보 모델
@@ -116,6 +121,7 @@ model Review {
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   votes        ReviewVote[]
+  reports      Report[]
 
   // 한 명의 유저는 한 식당에 하나의 리뷰만 작성 가능
   @@unique([userId, restaurantId])
@@ -195,6 +201,7 @@ model Tag {
   @@index([needsModeration])
 
   reviews TagReview[]
+  reports Report[]
 }
 
 model TagReview {
@@ -296,4 +303,87 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+
+// Badge, Ranking, and Report System
+
+enum BadgeTier {
+  BRONZE
+  SILVER
+  GOLD
+  SPECIAL
+}
+
+enum BadgeCategory {
+  ACTIVITY
+  REPUTATION
+  COLLECTION
+  MASTERY
+  SPECIAL
+}
+
+model Badge {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String
+  iconUrl     String
+  tier        BadgeTier
+  category    BadgeCategory
+  
+  users       UserBadge[]
+  createdAt   DateTime @default(now())
+}
+
+model UserBadge {
+  userId    String
+  badgeId   Int
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+}
+
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
+enum ReportType {
+  USER
+  REVIEW
+  TAG
+}
+
+model Report {
+  id        Int      @id @default(autoincrement())
+  reason    String   @db.Text
+  status    ReportStatus @default(PENDING)
+  type      ReportType
+
+  reporterId String
+  reporter   User   @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  // Optional fields for what is being reported
+  reportedUserId    String?
+  reportedUser      User?    @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: NoAction)
+  
+  reportedReviewId  Int?
+  reportedReview    Review?  @relation(fields: [reportedReviewId], references: [id], onDelete: Cascade)
+
+  reportedTagId     Int?
+  reportedTag       Tag?     @relation(fields: [reportedTagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([reportedReviewId])
+  @@index([reportedTagId])
+  @@index([status])
 }
