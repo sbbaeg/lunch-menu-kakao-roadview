@@ -34,6 +34,7 @@ import { Menu, Heart, EyeOff, Tags, FileText } from "lucide-react";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import BadgeDisplay from "@/components/BadgeDisplay";
 
 interface SideMenuSheetProps {
     onShowFavorites: () => void;
@@ -167,6 +168,7 @@ export function SideMenuSheet({
                                 <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <p className="mt-2 font-semibold">{session.user.name}</p>
+                            <BadgeDisplay userId={session.user.id} />
                             <Button variant="outline" onClick={() => signOut()} className="w-full mt-2">
                                 로그아웃
                             </Button>

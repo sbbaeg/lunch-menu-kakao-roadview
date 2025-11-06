@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useAppStore } from "@/store/useAppStore";
 import { useNotifications } from "@/hooks/useNotifications"; // 알림 훅 임포트
+import BadgeDisplay from "@/components/BadgeDisplay";
 
 interface MyPageProps {
     onShowFavorites: () => void;
@@ -128,6 +129,7 @@ export default function MyPage({
                         <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <p className="mt-2 font-semibold">{session.user.name}</p>
+                    <BadgeDisplay userId={session.user.id} />
                     <Button variant="outline" onClick={() => signOut()} className="w-full mt-2">
                         로그아웃
                     </Button>
