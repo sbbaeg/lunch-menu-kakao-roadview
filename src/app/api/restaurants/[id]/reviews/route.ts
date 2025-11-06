@@ -139,10 +139,10 @@ export async function POST(
       });
 
       if (firstStepBadge) {
-        // 혹시 모를 중복 방지를 위해 create 대신 upsert 사용도 고려할 수 있으나,
-        // reviewCount가 1일 때만 실행되므로 create로도 충분합니다.
-        await prisma.userBadge.create({
-          data: {
+        await prisma.userBadge.upsert({
+          where: { userId_badgeId: { userId: userId, badgeId: firstStepBadge.id } },
+          update: {},
+          create: {
             userId: userId,
             badgeId: firstStepBadge.id,
           },
@@ -152,25 +152,20 @@ export async function POST(
     // --- End of Badge Logic for '첫 발자국' ---
 
     // --- Badge Awarding Logic for '리뷰어' (10 reviews) ---
-    if (reviewCount === 10) { // Check if this is their 10th review
+    if (reviewCount === 10) {
       const reviewerBadge = await prisma.badge.findUnique({
         where: { name: '리뷰어' },
       });
 
       if (reviewerBadge) {
-        // Check if user already has this badge to prevent duplicates
-        const hasBadge = await prisma.userBadge.findUnique({
+        await prisma.userBadge.upsert({
           where: { userId_badgeId: { userId: userId, badgeId: reviewerBadge.id } },
+          update: {},
+          create: {
+            userId: userId,
+            badgeId: reviewerBadge.id,
+          },
         });
-
-        if (!hasBadge) { // Only award if they don't have it yet
-          await prisma.userBadge.create({
-            data: {
-              userId: userId,
-              badgeId: reviewerBadge.id,
-            },
-          });
-        }
       }
     }
     // --- End of Badge Logic for '리뷰어' ---
@@ -182,18 +177,14 @@ export async function POST(
       });
 
       if (proReviewerBadge) {
-        const hasBadge = await prisma.userBadge.findUnique({
+        await prisma.userBadge.upsert({
           where: { userId_badgeId: { userId: userId, badgeId: proReviewerBadge.id } },
+          update: {},
+          create: {
+            userId: userId,
+            badgeId: proReviewerBadge.id,
+          },
         });
-
-        if (!hasBadge) {
-          await prisma.userBadge.create({
-            data: {
-              userId: userId,
-              badgeId: proReviewerBadge.id,
-            },
-          });
-        }
       }
     }
     // --- End of Badge Logic for '프로 리뷰어' ---

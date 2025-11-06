@@ -338,6 +338,7 @@ model Badge {
 model UserBadge {
   userId    String
   badgeId   Int
+  isFeatured Boolean @default(false) // New field for featured badges
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
