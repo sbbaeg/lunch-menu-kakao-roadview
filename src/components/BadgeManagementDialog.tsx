@@ -180,15 +180,20 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
                           {isSelected && <CheckCircle className="absolute top-1 right-1 h-4 w-4 text-primary-foreground bg-primary rounded-full" />}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        <p className={`font-semibold ${isEarned ? '' : 'line-through'}`}>{badge.name}</p>
-                        <p className="text-sm text-muted-foreground">{badge.description}</p>
-                        {userStats && badgeRequirements[badge.name] && (
-                          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                            {`(${(userStats as any)[badgeRequirements[badge.name].stat]} / ${badgeRequirements[badge.name].threshold})`}
-                          </p>
-                        )}
-                        {!isEarned && <p className="text-xs text-amber-500 mt-1">미획득</p>}
+                      <TooltipContent className="flex items-center gap-2">
+                        <div className="relative h-6 w-6 flex-shrink-0">
+                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="24px" style={{ objectFit: 'contain' }} />
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${isEarned ? '' : 'line-through'}`}>{badge.name}</p>
+                          <p className="text-sm text-muted-foreground">{badge.description}</p>
+                          {userStats && badgeRequirements[badge.name] && (
+                            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                              {`(${(userStats as any)[badgeRequirements[badge.name].stat]} / ${badgeRequirements[badge.name].threshold})`}
+                            </p>
+                          )}
+                          {!isEarned && <p className="text-xs text-amber-500 mt-1">미획득</p>}
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

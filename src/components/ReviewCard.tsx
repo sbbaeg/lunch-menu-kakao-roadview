@@ -113,13 +113,18 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
                   <TooltipProvider key={badge.id}>
                     <Tooltip>
                       <TooltipTrigger>
-                        <div className="relative h-5 w-5">
-                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="20px" style={{ objectFit: 'contain' }} />
+                        <div className="relative h-6 w-6">
+                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="24px" style={{ objectFit: 'contain' }} />
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="font-semibold">{badge.name}</p>
-                        <p className="text-sm text-muted-foreground">{badge.description}</p>
+                      <TooltipContent className="flex items-center gap-2">
+                        <div className="relative h-6 w-6 flex-shrink-0">
+                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="24px" style={{ objectFit: 'contain' }} />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{badge.name}</p>
+                          <p className="text-sm text-muted-foreground">{badge.description}</p>
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
