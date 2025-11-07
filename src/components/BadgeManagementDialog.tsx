@@ -6,10 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { CheckCircle } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 const MAX_FEATURED_BADGES = 5;
 
@@ -59,6 +61,7 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
   const [selectedBadgeIds, setSelectedBadgeIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
     if (isOpen) {
@@ -160,40 +163,73 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
                 const isEarned = myBadgeIds.has(badge.id);
                 const isSelected = selectedBadgeIds.has(badge.id);
 
+                const BadgeContent = (
+                  <div className="flex items-center gap-2">
+                    <div className="relative h-12 w-12 flex-shrink-0">
+                      <Image src={badge.iconUrl} alt={badge.name} fill sizes="48px" style={{ objectFit: 'contain' }} />
+                    </div>
+                    <div>
+                      <p className={`font-semibold ${isEarned ? '' : 'line-through'}`}>{badge.name}</p>
+                      <p className="text-sm text-muted-foreground">{badge.description}</p>
+                      {userStats && badgeRequirements[badge.name] && (
+                        <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                          {`(${(userStats as any)[badgeRequirements[badge.name].stat]} / ${badgeRequirements[badge.name].threshold})`}
+                        </p>
+                      )}
+                      {!isEarned && <p className="text-xs text-amber-500 mt-1">미획득</p>}
+                      {isMobile && isEarned && (
+                        <Button 
+                          variant={isSelected ? "default" : "outline"} 
+                          size="sm" 
+                          className="w-full mt-2"
+                          onClick={() => handleSelectBadge(badge.id)}
+                        >
+                          {isSelected ? "대표 뱃지 해제" : "대표 뱃지 설정"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+
+                const BadgeTrigger = (
+                  <div 
+                    className={`relative p-2 border rounded-md aspect-square flex items-center justify-center transition-all ${isEarned ? 'cursor-pointer hover:border-primary' : 'opacity-30'} ${isSelected ? 'border-primary border-2' : ''}`}
+                    onClick={() => isMobile ? null : (isEarned && handleSelectBadge(badge.id))}
+                  >
+                    <div className="relative w-full h-full">
+                        <Image 
+                          src={badge.iconUrl} 
+                          alt={badge.name} 
+                          fill 
+                          sizes="15vw"
+                          style={{ objectFit: 'contain' }}
+                        />
+                    </div>
+                    {isSelected && <CheckCircle className="absolute top-1 right-1 h-4 w-4 text-primary-foreground bg-primary rounded-full" />}
+                  </div>
+                );
+
+                if (isMobile) {
+                  return (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        {BadgeTrigger}
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        {BadgeContent}
+                      </PopoverContent>
+                    </Popover>
+                  )
+                }
+
                 return (
                   <TooltipProvider key={badge.id}>
                     <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div 
-                          className={`relative p-2 border rounded-md aspect-square flex items-center justify-center transition-all ${isEarned ? 'cursor-pointer hover:border-primary' : 'opacity-30'} ${isSelected ? 'border-primary border-2' : ''}`}
-                          onClick={() => isEarned && handleSelectBadge(badge.id)}
-                        >
-                          <div className="relative w-full h-full">
-                             <Image 
-                                src={badge.iconUrl} 
-                                alt={badge.name} 
-                                fill 
-                                sizes="15vw"
-                                style={{ objectFit: 'contain' }}
-                              />
-                          </div>
-                          {isSelected && <CheckCircle className="absolute top-1 right-1 h-4 w-4 text-primary-foreground bg-primary rounded-full" />}
-                        </div>
+                      <TooltipTrigger asChild onClick={() => isEarned && handleSelectBadge(badge.id)}>
+                        {BadgeTrigger}
                       </TooltipTrigger>
                       <TooltipContent className="flex items-center gap-2">
-                        <div className="relative h-12 w-12 flex-shrink-0">
-                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="48px" style={{ objectFit: 'contain' }} />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${isEarned ? '' : 'line-through'}`}>{badge.name}</p>
-                          <p className="text-sm text-muted-foreground">{badge.description}</p>
-                          {userStats && badgeRequirements[badge.name] && (
-                            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                              {`(${(userStats as any)[badgeRequirements[badge.name].stat]} / ${badgeRequirements[badge.name].threshold})`}
-                            </p>
-                          )}
-                          {!isEarned && <p className="text-xs text-amber-500 mt-1">미획득</p>}
-                        </div>
+                        {BadgeContent}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

@@ -14,6 +14,8 @@ import { ko } from 'date-fns/locale';
 import { VoteType } from '@prisma/client';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface ReviewCardProps {
   review: AppReview;
@@ -26,6 +28,7 @@ interface ReviewCardProps {
 export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onEdit }: ReviewCardProps) {
   const { data: session } = useSession();
   const isAuthor = session?.user?.id === review.userId;
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Optimistic UI updates for votes
   const [localUpvotes, setLocalUpvotes] = useState(review.upvotes);
@@ -109,26 +112,51 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
             <div className="flex items-center gap-2">
               <p className="font-semibold">{review.user.name}</p>
               <div className="flex gap-1">
-                {review.user.featuredBadges?.map(badge => (
-                  <TooltipProvider key={badge.id}>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <div className="relative h-6 w-6">
-                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="24px" style={{ objectFit: 'contain' }} />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="flex items-center gap-2">
-                        <div className="relative h-12 w-12 flex-shrink-0">
-                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="48px" style={{ objectFit: 'contain' }} />
-                        </div>
-                        <div>
-                          <p className="font-semibold">{badge.name}</p>
-                          <p className="text-sm text-muted-foreground">{badge.description}</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
+                {review.user.featuredBadges?.map(badge => {
+                  const BadgeContent = (
+                    <div className="flex items-center gap-2">
+                      <div className="relative h-12 w-12 flex-shrink-0">
+                        <Image src={badge.iconUrl} alt={badge.name} fill sizes="48px" style={{ objectFit: 'contain' }} />
+                      </div>
+                      <div>
+                        <p className="font-semibold">{badge.name}</p>
+                        <p className="text-sm text-muted-foreground">{badge.description}</p>
+                      </div>
+                    </div>
+                  );
+
+                  const BadgeTrigger = (
+                    <div className="relative h-6 w-6">
+                      <Image src={badge.iconUrl} alt={badge.name} fill sizes="24px" style={{ objectFit: 'contain' }} />
+                    </div>
+                  );
+
+                  if (isMobile) {
+                    return (
+                      <Popover key={badge.id}>
+                        <PopoverTrigger asChild>
+                          {BadgeTrigger}
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          {BadgeContent}
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  }
+
+                  return (
+                    <TooltipProvider key={badge.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          {BadgeTrigger}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {BadgeContent}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
