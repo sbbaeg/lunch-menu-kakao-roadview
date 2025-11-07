@@ -19,9 +19,10 @@ export async function GET(request: Request) {
       include: {
         badge: true, // Include the full badge details
       },
-      orderBy: {
-        createdAt: 'desc', // Show most recently earned badges first
-      },
+      orderBy: [
+        { isFeatured: 'desc' }, // Featured badges first
+        { createdAt: 'desc' },   // Then by most recently earned
+      ],
     });
 
     // Return badge objects with their featured status
