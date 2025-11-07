@@ -13,8 +13,12 @@ interface BadgeDisplayProps {
   userId: string;
 }
 
+interface DisplayBadge extends BadgeType {
+  isFeatured: boolean;
+}
+
 export default function BadgeDisplay({ userId }: BadgeDisplayProps) {
-  const [badges, setBadges] = useState<BadgeType[]>([]);
+  const [badges, setBadges] = useState<DisplayBadge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +32,7 @@ export default function BadgeDisplay({ userId }: BadgeDisplayProps) {
         if (!response.ok) {
           throw new Error(`Failed to fetch badges: ${response.statusText}`);
         }
-        const data: BadgeType[] = await response.json();
+        const data: DisplayBadge[] = await response.json();
         setBadges(data);
       } catch (err) {
         console.error("Error fetching badges:", err);
@@ -55,17 +59,16 @@ export default function BadgeDisplay({ userId }: BadgeDisplayProps) {
     return <p className="text-sm text-red-500 mt-2">Error: {error}</p>;
   }
 
-  if (badges.length === 0) {
-    return <p className="text-sm text-muted-foreground mt-2">아직 획득한 뱃지가 없습니다.</p>;
-  }
+  const featuredBadges = badges.filter(b => b.isFeatured);
 
-  const displayedBadges = badges.slice(0, 5);
+  if (featuredBadges.length === 0) {
+    return <p className="text-sm text-muted-foreground mt-2">대표 뱃지를 설정해보세요.</p>;
+  }
 
   return (
     <div className="mt-4 px-4">
-      
       <div className="flex flex-wrap gap-2 items-center">
-        {displayedBadges.map((badge) => (
+        {featuredBadges.map((badge) => (
           <TooltipProvider key={badge.id}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -86,10 +89,10 @@ export default function BadgeDisplay({ userId }: BadgeDisplayProps) {
             </Tooltip>
           </TooltipProvider>
         ))}
-        {badges.length > 5 && (
+        {badges.length > featuredBadges.length && (
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-sm">+{badges.length - 5} 더보기</Button>
+              <Button variant="ghost" size="sm" className="text-sm">+{badges.length - featuredBadges.length} 더보기</Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>

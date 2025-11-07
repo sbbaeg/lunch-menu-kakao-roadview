@@ -54,6 +54,7 @@ export function SideMenuSheet({
 }: SideMenuSheetProps) {
     const { data: session, status } = useSession();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
+    const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
 
     const [isMounted, setIsMounted] = useState(false);
@@ -63,6 +64,13 @@ export function SideMenuSheet({
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    const handleBadgeManagementOpenChange = (isOpen: boolean) => {
+        setIsBadgeManagementOpen(isOpen);
+        if (!isOpen) {
+            setBadgeDisplayKey(prev => prev + 1);
+        }
+    };
 
     useEffect(() => {
         const scrollArea = scrollRef.current;
@@ -170,7 +178,7 @@ export function SideMenuSheet({
                                 <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <p className="mt-2 font-semibold">{session.user.name}</p>
-                            <BadgeDisplay userId={session.user.id} />
+                            <BadgeDisplay userId={session.user.id} key={badgeDisplayKey} />
                             <Button variant="outline" onClick={() => signOut()} className="w-full mt-2">
                                 로그아웃
                             </Button>
@@ -368,7 +376,7 @@ export function SideMenuSheet({
                     </div>
                 </div>
             </SheetContent>
-                    <BadgeManagementDialog isOpen={isBadgeManagementOpen} onOpenChange={setIsBadgeManagementOpen} />
+                    <BadgeManagementDialog isOpen={isBadgeManagementOpen} onOpenChange={handleBadgeManagementOpenChange} />
         </Sheet>
     );
 }
