@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { toast } from "sonner";
 
 // Helper component to render each notification
 const NotificationItem = ({ notification, onDelete }: { notification: any, onDelete: (id: number) => void }) => {
@@ -71,6 +72,57 @@ export function NotificationPopover() {
   const { notifications, unreadCount, markAsRead, fetchNotifications, deleteNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [lastNotificationDate, setLastNotificationDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      setLastNotificationDate(new Date(notifications[0].createdAt));
+    }
+  }, [notifications]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000); // 30초마다 알림을 가져옵니다.
+
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    if (notifications.length > 0 && lastNotificationDate) {
+      const latestNotification = notifications[0];
+      if (new Date(latestNotification.createdAt) > lastNotificationDate) {
+        let messageContent = latestNotification.message;
+        let tagId = null;
+        let restaurantId = null;
+
+        if (latestNotification.type === 'TAG_SUBSCRIPTION' || latestNotification.type === 'REVIEW_UPVOTE' || latestNotification.type === 'BEST_REVIEW') {
+          try {
+            const parsed = JSON.parse(latestNotification.message);
+            messageContent = parsed.text;
+            if (latestNotification.type === 'TAG_SUBSCRIPTION') {
+              tagId = parsed.tagId;
+            } else {
+              restaurantId = parsed.restaurantId;
+            }
+          } catch (e) { /* Do nothing */ }
+        }
+
+        toast(messageContent, {
+          action: (tagId || restaurantId) ? {
+            label: tagId ? "태그 보러가기" : "음식점 보러가기",
+            onClick: () => {
+              if (tagId) {
+                window.location.href = `/tags/${tagId}`;
+              } else if (restaurantId) {
+                window.location.href = `/restaurants/${restaurantId}`;
+              }
+            },
+          } : undefined,
+        });
+      }
+    }
+  }, [notifications, lastNotificationDate]);
 
   const hasReadNotifications = notifications.some(n => n.read);
 
