@@ -1,4 +1,4 @@
-import { VoteType } from '@prisma/client';
+import { VoteType, Badge } from '@prisma/client';
 
 export interface GoogleOpeningHours {
   open_now: boolean;
@@ -41,6 +41,7 @@ export interface AppReview {
   user: {
     name: string | null;
     image: string | null;
+    featuredBadges: Badge[];
   };
   upvotes: number;
   downvotes: number;
