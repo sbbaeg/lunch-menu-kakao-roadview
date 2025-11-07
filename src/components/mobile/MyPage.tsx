@@ -53,6 +53,7 @@ export default function MyPage({
     const showMyReviews = useAppStore((state) => state.showMyReviews);
     const { unreadCount } = useNotifications(); // 읽지 않은 알림 수 가져오기
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
+    const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -60,6 +61,13 @@ export default function MyPage({
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    const handleBadgeManagementOpenChange = (isOpen: boolean) => {
+        setIsBadgeManagementOpen(isOpen);
+        if (!isOpen) {
+            setBadgeDisplayKey(prev => prev + 1);
+        }
+    };
 
     // This useEffect is for stopping wheel propagation on the help dialog, 
     // which might not be necessary in this page layout, but we keep it for consistency.
@@ -131,7 +139,7 @@ export default function MyPage({
                         <AvatarFallback>{session.user.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <p className="mt-2 font-semibold">{session.user.name}</p>
-                    <BadgeDisplay userId={session.user.id} />
+                    <BadgeDisplay userId={session.user.id} key={badgeDisplayKey} />
                     <Button variant="outline" onClick={() => signOut()} className="w-full mt-2">
                         로그아웃
                     </Button>
@@ -357,7 +365,7 @@ export default function MyPage({
                     </div>
                 </div>
             </main>
-            <BadgeManagementDialog isOpen={isBadgeManagementOpen} onOpenChange={setIsBadgeManagementOpen} />
+            <BadgeManagementDialog isOpen={isBadgeManagementOpen} onOpenChange={handleBadgeManagementOpenChange} />
         </div>
     );
 }
