@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
 
 /**
  * GET: 현재 로그인한 사용자가 생성한 모든 태그 목록을 조회합니다.
@@ -58,6 +59,30 @@ export async function POST(request: Request) {
                 needsModeration: needsModeration, // 검사 결과 반영
             },
         });
+
+        // --- Badge Awarding Logic ---
+        const tagCount = await prisma.tag.count({ where: { userId: session.user.id } });
+
+        const badgeNames: { [key: number]: string } = {
+            1: '태그 개척자',
+            10: '태그 전문가',
+            50: '태그 장인',
+        };
+
+        if (badgeNames[tagCount]) {
+            const badge = await prisma.badge.findUnique({ where: { name: badgeNames[tagCount] } });
+            if (badge) {
+                await prisma.userBadge.upsert({
+                    where: { userId_badgeId: { userId: session.user.id, badgeId: badge.id } },
+                    update: {},
+                    create: { userId: session.user.id, badgeId: badge.id },
+                });
+                if (badge.tier === 'GOLD') {
+                    await checkAndAwardMasteryBadges(session.user.id);
+                }
+            }
+        }
+        // --- End of Badge Logic ---
 
         return NextResponse.json(newTag, { status: 201 }); // 201 Created
     } catch (error: unknown) {

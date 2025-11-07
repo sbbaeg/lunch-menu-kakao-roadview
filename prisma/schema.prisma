@@ -55,6 +55,7 @@ model User {
   userBadges       UserBadge[]
   reportsMade      Report[]      @relation("Reporter")
   reportsReceived  Report[]      @relation("ReportedUser")
+  rouletteSpins    Int           @default(0)
 }
 
 // 2. 음식점 정보 모델

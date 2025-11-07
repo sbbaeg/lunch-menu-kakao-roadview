@@ -43,11 +43,17 @@ export function RouletteDialog({ isOpen, onOpenChange, items, onResult }: Roulet
         };
     });
 
-    const handleSpinClick = () => {
+    const handleSpinClick = async () => {
         if (mustSpin) return;
         const newPrizeNumber = Math.floor(Math.random() * items.length);
         setPrizeNumber(newPrizeNumber);
         setMustSpin(true);
+
+        try {
+            await fetch('/api/users/me/roulette-spin', { method: 'POST' });
+        } catch (error) {
+            console.error("Failed to track roulette spin:", error);
+        }
     };
 
     const handleStopSpinning = () => {

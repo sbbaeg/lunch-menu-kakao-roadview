@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
 
 /**
  * POST: 특정 태그를 구독하거나 구독을 취소합니다 (토글 방식).
@@ -56,12 +57,64 @@ export async function POST(
             });
             return NextResponse.json({ message: '구독이 취소되었습니다.', action: 'unsubscribed' });
         } else {
+            const oldSubscriberCount = await prisma.tagSubscription.count({ where: { tagId: tagId } });
+
             await prisma.tagSubscription.create({
                 data: {
                     userId: session.user.id,
                     tagId: tagId,
                 },
             });
+
+            const newSubscriberCount = oldSubscriberCount + 1;
+
+            // --- Badge Awarding Logic for Tag Subscribers ---
+            const badgeThresholds: { [key: number]: string } = {
+                10: '주목받는 태그',
+                25: '유명 태그',
+                50: '인기 태그 마스터',
+            };
+
+            for (const threshold of Object.keys(badgeThresholds).map(Number)) {
+                if (newSubscriberCount >= threshold && oldSubscriberCount < threshold) {
+                    const badge = await prisma.badge.findUnique({ where: { name: badgeThresholds[threshold] } });
+                    if (badge) {
+                        await prisma.userBadge.upsert({
+                            where: { userId_badgeId: { userId: tagToSubscribe.userId, badgeId: badge.id } },
+                            update: {},
+                            create: { userId: tagToSubscribe.userId, badgeId: badge.id },
+                        });
+                        if (badge.tier === 'GOLD') {
+                            await checkAndAwardMasteryBadges(tagToSubscribe.userId);
+                        }
+                    }
+                }
+            }
+            // --- End of Badge Logic ---
+
+            // --- Badge Awarding Logic for User Subscribing to Tags ---
+            const userSubscriptionCount = await prisma.tagSubscription.count({ where: { userId: session.user.id } });
+            const userBadgeThresholds: { [key: number]: string } = {
+                10: '탐험가',
+                50: '큐레이터',
+                150: '지식의 보고',
+            };
+
+            if (userBadgeThresholds[userSubscriptionCount]) {
+                const badge = await prisma.badge.findUnique({ where: { name: userBadgeThresholds[userSubscriptionCount] } });
+                if (badge) {
+                    await prisma.userBadge.upsert({
+                        where: { userId_badgeId: { userId: session.user.id, badgeId: badge.id } },
+                        update: {},
+                        create: { userId: session.user.id, badgeId: badge.id },
+                    });
+                    if (badge.tier === 'GOLD') {
+                        await checkAndAwardMasteryBadges(session.user.id);
+                    }
+                }
+            }
+            // --- End of Badge Logic ---
+
             return NextResponse.json({ message: '태그를 구독했습니다.', action: 'subscribed' });
         }
 

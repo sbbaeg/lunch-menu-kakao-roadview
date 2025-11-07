@@ -4,6 +4,7 @@ import { VoteType } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
 
 export async function POST(
   request: Request,
@@ -146,6 +147,30 @@ export async function POST(
           },
         });
       }
+
+      // --- Badge Awarding Logic for Review Upvotes ---
+      const badgeThresholds: { [key: number]: string } = {
+        10: '주목받는 리뷰',
+        50: '베스트 리뷰',
+        100: '명예의 전당',
+      };
+
+      for (const threshold of Object.keys(badgeThresholds).map(Number)) {
+        if (upvotes >= threshold && previousUpvotes < threshold) {
+          const badge = await prisma.badge.findUnique({ where: { name: badgeThresholds[threshold] } });
+          if (badge) {
+            await prisma.userBadge.upsert({
+              where: { userId_badgeId: { userId: review.userId, badgeId: badge.id } },
+              update: {},
+              create: { userId: review.userId, badgeId: badge.id },
+            });
+            if (badge.tier === 'GOLD') {
+              await checkAndAwardMasteryBadges(review.userId);
+            }
+          }
+        }
+      }
+      // --- End of Badge Logic ---
     }
 
     return NextResponse.json({
