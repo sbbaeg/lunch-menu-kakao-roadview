@@ -12,6 +12,8 @@ import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { VoteType } from '@prisma/client';
+import Image from 'next/image';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ReviewCardProps {
   review: AppReview;
@@ -104,7 +106,26 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
             <AvatarFallback>{review.user.name?.charAt(0) || 'U'}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold">{review.user.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold">{review.user.name}</p>
+              <div className="flex gap-1">
+                {review.user.featuredBadges?.map(badge => (
+                  <TooltipProvider key={badge.id}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="relative h-5 w-5">
+                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="20px" style={{ objectFit: 'contain' }} />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-semibold">{badge.name}</p>
+                        <p className="text-sm text-muted-foreground">{badge.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">
               {format(new Date(review.createdAt), 'yyyy년 M월 d일', { locale: ko })}
             </p>
