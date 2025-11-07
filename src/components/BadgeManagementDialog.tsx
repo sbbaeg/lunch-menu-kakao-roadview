@@ -18,9 +18,44 @@ interface BadgeManagementDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+const badgeRequirements: { [key: string]: { stat: keyof UserStats; threshold: number } } = {
+  '첫 발자국': { stat: 'reviewCount', threshold: 1 },
+  '리뷰어': { stat: 'reviewCount', threshold: 10 },
+  '프로 리뷰어': { stat: 'reviewCount', threshold: 50 },
+  '태그 개척자': { stat: 'tagCount', threshold: 1 },
+  '태그 전문가': { stat: 'tagCount', threshold: 10 },
+  '태그 장인': { stat: 'tagCount', threshold: 50 },
+  '운명론자': { stat: 'rouletteSpins', threshold: 10 },
+  '운명의 탐구자': { stat: 'rouletteSpins', threshold: 50 },
+  '운명의 지배자': { stat: 'rouletteSpins', threshold: 200 },
+  '주목받는 리뷰': { stat: 'mostUpvotedReview', threshold: 10 },
+  '베스트 리뷰': { stat: 'mostUpvotedReview', threshold: 50 },
+  '명예의 전당': { stat: 'mostUpvotedReview', threshold: 100 },
+  '주목받는 태그': { stat: 'mostSubscribedTag', threshold: 10 },
+  '유명 태그': { stat: 'mostSubscribedTag', threshold: 25 },
+  '인기 태그 마스터': { stat: 'mostSubscribedTag', threshold: 50 },
+  '탐험가': { stat: 'tagSubscriptionCount', threshold: 10 },
+  '큐레이터': { stat: 'tagSubscriptionCount', threshold: 50 },
+  '지식의 보고': { stat: 'tagSubscriptionCount', threshold: 150 },
+  '골드 콜렉터': { stat: 'goldBadgesCount', threshold: 1 },
+  '골드 헌터': { stat: 'goldBadgesCount', threshold: 3 },
+  '그랜드 마스터': { stat: 'goldBadgesCount', threshold: 7 },
+};
+
+interface UserStats {
+  reviewCount: number;
+  tagCount: number;
+  rouletteSpins: number;
+  mostUpvotedReview: number;
+  mostSubscribedTag: number;
+  tagSubscriptionCount: number;
+  goldBadgesCount: number;
+}
+
 export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeManagementDialogProps) {
   const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
   const [myBadges, setMyBadges] = useState<(BadgeType & { isFeatured: boolean })[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [selectedBadgeIds, setSelectedBadgeIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -30,20 +65,23 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
       const fetchData = async () => {
         setLoading(true);
         try {
-          const [allBadgesRes, myBadgesRes] = await Promise.all([
+          const [allBadgesRes, myBadgesRes, userStatsRes] = await Promise.all([
             fetch('/api/badges'),
             fetch('/api/users/me/badges'),
+            fetch('/api/users/me/stats'),
           ]);
 
-          if (!allBadgesRes.ok || !myBadgesRes.ok) {
+          if (!allBadgesRes.ok || !myBadgesRes.ok || !userStatsRes.ok) {
             throw new Error('Failed to fetch badge data');
           }
 
           const allBadgesData: BadgeType[] = await allBadgesRes.json();
           const myBadgesData: (BadgeType & { isFeatured: boolean })[] = await myBadgesRes.json();
+          const userStatsData: UserStats = await userStatsRes.json();
 
           setAllBadges(allBadgesData);
           setMyBadges(myBadgesData);
+          setUserStats(userStatsData);
           setSelectedBadgeIds(new Set(myBadgesData.filter(b => b.isFeatured).map(b => b.id)));
 
         } catch (error) {
@@ -137,6 +175,11 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
                       <TooltipContent>
                         <p className={`font-semibold ${isEarned ? '' : 'line-through'}`}>{badge.name}</p>
                         <p className="text-sm text-muted-foreground">{badge.description}</p>
+                        {userStats && badgeRequirements[badge.name] && (
+                          <p className="text-sm font-bold text-primary">
+                            {`(${(userStats as any)[badgeRequirements[badge.name].stat]} / ${badgeRequirements[badge.name].threshold})`}
+                          </p>
+                        )}
                         {!isEarned && <p className="text-xs text-amber-500 mt-1">미획득</p>}
                       </TooltipContent>
                     </Tooltip>

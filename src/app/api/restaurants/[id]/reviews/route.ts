@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
 
 // 특정 식당의 모든 리뷰를 가져오는 GET 핸들러
 export async function GET(
@@ -147,6 +148,7 @@ export async function POST(
             badgeId: firstStepBadge.id,
           },
         });
+        await checkAndAwardMasteryBadges(userId);
       }
     }
     // --- End of Badge Logic for '첫 발자국' ---
@@ -166,6 +168,7 @@ export async function POST(
             badgeId: reviewerBadge.id,
           },
         });
+        await checkAndAwardMasteryBadges(userId);
       }
     }
     // --- End of Badge Logic for '리뷰어' ---
@@ -185,6 +188,7 @@ export async function POST(
             badgeId: proReviewerBadge.id,
           },
         });
+        await checkAndAwardMasteryBadges(userId);
       }
     }
     // --- End of Badge Logic for '프로 리뷰어' ---

@@ -45,6 +45,24 @@ export async function GET(request: Request) {
                 take: 20, // 상위 20개 결과
             });
 
+            if (sort === 'subscribers' && tags.length > 0) {
+                const topRank = tags[0]._count.subscribers;
+                if (topRank > 0) { // 최소 1명 이상의 구독자가 있는 경우에만 뱃지 수여
+                    const topRankedTags = tags.filter(tag => tag._count.subscribers === topRank);
+                    const tagRankerBadge = await prisma.badge.findUnique({ where: { name: '태그 랭킹 1위' } });
+
+                    if (tagRankerBadge) {
+                        for (const tag of topRankedTags) {
+                            await prisma.userBadge.upsert({
+                                where: { userId_badgeId: { userId: tag.userId, badgeId: tagRankerBadge.id } },
+                                update: {},
+                                create: { userId: tag.userId, badgeId: tagRankerBadge.id },
+                            });
+                        }
+                    }
+                }
+            }
+
         } else if (query && query.trim() !== '') {
             // 기존의 검색 기능
             tags = await prisma.tag.findMany({
