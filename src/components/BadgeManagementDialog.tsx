@@ -84,7 +84,6 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
           // Fetch user stats, but don't block the dialog if it fails
           try {
             const userStatsRes = await fetch('/api/users/me/stats');
-            console.log('User stats response:', userStatsRes);
             if (userStatsRes.ok) {
               const userStatsData: UserStats = await userStatsRes.json();
               setUserStats(userStatsData);
@@ -185,7 +184,7 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
                         <p className={`font-semibold ${isEarned ? '' : 'line-through'}`}>{badge.name}</p>
                         <p className="text-sm text-muted-foreground">{badge.description}</p>
                         {userStats && badgeRequirements[badge.name] && (
-                          <p className="text-sm font-bold text-primary">
+                          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
                             {`(${(userStats as any)[badgeRequirements[badge.name].stat]} / ${badgeRequirements[badge.name].threshold})`}
                           </p>
                         )}
