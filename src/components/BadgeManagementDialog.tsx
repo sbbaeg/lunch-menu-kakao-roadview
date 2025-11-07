@@ -84,6 +84,7 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
           // Fetch user stats, but don't block the dialog if it fails
           try {
             const userStatsRes = await fetch('/api/users/me/stats');
+            console.log('User stats response:', userStatsRes);
             if (userStatsRes.ok) {
               const userStatsData: UserStats = await userStatsRes.json();
               setUserStats(userStatsData);
