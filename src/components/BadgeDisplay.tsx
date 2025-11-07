@@ -83,8 +83,8 @@ export default function BadgeDisplay({ userId }: BadgeDisplayProps) {
                 </div>
               </TooltipTrigger>
               <TooltipContent className="flex items-center gap-2">
-                <div className="relative h-10 w-10 flex-shrink-0">
-                  <Image src={badge.iconUrl} alt={badge.name} fill sizes="40px" style={{ objectFit: 'contain' }} />
+                <div className="relative h-12 w-12 flex-shrink-0">
+                  <Image src={badge.iconUrl} alt={badge.name} fill sizes="48px" style={{ objectFit: 'contain' }} />
                 </div>
                 <div>
                   <p className="font-semibold">{badge.name}</p>
@@ -120,8 +120,8 @@ export default function BadgeDisplay({ userId }: BadgeDisplayProps) {
                           </div>
                         </TooltipTrigger>
                         <TooltipContent className="flex items-center gap-2">
-                          <div className="relative h-10 w-10 flex-shrink-0">
-                            <Image src={badge.iconUrl} alt={badge.name} fill sizes="40px" style={{ objectFit: 'contain' }} />
+                          <div className="relative h-12 w-12 flex-shrink-0">
+                            <Image src={badge.iconUrl} alt={badge.name} fill sizes="48px" style={{ objectFit: 'contain' }} />
                           </div>
                           <div>
                             <p className="font-semibold">{badge.name}</p>
