@@ -181,8 +181,8 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
                         </div>
                       </TooltipTrigger>
                       <TooltipContent className="flex items-center gap-2">
-                        <div className="relative h-6 w-6 flex-shrink-0">
-                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="24px" style={{ objectFit: 'contain' }} />
+                        <div className="relative h-10 w-10 flex-shrink-0">
+                          <Image src={badge.iconUrl} alt={badge.name} fill sizes="40px" style={{ objectFit: 'contain' }} />
                         </div>
                         <div>
                           <p className={`font-semibold ${isEarned ? '' : 'line-through'}`}>{badge.name}</p>
