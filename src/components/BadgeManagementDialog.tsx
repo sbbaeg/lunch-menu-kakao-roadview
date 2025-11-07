@@ -48,7 +48,7 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
 
         } catch (error) {
           console.error("Error fetching badge data:", error);
-          toast({ title: "오류", description: "뱃지 정보를 불러오는데 실패했습니다.", variant: "destructive" });
+          toast.error("뱃지 정보를 불러오는데 실패했습니다.");
         } finally {
           setLoading(false);
         }
@@ -63,7 +63,7 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
       newSelection.delete(badgeId);
     } else {
       if (newSelection.size >= MAX_FEATURED_BADGES) {
-        toast({ title: "알림", description: `대표 뱃지는 최대 ${MAX_FEATURED_BADGES}개까지 선택할 수 있습니다.` });
+        toast.info(`대표 뱃지는 최대 ${MAX_FEATURED_BADGES}개까지 선택할 수 있습니다.`);
         return;
       }
       newSelection.add(badgeId);
@@ -84,11 +84,11 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
         throw new Error('Failed to save featured badges');
       }
 
-      toast({ title: "성공", description: "대표 뱃지가 저장되었습니다." });
+      toast.success("대표 뱃지가 저장되었습니다.");
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving featured badges:", error);
-      toast({ title: "오류", description: "저장에 실패했습니다.", variant: "destructive" });
+      toast.error("저장에 실패했습니다.");
     } finally {
       setSaving(false);
     }
