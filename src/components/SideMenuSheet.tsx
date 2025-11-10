@@ -235,10 +235,10 @@ export function SideMenuSheet({
                         <div className="px-4 mb-4">
                             <ContactAdminDialog>
                                 <Button variant="ghost" className="justify-start w-full flex items-center">
-                                    문의
-                                    {unreadInquiryCount && unreadInquiryCount > 0 && (
+                                    <span>문의</span>
+                                    {unreadInquiryCount && unreadInquiryCount > 0 ? (
                                         <Badge className="ml-auto">{unreadInquiryCount}</Badge>
-                                    )}
+                                    ) : null}
                                 </Button>
                             </ContactAdminDialog>
                         </div>
