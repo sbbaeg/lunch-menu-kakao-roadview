@@ -57,7 +57,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>관리자에게 문의하기</DialogTitle>
           <DialogDescription>

@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +30,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { useNotifications } from "@/hooks/useNotifications"; // 알림 훅 임포트
 import BadgeDisplay from "@/components/BadgeDisplay";
 import BadgeManagementDialog from "@/components/BadgeManagementDialog";
+import { ContactAdminDialog } from "@/components/ContactAdminDialog";
 
 interface MyPageProps {
     onShowFavorites: () => void;
@@ -220,6 +221,20 @@ export default function MyPage({
                         </div>
                     </div>
 
+                    {status === 'authenticated' && (
+                        <>
+                            <Separator className="my-4" />
+                            <div className="px-4">
+                                <h3 className="text-lg font-semibold mb-2">지원</h3>
+                                <ContactAdminDialog>
+                                    <Button variant="ghost" className="justify-start w-full p-2">
+                                        <MessageSquare className="mr-2 h-4 w-4" /> 관리자에게 문의
+                                    </Button>
+                                </ContactAdminDialog>
+                            </div>
+                        </>
+                    )}
+                    
                     <Separator className="my-4" />
 
                      <div className="px-4">
