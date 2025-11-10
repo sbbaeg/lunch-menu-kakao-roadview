@@ -59,6 +59,9 @@ export async function GET(
     const reviewAggregations = await prisma.review.aggregate({
       where: {
         restaurantId: restaurantFromDb.id,
+        user: {
+          isBanned: false,
+        }
       },
       _avg: {
         rating: true,

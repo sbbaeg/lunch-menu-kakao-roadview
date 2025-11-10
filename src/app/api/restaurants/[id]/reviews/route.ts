@@ -22,19 +22,21 @@ export async function GET(
     const reviewsFromDb = await prisma.review.findMany({
       where: { restaurantId },
       include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-                isBanned: true, // isBanned 필드 추가
-                featuredBadges: {
-                  where: { isFeatured: true },
-                }
-              }
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            isBanned: true,
+            userBadges: {
+              where: { isFeatured: true },
+              include: {
+                badge: true,
+              },
             },
-
-        votes: { // 모든 투표 정보
+          },
+        },
+        votes: {
           select: {
             userId: true,
             type: true,
@@ -52,15 +54,14 @@ export async function GET(
       const downvotes = review.votes.filter(v => v.type === 'DOWNVOTE').length;
       const currentUserVote = userId ? review.votes.find(v => v.userId === userId)?.type || null : null;
 
-      const { votes, user, ...reviewData } = review;
+      const { user, votes, ...reviewData } = review;
+      const { userBadges, ...restOfUser } = user;
 
       return {
         ...reviewData,
         user: {
-            id: user.id,
-            name: user.name,
-            image: user.image,
-            featuredBadges: user.userBadges.map(ub => ub.badge),
+          ...restOfUser,
+          featuredBadges: userBadges.map(ub => ub.badge),
         },
         upvotes,
         downvotes,
