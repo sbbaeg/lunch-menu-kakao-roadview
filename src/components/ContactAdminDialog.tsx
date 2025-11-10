@@ -65,15 +65,15 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="message" className="text-right">
+          <div className="space-y-2">
+            <Label htmlFor="message">
               문의 내용
             </Label>
             <Textarea
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="col-span-3"
+              className="w-full"
               placeholder="여기에 문의 내용을 입력하세요."
               rows={6}
             />
