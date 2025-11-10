@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, MessageSquare } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, MessageSquare, HelpCircle } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -241,9 +241,12 @@ export default function MyPage({
                     <Separator className="my-4" />
 
                      <div className="px-4">
-                                                <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+                        <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="ghost" className="justify-start w-full p-2">도움말 및 정보</Button>
+                                <Button variant="ghost" className="justify-start w-full p-2">
+                                    <HelpCircle className="mr-2 h-4 w-4" />
+                                    도움말 및 정보
+                                </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-lg flex flex-col h-[85vh] p-0">
                                 <DialogHeader className="p-6 pb-2">
@@ -253,12 +256,13 @@ export default function MyPage({
                                     본 앱의 주요 기능과 사용법을 안내합니다.
                                 </p>
                                 <Tabs defaultValue="quickstart" className="w-full flex flex-col flex-1 min-h-0 pt-4" ref={scrollRef}>
-                                    <TabsList className="grid w-full grid-cols-5 mx-6 w-auto">
+                                    <TabsList className="grid w-full grid-cols-7 mx-6 w-auto">
                                         <TabsTrigger value="quickstart">기본</TabsTrigger>
                                         <TabsTrigger value="map">지도</TabsTrigger>
                                         <TabsTrigger value="personal">개인화</TabsTrigger>
                                         <TabsTrigger value="reviews">리뷰/평가</TabsTrigger>
                                         <TabsTrigger value="explore">탐색</TabsTrigger>
+                                        <TabsTrigger value="inquiries">문의</TabsTrigger>
                                         <TabsTrigger value="notifications">알림</TabsTrigger>
                                     </TabsList>
 
@@ -361,11 +365,28 @@ export default function MyPage({
                                         </div>
                                     </TabsContent>
 
+                                    <TabsContent value="inquiries" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">문의 작성 및 확인</h4>
+                                                <p className="text-sm text-muted-foreground">'지원' 섹션의 '문의' 버튼을 통해 앱 사용 중 발생하는 문제나 건의사항을 관리자에게 보낼 수 있습니다. 관리자가 답변을 등록하면 내역에서 확인할 수 있습니다.</p>
+                                            </div>
+                                            <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">답변 알림</h4>
+                                                <p className="text-sm text-muted-foreground">관리자가 내 문의에 답변을 등록하면 '문의' 버튼과 해당 문의 항목에 빨간 점이 표시되어 새로운 답변이 있음을 알려줍니다.</p>
+                                            </div>
+                                            <div className="p-4 bg-muted/50 rounded-lg">
+                                                <h4 className="font-semibold mb-2">문의 관리</h4>
+                                                <p className="text-sm text-muted-foreground">문의 내역 목록은 '전체', '미응답', '답변완료' 탭으로 나누어 관리할 수 있으며, 각 문의 항목 옆의 휴지통 아이콘을 눌러 개별적으로 삭제할 수 있습니다.</p>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
                                     <TabsContent value="notifications" className="mt-4 p-6 pt-0 flex-1 overflow-y-auto">
                                         <div className="space-y-4">
                                             <div className="p-4 bg-muted/50 rounded-lg">
                                                 <h4 className="font-semibold mb-2">알림 종류</h4>
-                                                <p className="text-sm text-muted-foreground">계정 상태 변경(차단/해제) 또는 구독 중인 태그에 새로운 장소가 추가될 경우 알림을 받게 됩니다.</p>
+                                                <p className="text-sm text-muted-foreground">계정 상태 변경(차단/해제), 구독 중인 태그에 새로운 장소 추가, 또는 관리자 문의에 대한 답변이 등록될 경우 알림을 받게 됩니다.</p>
                                             </div>
                                             <div className="p-4 bg-muted/50 rounded-lg">
                                                 <h4 className="font-semibold mb-2">읽음 처리</h4>
