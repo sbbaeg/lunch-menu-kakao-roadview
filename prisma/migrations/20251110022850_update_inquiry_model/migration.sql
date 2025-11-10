@@ -6,4 +6,4 @@
 */
 -- AlterTable
 ALTER TABLE "Inquiry" ADD COLUMN     "adminReply" TEXT,
-ADD COLUMN     "title" TEXT NOT NULL;
+ADD COLUMN     "title" TEXT NOT NULL DEFAULT '제목 없음';
