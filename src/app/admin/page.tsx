@@ -7,12 +7,22 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Trash2, Edit, UserX, Users, Utensils, MessageSquare, Tag, ThumbsUp, GitCompareArrows, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AdminEditDialog } from '@/components/ui/AdminEditDialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -57,7 +67,9 @@ interface UserForManagement {
 }
 interface Inquiry {
     id: number;
+    title: string;
     message: string;
+    adminReply: string | null;
     isResolved: boolean;
     createdAt: string;
     user: {
@@ -134,6 +146,8 @@ export default function AdminPage() {
     const [filteredBannedUsers, setFilteredBannedUsers] = useState<UserForManagement[]>([]);
     const [inquiries, setInquiries] = useState<Inquiry[]>([]);
     const [inquiryFilter, setInquiryFilter] = useState<'unresolved' | 'resolved'>('unresolved');
+    const [replyingInquiry, setReplyingInquiry] = useState<Inquiry | null>(null);
+    const [replyText, setReplyText] = useState('');
 
     // Initial Data Fetching
     useEffect(() => {
@@ -303,26 +317,32 @@ export default function AdminPage() {
         }
     };
 
-    const handleToggleInquiry = async (inquiryId: number, currentStatus: boolean) => {
-        const newStatus = !currentStatus;
-        // Optimistic update
-        setInquiries(inquiries.map(i => i.id === inquiryId ? { ...i, isResolved: newStatus } : i));
+    const handleOpenReplyDialog = (inquiry: Inquiry) => {
+        setReplyingInquiry(inquiry);
+        setReplyText(inquiry.adminReply || '');
+    };
+
+    const handleReplySubmit = async () => {
+        if (!replyingInquiry || !replyText.trim()) return;
 
         try {
-            const res = await fetch(`/api/admin/inquiries/${inquiryId}`, {
+            const res = await fetch(`/api/admin/inquiries/${replyingInquiry.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isResolved: newStatus }),
+                body: JSON.stringify({ adminReply: replyText }),
             });
+
             if (!res.ok) {
-                // Revert on failure
-                setInquiries(inquiries.map(i => i.id === inquiryId ? { ...i, isResolved: currentStatus } : i));
-                throw new Error('문의 상태 변경에 실패했습니다.');
+                throw new Error('답변 등록에 실패했습니다.');
             }
+
+            const updatedInquiry = await res.json();
+            setInquiries(inquiries.map(i => i.id === updatedInquiry.id ? updatedInquiry : i));
+            setReplyingInquiry(null);
+            setReplyText('');
+
         } catch (e: any) {
             setError(e.message);
-            // Revert on failure
-            setInquiries(inquiries.map(i => i.id === inquiryId ? { ...i, isResolved: currentStatus } : i));
         }
     };
 
@@ -599,8 +619,9 @@ export default function AdminPage() {
                                     ) : (
                                         inquiries.filter(i => inquiryFilter === 'resolved' ? i.isResolved : !i.isResolved).map(inquiry => (
                                             <div key={inquiry.id} className="p-4 border rounded-lg">
-                                                <div className="flex justify-between items-start">
+                                                <div className="flex justify-between items-start gap-4">
                                                     <div>
+                                                        <p className="font-semibold">{inquiry.title}</p>
                                                         <p className="text-xs text-muted-foreground">
                                                             From: <Link href={`/admin/users/${inquiry.user.id}`} className="hover:underline">{inquiry.user.name} ({inquiry.user.email})</Link>
                                                         </p>
@@ -610,13 +631,19 @@ export default function AdminPage() {
                                                     </div>
                                                     <Button 
                                                         size="sm" 
-                                                        variant={inquiry.isResolved ? "secondary" : "default"}
-                                                        onClick={() => handleToggleInquiry(inquiry.id, inquiry.isResolved)}
+                                                        variant="default"
+                                                        onClick={() => handleOpenReplyDialog(inquiry)}
                                                     >
-                                                        {inquiry.isResolved ? '미해결로 표시' : '해결됨으로 표시'}
+                                                        {inquiry.isResolved ? '답변 보기/수정' : '답변하기'}
                                                     </Button>
                                                 </div>
                                                 <p className="mt-4 text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-md">{inquiry.message}</p>
+                                                {inquiry.adminReply && (
+                                                    <div className="mt-3">
+                                                        <p className="text-xs font-semibold text-primary">관리자 답변:</p>
+                                                        <p className="text-sm whitespace-pre-wrap bg-primary/10 p-3 rounded-md">{inquiry.adminReply}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))
                                     )}
@@ -627,6 +654,45 @@ export default function AdminPage() {
 
                 </Tabs>
             </main>
+
+            {replyingInquiry && (
+                <Dialog open={!!replyingInquiry} onOpenChange={() => setReplyingInquiry(null)}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>문의 답변하기</DialogTitle>
+                            <DialogDescription>
+                                <p className="font-semibold mt-2">문의 제목: {replyingInquiry.title}</p>
+                                <p className="text-sm text-muted-foreground">
+                                    From: {replyingInquiry.user.name} ({replyingInquiry.user.email})
+                                </p>
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <Label className="font-semibold">사용자 문의 내용</Label>
+                                <div className="mt-1 p-3 rounded-md border bg-muted/50 text-sm whitespace-pre-wrap">
+                                    {replyingInquiry.message}
+                                </div>
+                            </div>
+                            <div>
+                                <Label htmlFor="adminReply" className="font-semibold">답변 작성</Label>
+                                <Textarea
+                                    id="adminReply"
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    rows={8}
+                                    placeholder="여기에 답변을 입력하세요..."
+                                    className="mt-1"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="secondary" onClick={() => setReplyingInquiry(null)}>취소</Button>
+                            <Button onClick={handleReplySubmit} disabled={!replyText.trim()}>답변 등록</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
 
             {itemToEdit && <AdminEditDialog isOpen={!!itemToEdit} onClose={() => setItemToEdit(null)} itemType={itemToEdit.type} initialText={itemToEdit.text} onSave={handleSaveItem} />}
             {itemToDelete && (

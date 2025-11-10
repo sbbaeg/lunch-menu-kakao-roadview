@@ -232,7 +232,7 @@ export function SideMenuSheet({
                     {isMounted && status === 'authenticated' && (
                         <div className="px-4 mb-4">
                             <ContactAdminDialog>
-                                <Button variant="ghost" className="justify-start w-full">관리자에게 문의</Button>
+                                <Button variant="ghost" className="justify-start w-full">문의</Button>
                             </ContactAdminDialog>
                         </div>
                     )}

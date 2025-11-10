@@ -228,7 +228,7 @@ export default function MyPage({
                                 <h3 className="text-lg font-semibold mb-2">지원</h3>
                                 <ContactAdminDialog>
                                     <Button variant="ghost" className="justify-start w-full p-2">
-                                        <MessageSquare className="mr-2 h-4 w-4" /> 관리자에게 문의
+                                        <MessageSquare className="mr-2 h-4 w-4" /> 문의
                                     </Button>
                                 </ContactAdminDialog>
                             </div>

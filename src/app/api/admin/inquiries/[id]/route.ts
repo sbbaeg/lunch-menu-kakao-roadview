@@ -16,15 +16,18 @@ export async function PUT(
 
   try {
     const inquiryId = parseInt(params.id, 10);
-    const { isResolved } = await request.json();
+    const { adminReply } = await request.json();
 
-    if (typeof isResolved !== 'boolean') {
-      return NextResponse.json({ error: 'Invalid value for isResolved.' }, { status: 400 });
+    if (typeof adminReply !== 'string' || adminReply.trim().length === 0) {
+      return NextResponse.json({ error: 'Admin reply text is required.' }, { status: 400 });
     }
 
     const updatedInquiry = await prisma.inquiry.update({
       where: { id: inquiryId },
-      data: { isResolved },
+      data: { 
+        adminReply,
+        isResolved: true,
+      },
     });
 
     return NextResponse.json(updatedInquiry);
