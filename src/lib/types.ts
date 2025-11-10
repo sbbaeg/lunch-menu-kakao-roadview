@@ -41,6 +41,7 @@ export interface AppReview {
   user: {
     name: string | null;
     image: string | null;
+    isBanned: boolean;
     featuredBadges: Badge[];
   };
   upvotes: number;

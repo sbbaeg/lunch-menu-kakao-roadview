@@ -56,6 +56,7 @@ model User {
   reportsMade      Report[]      @relation("Reporter")
   reportsReceived  Report[]      @relation("ReportedUser")
   rouletteSpins    Int           @default(0)
+  inquiries        Inquiry[]
 }
 
 // 2. 음식점 정보 모델
@@ -388,4 +389,18 @@ model Report {
   @@index([reportedReviewId])
   @@index([reportedTagId])
   @@index([status])
+}
+
+model Inquiry {
+  id          Int      @id @default(autoincrement())
+  message     String   @db.Text
+  isResolved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isResolved])
 }

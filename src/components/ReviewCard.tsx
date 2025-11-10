@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface ReviewCardProps {
   review: AppReview;
@@ -176,8 +177,24 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
         )}
       </div>
       <div className="mt-3 space-y-2">
-        <StarRating rating={review.rating} />
-        <p className="text-sm text-foreground/90 whitespace-pre-wrap">{review.text}</p>
+        {review.user.isBanned ? (
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1" className="border-b-0">
+              <AccordionTrigger className="text-sm text-muted-foreground py-2 hover:no-underline">
+                차단된 사용자의 리뷰입니다. (클릭하여 확인)
+              </AccordionTrigger>
+              <AccordionContent className="pt-2">
+                <StarRating rating={review.rating} />
+                <p className="text-sm text-foreground/90 whitespace-pre-wrap mt-2">{review.text}</p>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        ) : (
+          <>
+            <StarRating rating={review.rating} />
+            <p className="text-sm text-foreground/90 whitespace-pre-wrap">{review.text}</p>
+          </>
+        )}
       </div>
       <div className="mt-3 flex items-center gap-4">
         <Button
