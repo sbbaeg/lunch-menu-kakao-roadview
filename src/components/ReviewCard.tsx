@@ -98,11 +98,19 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
 
   const [isBlindedContentVisible, setIsBlindedContentVisible] = useState(false);
 
-  const isEffectivelyBanned = review.user.isBanned && !isBlindedContentVisible;
+  const isBannedUser = review.user.isBanned;
+  const needsModeration = review.needsModeration;
+  const isBlinded = isBannedUser || needsModeration;
+  
+  const isEffectivelyBlinded = isBlinded && !isBlindedContentVisible;
+
+  const blindReasonText = isBannedUser 
+    ? "블라인드된 리뷰입니다. - 차단당한 사용자" 
+    : "블라인드된 리뷰입니다. - 욕설";
 
   return (
     <div className={`p-4 border-b last:border-b-0 relative rounded-md ${isBestReview ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}>
-      {isBestReview && !isEffectivelyBanned && (
+      {isBestReview && !isEffectivelyBlinded && (
         <Badge variant="destructive" className="absolute -top-2 -left-2 -rotate-12 z-10">
           BEST
         </Badge>
@@ -181,9 +189,9 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
         )}
       </div>
       <div className="mt-3 space-y-2">
-        {isEffectivelyBanned ? (
+        {isEffectivelyBlinded ? (
           <p className="text-sm text-muted-foreground">
-            블라인드된 리뷰입니다.
+            {blindReasonText}
             <Button variant="link" className="p-1" onClick={() => setIsBlindedContentVisible(true)}>
               [보기]
             </Button>
@@ -200,7 +208,7 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
           variant="outline"
           size="sm"
           onClick={() => handleVote('UPVOTE')}
-          disabled={!session || isAuthor || isVoting || isEffectivelyBanned}
+          disabled={!session || isAuthor || isVoting || isEffectivelyBlinded}
           className={`gap-1 ${localUserVote === 'UPVOTE' ? 'bg-primary/10 border-primary text-primary' : ''}`}>
           <ThumbsUp className="h-4 w-4" />
           <span>{localUpvotes}</span>
@@ -209,7 +217,7 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
           variant="outline"
           size="sm"
           onClick={() => handleVote('DOWNVOTE')}
-          disabled={!session || isAuthor || isVoting || isEffectivelyBanned}
+          disabled={!session || isAuthor || isVoting || isEffectivelyBlinded}
           className={`gap-1 ${localUserVote === 'DOWNVOTE' ? 'bg-destructive/10 border-destructive text-destructive' : ''}`}>
           <ThumbsDown className="h-4 w-4" />
           <span>{localDownvotes}</span>
@@ -220,7 +228,7 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
           variant="ghost"
           size="sm"
           onClick={handleReport}
-          disabled={!session || isAuthor || isReporting || isEffectivelyBanned}
+          disabled={!session || isAuthor || isReporting || isEffectivelyBlinded}
           className="text-muted-foreground hover:text-destructive gap-1"
         >
           <Flag className="h-4 w-4" />
