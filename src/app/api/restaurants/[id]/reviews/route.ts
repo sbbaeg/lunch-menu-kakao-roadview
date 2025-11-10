@@ -22,19 +22,18 @@ export async function GET(
     const reviewsFromDb = await prisma.review.findMany({
       where: { restaurantId },
       include: {
-        user: { 
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            userBadges: {
-              where: { isFeatured: true },
-              include: {
-                badge: true,
-              },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                isBanned: true, // isBanned 필드 추가
+                featuredBadges: {
+                  where: { isFeatured: true },
+                }
+              }
             },
-          },
-        },
+
         votes: { // 모든 투표 정보
           select: {
             userId: true,

@@ -55,6 +55,17 @@ interface UserForManagement {
     isAdmin: boolean;
     isBanned: boolean;
 }
+interface Inquiry {
+    id: number;
+    message: string;
+    isResolved: boolean;
+    createdAt: string;
+    user: {
+        id: string;
+        name: string | null;
+        email: string | null;
+    };
+}
 type ItemToEdit = { type: 'tag' | 'review'; id: number; text: string; } | null;
 type ItemToDelete = { type: 'tag' | 'review'; id: number; } | null;
 type ActiveChart = 'users' | 'reviews' | 'tags' | 'restaurantVotes' | 'reviewVotes';
@@ -121,6 +132,8 @@ export default function AdminPage() {
     const [bannedUserSearchTerm, setBannedUserSearchTerm] = useState('');
     const [filteredUsers, setFilteredUsers] = useState<UserForManagement[]>([]);
     const [filteredBannedUsers, setFilteredBannedUsers] = useState<UserForManagement[]>([]);
+    const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+    const [inquiryFilter, setInquiryFilter] = useState<'unresolved' | 'resolved'>('unresolved');
 
     // Initial Data Fetching
     useEffect(() => {
@@ -133,12 +146,13 @@ export default function AdminPage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [profanityRes, moderationRes, statsRes, usersRes, bannedUsersRes] = await Promise.all([
+                const [profanityRes, moderationRes, statsRes, usersRes, bannedUsersRes, inquiriesRes] = await Promise.all([
                     fetch('/api/admin/profanity'),
                     fetch('/api/admin/moderation'),
                     fetch('/api/admin/stats'),
                     fetch('/api/admin/users?isBanned=false'),
-                    fetch('/api/admin/users?isBanned=true')
+                    fetch('/api/admin/users?isBanned=true'),
+                    fetch('/api/admin/inquiries')
                 ]);
 
                 if (!profanityRes.ok) throw new Error('비속어를 불러오는 데 실패했습니다.');
@@ -157,6 +171,9 @@ export default function AdminPage() {
 
                 if (!bannedUsersRes.ok) throw new Error('차단된 사용자 목록을 불러오는 데 실패했습니다.');
                 setBannedUsers(await bannedUsersRes.json());
+
+                if (!inquiriesRes.ok) throw new Error('문의 목록을 불러오는 데 실패했습니다.');
+                setInquiries(await inquiriesRes.json());
 
             } catch (e: any) {
                 setError(e.message);
@@ -286,6 +303,29 @@ export default function AdminPage() {
         }
     };
 
+    const handleToggleInquiry = async (inquiryId: number, currentStatus: boolean) => {
+        const newStatus = !currentStatus;
+        // Optimistic update
+        setInquiries(inquiries.map(i => i.id === inquiryId ? { ...i, isResolved: newStatus } : i));
+
+        try {
+            const res = await fetch(`/api/admin/inquiries/${inquiryId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isResolved: newStatus }),
+            });
+            if (!res.ok) {
+                // Revert on failure
+                setInquiries(inquiries.map(i => i.id === inquiryId ? { ...i, isResolved: currentStatus } : i));
+                throw new Error('문의 상태 변경에 실패했습니다.');
+            }
+        } catch (e: any) {
+            setError(e.message);
+            // Revert on failure
+            setInquiries(inquiries.map(i => i.id === inquiryId ? { ...i, isResolved: currentStatus } : i));
+        }
+    };
+
     const chartTitles: { [key in ActiveChart]: string } = {
         users: '신규 사용자',
         reviews: '신규 리뷰',
@@ -369,6 +409,7 @@ export default function AdminPage() {
                         <TabsTrigger value="dashboard">대시보드</TabsTrigger>
                         <TabsTrigger value="management">콘텐츠 관리</TabsTrigger>
                         <TabsTrigger value="users">사용자 관리</TabsTrigger>
+                        <TabsTrigger value="inquiries">문의 관리</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="dashboard">
@@ -536,6 +577,52 @@ export default function AdminPage() {
                                 </CardContent>
                             </Card>
                         </div>
+                    </TabsContent>
+
+                    <TabsContent value="inquiries">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>사용자 문의 관리</CardTitle>
+                                <Tabs value={inquiryFilter} onValueChange={(value) => setInquiryFilter(value as any)}>
+                                    <TabsList>
+                                        <TabsTrigger value="unresolved">미해결</TabsTrigger>
+                                        <TabsTrigger value="resolved">해결됨</TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
+                                    {inquiries.filter(i => inquiryFilter === 'resolved' ? i.isResolved : !i.isResolved).length === 0 ? (
+                                        <p className="text-sm text-muted-foreground text-center py-8">
+                                            {inquiryFilter === 'resolved' ? '해결된 문의가 없습니다.' : '미해결된 문의가 없습니다.'}
+                                        </p>
+                                    ) : (
+                                        inquiries.filter(i => inquiryFilter === 'resolved' ? i.isResolved : !i.isResolved).map(inquiry => (
+                                            <div key={inquiry.id} className="p-4 border rounded-lg">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            From: <Link href={`/admin/users/${inquiry.user.id}`} className="hover:underline">{inquiry.user.name} ({inquiry.user.email})</Link>
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Received: {new Date(inquiry.createdAt).toLocaleString('ko-KR')}
+                                                        </p>
+                                                    </div>
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant={inquiry.isResolved ? "secondary" : "default"}
+                                                        onClick={() => handleToggleInquiry(inquiry.id, inquiry.isResolved)}
+                                                    >
+                                                        {inquiry.isResolved ? '미해결로 표시' : '해결됨으로 표시'}
+                                                    </Button>
+                                                </div>
+                                                <p className="mt-4 text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-md">{inquiry.message}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
 
                 </Tabs>

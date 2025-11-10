@@ -36,6 +36,7 @@ import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BadgeManagementDialog from "@/components/BadgeManagementDialog";
 import BadgeDisplay from "@/components/BadgeDisplay";
+import { ContactAdminDialog } from "@/components/ContactAdminDialog";
 
 interface SideMenuSheetProps {
     onShowFavorites: () => void;
@@ -227,6 +228,14 @@ export function SideMenuSheet({
                         </Accordion>
                     </div>
                     <Separator className="my-4" />
+
+                    {isMounted && status === 'authenticated' && (
+                        <div className="px-4 mb-4">
+                            <ContactAdminDialog>
+                                <Button variant="ghost" className="justify-start w-full">관리자에게 문의</Button>
+                            </ContactAdminDialog>
+                        </div>
+                    )}
 
                     <div className="px-4 flex items-center justify-between">
                         <span className="text-sm font-medium">테마 변경</span>
