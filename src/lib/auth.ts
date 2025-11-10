@@ -57,6 +57,18 @@ export const authOptions: NextAuthOptions = {
           }
         }
         // --- End of Early Bird Badge Logic ---
+      } else {
+        // Subsequent requests: refresh token with latest user data
+        if (token.id) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { isAdmin: true, isBanned: true },
+          });
+          if (dbUser) {
+            token.isAdmin = dbUser.isAdmin;
+            token.isBanned = dbUser.isBanned;
+          }
+        }
       }
       return token;
     },
