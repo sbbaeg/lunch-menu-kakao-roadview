@@ -41,7 +41,10 @@ const NotificationItem = ({ notification, onDelete }: { notification: any, onDel
     >
       <div className="flex w-full flex-col gap-1">
         <div className="flex items-center">
-          <div className="font-semibold flex-grow">{messageContent}</div>
+          <div className="font-semibold flex-grow flex items-center gap-2">
+            {messageContent}
+            {!notification.read && <span className="block h-2 w-2 rounded-full bg-red-500" />}
+          </div>
           <div className={cn("ml-auto text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
             {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
           </div>

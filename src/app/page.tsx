@@ -20,6 +20,8 @@ import { useBlacklist } from "@/hooks/useBlacklist";
 import { useUserTags } from "@/hooks/useUserTags";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useLikedRestaurants } from "@/hooks/useLikedRestaurants";
+import { useNotifications } from "@/hooks/useNotifications"; // 알림 훅 임포트
+import { useInquiryNotifications } from "@/hooks/useInquiryNotifications"; // 문의 알림 훅 임포트
 
 
 import { useAppStore } from '@/store/useAppStore';
@@ -127,6 +129,8 @@ export default function Home() {
     const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
     const { likedRestaurants, isLoading: isLoadingLiked } = useLikedRestaurants();
+    const { unreadCount: unreadGeneralNotificationCount } = useNotifications(); // 일반 알림
+    const { unreadInquiryCount } = useInquiryNotifications(); // 문의 알림
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
 
@@ -280,6 +284,8 @@ export default function Home() {
         updateFavoriteInList(updatedRestaurant);    // 2. useFavorites의 목록 업데이트
     };
 
+    const hasUnreadNotifications = unreadGeneralNotificationCount > 0 || unreadInquiryCount > 0;
+
     return (
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
             <div className="absolute top-2 right-2 z-50 flex items-center">
@@ -290,7 +296,11 @@ export default function Home() {
                     onShowTagManagement={() => setIsTagManagementOpen(true)}
                     onShowMyReviews={() => setIsMyReviewsOpen(true)}
                     onShowLikedRestaurants={() => setIsLikedRestaurantsOpen(true)} // 3. 핸들러 전달
+                    unreadInquiryCount={unreadInquiryCount}
                 />
+                {hasUnreadNotifications && (
+                    <span className="absolute top-2 right-12 block h-2 w-2 rounded-full bg-red-500" />
+                )}
             </div>
             <div className="w-full max-w-6xl p-6 md:p-8 flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-3/5 h-[400px] md:h-auto">

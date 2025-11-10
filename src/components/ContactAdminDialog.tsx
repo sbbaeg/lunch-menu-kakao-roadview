@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from 'lucide-react';
+import { useInquiryNotifications } from "@/hooks/useInquiryNotifications";
 
 interface Inquiry {
   id: number;
@@ -24,6 +25,7 @@ interface Inquiry {
   message: string;
   adminReply: string | null;
   isResolved: boolean;
+  isReadByUser: boolean; // Added for notification
   createdAt: string;
 }
 
@@ -39,6 +41,8 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { markInquiriesAsRead } = useInquiryNotifications(); // Use the hook
+
   // Form state
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
@@ -47,10 +51,11 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
   useEffect(() => {
     if (isOpen) {
       fetchInquiries();
+      markInquiriesAsRead(); // Mark inquiries as read when dialog opens
       // Reset view to list when re-opened
       setView('list');
     }
-  }, [isOpen]);
+  }, [isOpen, markInquiriesAsRead]); // Add markInquiriesAsRead to dependency array
 
   const fetchInquiries = async () => {
     setIsLoading(true);
@@ -60,7 +65,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       if (!response.ok) {
         throw new Error('문의 목록을 불러오는 데 실패했습니다.');
       }
-      const data = await response.json();
+      const data: Inquiry[] = await response.json();
       setInquiries(data);
     } catch (err: any) {
       setError(err.message);
@@ -98,7 +103,8 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       fetchInquiries(); // Refresh the list
     } catch (error: any) {
       alert(error.message);
-    } finally {
+    }
+    finally {
       setIsSubmitting(false);
     }
   };
@@ -118,7 +124,12 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
             {inquiries.map(inq => (
               <div key={inq.id} onClick={() => handleViewDetails(inq)} className="p-3 border rounded-lg cursor-pointer hover:bg-accent">
                 <div className="flex justify-between items-center">
-                  <p className="font-semibold truncate pr-4">{inq.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold truncate pr-4">{inq.title}</p>
+                    {inq.isResolved && !inq.isReadByUser && (
+                      <span className="block h-2 w-2 rounded-full bg-red-500" />
+                    )}
+                  </div>
                   {inq.isResolved && <Badge>답변완료</Badge>}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">{new Date(inq.createdAt).toLocaleDateString('ko-KR')}</p>

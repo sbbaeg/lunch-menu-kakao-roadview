@@ -43,7 +43,8 @@ interface SideMenuSheetProps {
     onShowBlacklist: () => void;
     onShowTagManagement: () => void;
     onShowMyReviews: () => void;
-    onShowLikedRestaurants?: () => void; // 1. Prop 선택적으로 변경
+    onShowLikedRestaurants?: () => void;
+    unreadInquiryCount?: number; // Add unreadInquiryCount to props
 }
 
 export function SideMenuSheet({
@@ -51,7 +52,8 @@ export function SideMenuSheet({
     onShowBlacklist,
     onShowTagManagement,
     onShowMyReviews,
-    onShowLikedRestaurants, // 2. Prop 받기
+    onShowLikedRestaurants,
+    unreadInquiryCount, // Receive unreadInquiryCount
 }: SideMenuSheetProps) {
     const { data: session, status } = useSession();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
@@ -232,7 +234,12 @@ export function SideMenuSheet({
                     {isMounted && status === 'authenticated' && (
                         <div className="px-4 mb-4">
                             <ContactAdminDialog>
-                                <Button variant="ghost" className="justify-start w-full">문의</Button>
+                                <Button variant="ghost" className="justify-start w-full flex items-center">
+                                    문의
+                                    {unreadInquiryCount && unreadInquiryCount > 0 && (
+                                        <Badge className="ml-auto">{unreadInquiryCount}</Badge>
+                                    )}
+                                </Button>
                             </ContactAdminDialog>
                         </div>
                     )}
