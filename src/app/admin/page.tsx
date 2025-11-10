@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -83,8 +83,6 @@ type ItemToDelete = { type: 'tag' | 'review'; id: number; } | null;
 type ActiveChart = 'users' | 'reviews' | 'tags' | 'restaurantVotes' | 'reviewVotes';
 
 // --- CHILD COMPONENTS ---
-
-// --- CHILD COMPONENTS ---
 const StatCard = ({ title, value, icon, onClick, isActive }: { title: string; value: number | string; icon: ReactNode; onClick?: () => void; isActive?: boolean; }) => (
     <Card onClick={onClick} className={`cursor-pointer transition-all ${isActive ? 'ring-2 ring-primary' : 'hover:bg-accent'}`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -149,6 +147,17 @@ export default function AdminPage() {
     const [replyingInquiry, setReplyingInquiry] = useState<Inquiry | null>(null);
     const [replyText, setReplyText] = useState('');
 
+    const fetchInquiries = useCallback(async () => {
+        try {
+            const inquiriesRes = await fetch('/api/admin/inquiries');
+            if (inquiriesRes.ok) {
+                setInquiries(await inquiriesRes.json());
+            }
+        } catch (e) {
+            console.error("Failed to poll inquiries", e);
+        }
+    }, []);
+
     // Initial Data Fetching
     useEffect(() => {
         if (status === 'loading') return;
@@ -160,13 +169,12 @@ export default function AdminPage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [profanityRes, moderationRes, statsRes, usersRes, bannedUsersRes, inquiriesRes] = await Promise.all([
+                const [profanityRes, moderationRes, statsRes, usersRes, bannedUsersRes] = await Promise.all([
                     fetch('/api/admin/profanity'),
                     fetch('/api/admin/moderation'),
                     fetch('/api/admin/stats'),
                     fetch('/api/admin/users?isBanned=false'),
                     fetch('/api/admin/users?isBanned=true'),
-                    fetch('/api/admin/inquiries')
                 ]);
 
                 if (!profanityRes.ok) throw new Error('비속어를 불러오는 데 실패했습니다.');
@@ -185,9 +193,8 @@ export default function AdminPage() {
 
                 if (!bannedUsersRes.ok) throw new Error('차단된 사용자 목록을 불러오는 데 실패했습니다.');
                 setBannedUsers(await bannedUsersRes.json());
-
-                if (!inquiriesRes.ok) throw new Error('문의 목록을 불러오는 데 실패했습니다.');
-                setInquiries(await inquiriesRes.json());
+                
+                await fetchInquiries();
 
             } catch (e: any) {
                 setError(e.message);
@@ -197,7 +204,17 @@ export default function AdminPage() {
         };
 
         fetchData();
-    }, [session, status, router]);
+    }, [session, status, router, fetchInquiries]);
+
+    // Polling for inquiries
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchInquiries();
+        }, 30000); // 30 seconds
+
+        return () => clearInterval(interval);
+    }, [fetchInquiries]);
+
 
     // Client-side filtering for all users
     useEffect(() => {
@@ -419,6 +436,9 @@ export default function AdminPage() {
         return null;
     }
 
+    const hasNewModeration = tagsToModerate.length > 0 || reviewsToModerate.length > 0;
+    const hasNewInquiries = inquiries.some(i => !i.isResolved);
+
     return (
         <>
             <main className="container mx-auto p-4 md:p-8">
@@ -427,9 +447,15 @@ export default function AdminPage() {
                 <Tabs defaultValue="dashboard">
                     <TabsList className="mb-4">
                         <TabsTrigger value="dashboard">대시보드</TabsTrigger>
-                        <TabsTrigger value="management">콘텐츠 관리</TabsTrigger>
+                        <TabsTrigger value="management" className="relative">
+                            콘텐츠 관리
+                            {hasNewModeration && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />}
+                        </TabsTrigger>
                         <TabsTrigger value="users">사용자 관리</TabsTrigger>
-                        <TabsTrigger value="inquiries">문의 관리</TabsTrigger>
+                        <TabsTrigger value="inquiries" className="relative">
+                            문의 관리
+                            {hasNewInquiries && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />}
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="dashboard">
@@ -620,8 +646,11 @@ export default function AdminPage() {
                                         inquiries.filter(i => inquiryFilter === 'resolved' ? i.isResolved : !i.isResolved).map(inquiry => (
                                             <div key={inquiry.id} className="p-4 border rounded-lg">
                                                 <div className="flex justify-between items-start gap-4">
-                                                    <div>
-                                                        <p className="font-semibold">{inquiry.title}</p>
+                                                    <div className="flex-grow">
+                                                        <div className="flex items-center">
+                                                            <p className="font-semibold">{inquiry.title}</p>
+                                                            {!inquiry.isResolved && <span className="ml-2 h-2 w-2 rounded-full bg-red-500" />}
+                                                        </div>
                                                         <p className="text-xs text-muted-foreground">
                                                             From: <Link href={`/admin/users/${inquiry.user.id}`} className="hover:underline">{inquiry.user.name} ({inquiry.user.email})</Link>
                                                         </p>
