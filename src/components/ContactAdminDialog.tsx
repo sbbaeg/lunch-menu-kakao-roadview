@@ -12,11 +12,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { useInquiryNotifications } from "@/hooks/useInquiryNotifications";
 
 interface Inquiry {
@@ -25,7 +26,7 @@ interface Inquiry {
   message: string;
   adminReply: string | null;
   isResolved: boolean;
-  isReadByUser: boolean; // Added for notification
+  isReadByUser: boolean;
   createdAt: string;
 }
 
@@ -41,9 +42,8 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { markInquiriesAsRead } = useInquiryNotifications(); // Use the hook
+  const { markInquiriesAsRead } = useInquiryNotifications();
 
-  // Form state
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,11 +51,10 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
   useEffect(() => {
     if (isOpen) {
       fetchInquiries();
-      markInquiriesAsRead(); // Mark inquiries as read when dialog opens
-      // Reset view to list when re-opened
+      markInquiriesAsRead();
       setView('list');
     }
-  }, [isOpen, markInquiriesAsRead]); // Add markInquiriesAsRead to dependency array
+  }, [isOpen, markInquiriesAsRead]);
 
   const fetchInquiries = async () => {
     setIsLoading(true);
@@ -88,6 +87,23 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
     setView('detail');
   };
 
+  const handleDelete = async (inquiryId: number) => {
+    if (!confirm('이 문의를 정말로 삭제하시겠습니까?')) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/inquiries/${inquiryId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('문의 삭제에 실패했습니다.');
+      }
+      setInquiries(prevInquiries => prevInquiries.filter(inq => inq.id !== inquiryId));
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+
   const handleSubmit = async () => {
     if (title.trim().length === 0 || message.trim().length === 0) {
       alert('제목과 문의 내용을 모두 입력해주세요.');
@@ -118,7 +134,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       setTitle('');
       setMessage('');
       setView('list');
-      fetchInquiries(); // Refresh the list
+      fetchInquiries();
     } catch (error: any) {
       alert(error.message);
     }
@@ -127,33 +143,74 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
     }
   };
 
+  const renderInquiryList = (inquiryList: Inquiry[]) => {
+    if (inquiryList.length === 0) {
+      return <p className="text-center text-muted-foreground pt-8">해당하는 문의 내역이 없습니다.</p>;
+    }
+    return inquiryList.map(inq => (
+      <div key={inq.id} className="p-3 border rounded-lg hover:bg-accent flex justify-between items-center">
+        <div onClick={() => handleViewDetails(inq)} className="flex-grow cursor-pointer">
+          <div className="flex items-center gap-2">
+            <p className="font-semibold truncate pr-4">{inq.title}</p>
+            {inq.isResolved && !inq.isReadByUser && (
+              <span className="block h-2 w-2 rounded-full bg-red-500" />
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">{new Date(inq.createdAt).toLocaleDateString('ko-KR')}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {inq.isResolved && <Badge>답변완료</Badge>}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(inq.id);
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    ));
+  };
+
   const renderContent = () => {
     if (view === 'list') {
+      const unansweredInquiries = inquiries.filter(inq => !inq.isResolved);
+      const answeredInquiries = inquiries.filter(inq => inq.isResolved);
+
       return (
         <>
           <DialogHeader>
             <DialogTitle>문의 내역</DialogTitle>
             <DialogDescription>과거에 문의했던 내역을 확인하거나 새 문의를 작성할 수 있습니다.</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[60vh] min-h-[300px] overflow-y-auto space-y-3 pr-2 py-4">
-            {isLoading && <p>목록을 불러오는 중...</p>}
-            {error && <p className="text-red-500">{error}</p>}
-            {!isLoading && inquiries.length === 0 && <p className="text-center text-muted-foreground pt-8">문의 내역이 없습니다.</p>}
-            {inquiries.map(inq => (
-              <div key={inq.id} onClick={() => handleViewDetails(inq)} className="p-3 border rounded-lg cursor-pointer hover:bg-accent">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold truncate pr-4">{inq.title}</p>
-                    {inq.isResolved && !inq.isReadByUser && (
-                      <span className="block h-2 w-2 rounded-full bg-red-500" />
-                    )}
-                  </div>
-                  {inq.isResolved && <Badge>답변완료</Badge>}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">{new Date(inq.createdAt).toLocaleDateString('ko-KR')}</p>
-              </div>
-            ))}
-          </div>
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="all">전체</TabsTrigger>
+              <TabsTrigger value="unanswered">미응답</TabsTrigger>
+              <TabsTrigger value="answered">답변완료</TabsTrigger>
+            </TabsList>
+            <div className="max-h-[50vh] min-h-[300px] overflow-y-auto space-y-3 pr-2 py-4">
+              {isLoading && <p>목록을 불러오는 중...</p>}
+              {error && <p className="text-red-500">{error}</p>}
+              {!isLoading && (
+                <>
+                  <TabsContent value="all">
+                    {renderInquiryList(inquiries)}
+                  </TabsContent>
+                  <TabsContent value="unanswered">
+                    {renderInquiryList(unansweredInquiries)}
+                  </TabsContent>
+                  <TabsContent value="answered">
+                    {renderInquiryList(answeredInquiries)}
+                  </TabsContent>
+                </>
+              )}
+            </div>
+          </Tabs>
           <DialogFooter>
             <Button onClick={() => setView('create')}>새 문의 작성</Button>
           </DialogFooter>
