@@ -2,6 +2,7 @@
 
 import { useAppStore } from '@/store/useAppStore';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useInquiryNotifications } from '@/hooks/useInquiryNotifications';
 import { Map, Heart, Search, Dices, User } from 'lucide-react';
 
 // 탭 종류를 타입으로 정의
@@ -35,6 +36,7 @@ export default function BottomTabBar({ onSearchClick }: BottomTabBarProps) {
   const activeTab = useAppStore((state) => state.activeTab);
   const setActiveTab = useAppStore((state) => state.setActiveTab);
   const { unreadCount } = useNotifications();
+  const { unreadInquiryCount } = useInquiryNotifications();
 
   return (
     <footer className="relative h-20 w-full border-t bg-background shadow-inner">
@@ -83,7 +85,7 @@ export default function BottomTabBar({ onSearchClick }: BottomTabBarProps) {
             label="마이페이지"
             isActive={activeTab === 'my-page'}
             onClick={() => setActiveTab('my-page')}
-            hasNotification={unreadCount > 0}
+            hasNotification={unreadCount > 0 || unreadInquiryCount > 0}
           />
         </div>
       </div>
