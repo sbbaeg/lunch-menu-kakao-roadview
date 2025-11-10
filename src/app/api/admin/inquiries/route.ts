@@ -1,10 +1,9 @@
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.isAdmin) {
@@ -26,10 +25,9 @@ export async function GET() {
         },
       },
     });
-
     return NextResponse.json(inquiries);
   } catch (error) {
-    console.error('Failed to fetch inquiries:', error);
+    console.error('Failed to fetch inquiries for admin:', error);
     return NextResponse.json({ error: 'Failed to fetch inquiries.' }, { status: 500 });
   }
 }
