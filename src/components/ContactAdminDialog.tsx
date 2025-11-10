@@ -63,7 +63,16 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
     try {
       const response = await fetch('/api/inquiries');
       if (!response.ok) {
-        throw new Error('문의 목록을 불러오는 데 실패했습니다.');
+        let detailMessage = '';
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.details) {
+            detailMessage = ` (상세: ${errorData.details})`;
+          }
+        } catch (e) {
+          // JSON 파싱 실패는 무시
+        }
+        throw new Error(`문의 목록을 불러오는 데 실패했습니다.${detailMessage}`);
       }
       const data: Inquiry[] = await response.json();
       setInquiries(data);
@@ -93,7 +102,16 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       });
 
       if (!response.ok) {
-        throw new Error('문의 접수 중 오류가 발생했습니다.');
+        let detailMessage = '';
+        try {
+            const errorData = await response.json();
+            if (errorData && errorData.details) {
+                detailMessage = ` (상세: ${errorData.details})`;
+            }
+        } catch (e) {
+            // JSON 파싱 실패는 무시
+        }
+        throw new Error(`문의 접수 중 오류가 발생했습니다.${detailMessage}`);
       }
 
       alert('문의가 성공적으로 접수되었습니다.');

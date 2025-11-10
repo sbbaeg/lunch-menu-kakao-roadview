@@ -23,7 +23,8 @@ export async function GET(request: Request) {
     return NextResponse.json(inquiries);
   } catch (error) {
     console.error('Failed to fetch inquiries:', error);
-    return NextResponse.json({ error: 'Failed to fetch inquiries.' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: 'Failed to fetch inquiries.', details: errorMessage }, { status: 500 });
   }
 }
 
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json(inquiry, { status: 201 });
   } catch (error) {
     console.error('Inquiry submission error:', error);
-    return NextResponse.json({ error: 'Failed to submit inquiry.' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: 'Failed to submit inquiry.', details: errorMessage }, { status: 500 });
   }
 }
