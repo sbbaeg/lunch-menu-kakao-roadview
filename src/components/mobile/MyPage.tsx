@@ -2,6 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import {
     Accordion,
     AccordionContent,
@@ -55,6 +56,7 @@ export default function MyPage({
     const showMyReviews = useAppStore((state) => state.showMyReviews);
     const { unreadCount } = useNotifications(); // 읽지 않은 알림 수 가져오기
     const { unreadInquiryCount } = useInquiryNotifications();
+    const { theme, setTheme } = useTheme();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -217,10 +219,10 @@ export default function MyPage({
 
                     <div className="px-4">
                         <h3 className="text-lg font-semibold mb-2">앱 설정</h3>
-                        <div className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                        <Button variant="ghost" className="justify-between w-full p-2" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
                             <span className="text-sm font-medium">테마 변경</span>
                             <ThemeToggle />
-                        </div>
+                        </Button>
                     </div>
 
                     {status === 'authenticated' && (
