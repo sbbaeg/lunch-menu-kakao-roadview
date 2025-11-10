@@ -20,8 +20,8 @@ import { useBlacklist } from "@/hooks/useBlacklist";
 import { useUserTags } from "@/hooks/useUserTags";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useLikedRestaurants } from "@/hooks/useLikedRestaurants";
-import { useNotifications } from "@/hooks/useNotifications"; // 알림 훅 임포트
-import { useInquiryNotifications } from "@/hooks/useInquiryNotifications"; // 문의 알림 훅 임포트
+import { useNotifications } from "@/hooks/useNotifications";
+import { useInquiryNotifications } from "@/hooks/useInquiryNotifications";
 
 
 import { useAppStore } from '@/store/useAppStore';
@@ -129,8 +129,9 @@ export default function Home() {
     const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
     const { likedRestaurants, isLoading: isLoadingLiked } = useLikedRestaurants();
-    const { unreadCount: unreadGeneralNotificationCount } = useNotifications(); // 일반 알림
-    const { unreadInquiryCount } = useInquiryNotifications(); // 문의 알림
+    const { unreadCount: unreadGeneralNotificationCount } = useNotifications();
+    const { unreadInquiryCount } = useInquiryNotifications();
+
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
 
@@ -171,7 +172,8 @@ export default function Home() {
         if (status === 'authenticated') {
             // 로그인 상태이면 -> 블랙리스트 팝업 열기
             setIsBlacklistOpen(true);
-        } else {
+        }
+        else {
             // 비로그인 상태이면 -> 로그인 안내창 띄우기
             setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
             // (추가 개선) alert 대신, 로그인 Dialog를 열어주는 것이 더 좋은 사용자 경험을 제공합니다.
@@ -200,11 +202,13 @@ export default function Home() {
                     };
                     handleTagsChange(updatedRestaurant);
                     setTaggingRestaurant(updatedRestaurant);
-                } else {
+                }
+                else {
                     setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
                 }
             }
-        } catch (error) {
+        }
+        catch (error) {
             console.error("태그 생성 및 연결 오류:", error);
             setAlertInfo({ title: "오류", message: "태그 처리 중 오류가 발생했습니다." });
         }
@@ -247,7 +251,8 @@ export default function Home() {
                 setTaggingRestaurant(originalRestaurant);
                 setAlertInfo({ title: "오류", message: "태그 변경에 실패했습니다." });
             }
-        } catch (error) {
+        }
+        catch (error) {
             // Revert on network error
             handleTagsChange(originalRestaurant);
             setTaggingRestaurant(originalRestaurant);
@@ -259,7 +264,8 @@ export default function Home() {
         const result = await recommendProcess(false); // 스토어 액션 호출
         if (!result.success && result.message) {
             setAlertInfo({ title: "알림", message: result.message });
-        } else if (result.isRoulette) {
+        }
+        else if (result.isRoulette) {
             setIsRouletteOpen(true); // 룰렛 다이얼로그 열기
         }
     };
@@ -268,7 +274,8 @@ export default function Home() {
         const result = await recommendProcess(true); // 스토어 액션 호출
         if (!result.success && result.message) {
             setAlertInfo({ title: "알림", message: result.message });
-        } else if (result.isRoulette) {
+        }
+        else if (result.isRoulette) {
             setIsRouletteOpen(true);
         }
     };
@@ -283,24 +290,26 @@ export default function Home() {
         updateRestaurantInStore(updatedRestaurant); // 1. 스토어의 목록 업데이트
         updateFavoriteInList(updatedRestaurant);    // 2. useFavorites의 목록 업데이트
     };
-
+    
     const hasUnreadNotifications = unreadGeneralNotificationCount > 0 || unreadInquiryCount > 0;
 
     return (
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
             <div className="absolute top-2 right-2 z-50 flex items-center">
                 <NotificationPopover />
-                <SideMenuSheet
-                    onShowFavorites={() => setIsFavoritesListOpen(true)}
-                    onShowBlacklist={handleBlacklistClick}
-                    onShowTagManagement={() => setIsTagManagementOpen(true)}
-                    onShowMyReviews={() => setIsMyReviewsOpen(true)}
-                    onShowLikedRestaurants={() => setIsLikedRestaurantsOpen(true)} // 3. 핸들러 전달
-                    unreadInquiryCount={unreadInquiryCount}
-                />
-                {hasUnreadNotifications && (
-                    <span className="absolute top-2 right-12 block h-2 w-2 rounded-full bg-red-500" />
-                )}
+                <div className="relative">
+                    <SideMenuSheet
+                        onShowFavorites={() => setIsFavoritesListOpen(true)}
+                        onShowBlacklist={handleBlacklistClick}
+                        onShowTagManagement={() => setIsTagManagementOpen(true)}
+                        onShowMyReviews={() => setIsMyReviewsOpen(true)}
+                        onShowLikedRestaurants={() => setIsLikedRestaurantsOpen(true)}
+                        unreadInquiryCount={unreadInquiryCount}
+                    />
+                    {hasUnreadNotifications && (
+                        <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500" />
+                    )}
+                </div>
             </div>
             <div className="w-full max-w-6xl p-6 md:p-8 flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-3/5 h-[400px] md:h-auto">
