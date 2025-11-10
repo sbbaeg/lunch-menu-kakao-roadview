@@ -4,6 +4,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import {
     Accordion,
     AccordionContent,
@@ -56,6 +57,7 @@ export function SideMenuSheet({
     unreadInquiryCount, // Receive unreadInquiryCount
 }: SideMenuSheetProps) {
     const { data: session, status } = useSession();
+    const { theme, setTheme } = useTheme();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -244,10 +246,12 @@ export function SideMenuSheet({
                         </div>
                     )}
 
-                    <Button variant="ghost" className="justify-start w-full flex items-center justify-between">
-                        <span className="text-sm font-medium">테마 변경</span>
-                        <ThemeToggle />
-                    </Button>
+                    <div className="px-4">
+                        <Button variant="ghost" className="justify-between w-full" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                            테마 변경
+                            <ThemeToggle />
+                        </Button>
+                    </div>
 
                     <div className="px-4 mt-4">
                         <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
