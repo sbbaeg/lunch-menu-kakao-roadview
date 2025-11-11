@@ -37,6 +37,8 @@ export async function GET(request: Request) {
     const openNow = searchParams.get('openNow') === 'true';
     const includeUnknown = searchParams.get('includeUnknown') === 'true';
     const fromFavorites = searchParams.get('fromFavorites') === 'true';
+    const allowsDogsOnly = searchParams.get('allowsDogsOnly') === 'true';
+    const hasParkingOnly = searchParams.get('hasParkingOnly') === 'true';
     const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
 
     const tagsParam = searchParams.get('tags');
@@ -157,6 +159,16 @@ export async function GET(request: Request) {
                 const hours = enriched.googleDetails?.opening_hours;
                 const isOpen = hours?.open_now === true || (includeUnknown && hours === undefined);
                 if (!isOpen) continue;
+            }
+
+            if (allowsDogsOnly) {
+                if (!enriched.googleDetails?.allowsDogs) continue;
+            }
+
+            if (hasParkingOnly) {
+                const parking = enriched.googleDetails?.parkingOptions;
+                const hasAnyParking = parking && Object.values(parking).some(val => val === true);
+                if (!hasAnyParking) continue;
             }
             finalResults.push(enriched);
         }

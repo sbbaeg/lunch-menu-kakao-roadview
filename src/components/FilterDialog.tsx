@@ -37,6 +37,8 @@ export interface FilterState {
   openNowOnly: boolean;
   includeUnknownHours: boolean;
   tags: number[];
+  allowsDogsOnly: boolean;
+  hasParkingOnly: boolean;
 }
 
 interface FilterDialogProps {
@@ -64,6 +66,8 @@ export function FilterDialog({
   const [tempOpenNowOnly, setTempOpenNowOnly] = useState(initialFilters.openNowOnly);
   const [tempIncludeUnknownHours, setTempIncludeUnknownHours] = useState(initialFilters.includeUnknownHours);
   const [tempSelectedTags, setTempSelectedTags] = useState(initialFilters.tags);
+  const [tempAllowsDogsOnly, setTempAllowsDogsOnly] = useState(initialFilters.allowsDogsOnly);
+  const [tempHasParkingOnly, setTempHasParkingOnly] = useState(initialFilters.hasParkingOnly);
 
   // 다이얼로그가 열릴 때마다 page.tsx의 현재 필터 값으로 상태를 초기화합니다.
   useEffect(() => {
@@ -77,6 +81,8 @@ export function FilterDialog({
       setTempOpenNowOnly(initialFilters.openNowOnly);
       setTempIncludeUnknownHours(initialFilters.includeUnknownHours);
       setTempSelectedTags(initialFilters.tags);
+      setTempAllowsDogsOnly(initialFilters.allowsDogsOnly);
+      setTempHasParkingOnly(initialFilters.hasParkingOnly);
     }
   }, [isOpen, initialFilters]);
 
@@ -111,6 +117,8 @@ export function FilterDialog({
       openNowOnly: tempOpenNowOnly,
       includeUnknownHours: tempIncludeUnknownHours,
       tags: tempSelectedTags,
+      allowsDogsOnly: tempAllowsDogsOnly,
+      hasParkingOnly: tempHasParkingOnly,
     });
     onOpenChange(false); // 다이얼로그 닫기
   };
@@ -138,6 +146,18 @@ export function FilterDialog({
                 <div className="flex items-center space-x-2 pl-6">
                     <Checkbox id="temp-include-unknown" checked={tempIncludeUnknownHours} onCheckedChange={(checked) => setTempIncludeUnknownHours(Boolean(checked))} disabled={!tempOpenNowOnly} />
                     <Label htmlFor="temp-include-unknown" className={tempOpenNowOnly ? "cursor-pointer" : "text-gray-400 dark:text-gray-500"}>영업 정보 없는 가게 포함</Label>
+                </div>
+            </div>
+            <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="temp-allows-dogs" checked={tempAllowsDogsOnly} onCheckedChange={(checked) => setTempAllowsDogsOnly(Boolean(checked))} />
+                    <Label htmlFor="temp-allows-dogs" className="font-semibold text-lg cursor-pointer">애견 동반 가능</Label>
+                </div>
+            </div>
+            <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="temp-has-parking" checked={tempHasParkingOnly} onCheckedChange={(checked) => setTempHasParkingOnly(Boolean(checked))} />
+                    <Label htmlFor="temp-has-parking" className="font-semibold text-lg cursor-pointer">주차 가능</Label>
                 </div>
             </div>
             <div className="border-t border-gray-200 dark:border-gray-700"></div>

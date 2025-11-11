@@ -7,6 +7,16 @@ interface GooglePhoto {
   photo_reference: string;
 }
 
+interface GoogleParkingOptions {
+  freeParkingLot?: boolean;
+  paidParkingLot?: boolean;
+  freeStreetParking?: boolean;
+  paidStreetParking?: boolean;
+  valetParking?: boolean;
+  freeGarageParking?: boolean;
+  paidGarageParking?: boolean;
+}
+
 interface GooglePlaceDetailsResult {
   url?: string;
   rating?: number;
@@ -16,6 +26,8 @@ interface GooglePlaceDetailsResult {
   reviews?: Review[];
   dine_in?: boolean;
   takeout?: boolean;
+  allows_dogs?: boolean;
+  parking_options?: GoogleParkingOptions;
 }
 
 export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<KakaoPlaceItem> {
@@ -34,7 +46,7 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
     if (!placeId) return place; // 구글에서 장소를 못 찾으면 카카오 정보만 반환
 
     // 2. Place ID로 상세 정보 요청
-    const fields = 'url,photos,rating,opening_hours,formatted_phone_number,reviews,dine_in,takeout';
+    const fields = 'url,photos,rating,opening_hours,formatted_phone_number,reviews,dine_in,takeout,allows_dogs,parking_options';
     const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}&language=ko`;
     const detailsResponse = await fetch(detailsUrl);
     const detailsData: { result?: GooglePlaceDetailsResult } = await detailsResponse.json();
@@ -57,6 +69,8 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
         reviews: result.reviews,
         dine_in: result.dine_in,
         takeout: result.takeout,
+        allowsDogs: result.allows_dogs,
+        parkingOptions: result.parking_options,
       }
     };
   } catch (error) {

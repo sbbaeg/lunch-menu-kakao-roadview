@@ -13,6 +13,16 @@ export interface Review {
   text: string;
 }
 
+export interface GoogleParkingOptions {
+  freeParkingLot?: boolean;
+  paidParkingLot?: boolean;
+  freeStreetParking?: boolean;
+  paidStreetParking?: boolean;
+  valetParking?: boolean;
+  freeGarageParking?: boolean;
+  paidGarageParking?: boolean;
+}
+
 export interface GoogleDetails {
   url?: string;
   photos: string[];
@@ -22,6 +32,8 @@ export interface GoogleDetails {
   reviews?: Review[];
   dine_in?: boolean;
   takeout?: boolean;
+  allowsDogs?: boolean;
+  parkingOptions?: GoogleParkingOptions;
 }
 
 // 우리 앱의 리뷰 요약 정보 타입
