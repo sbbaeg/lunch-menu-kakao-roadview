@@ -96,7 +96,6 @@ export default function MobileLayout() {
     const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
     const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
-    const [isLikedRestaurantsOpen, setIsLikedRestaurantsOpen] = useState(false);
 
     useEffect(() => {
         // PWA 모바일 뷰포트 스크롤 방지
@@ -194,7 +193,6 @@ export default function MobileLayout() {
     const myPageProps = {
         onShowBlacklist: () => setIsBlacklistOpen(true),
         onShowTagManagement: () => setIsTagManagementOpen(true),
-        onShowLikedRestaurants: () => setIsLikedRestaurantsOpen(true),
         onShowRanking: showRanking, // 3. Pass action to MyPage
         onShowNotifications: showNotifications,
     };
@@ -269,22 +267,6 @@ export default function MobileLayout() {
                 onCreateTag={createTag}
                 onDeleteTag={deleteTag}
                 onToggleTagPublic={toggleTagPublic}
-            />
-            <LikedRestaurantsDialog
-                isOpen={isLikedRestaurantsOpen}
-                onOpenChange={setIsLikedRestaurantsOpen}
-                onNavigate={() => setIsLikedRestaurantsOpen(false)} // 네비게이트 시 다이얼로그 닫기
-                likedRestaurants={likedRestaurants}
-                isLoading={isLoadingLiked}
-                session={session}
-                subscribedTagIds={subscribedTagIds}
-                selectedItemId={selectedItemId}
-                setSelectedItemId={setSelectedItemId}
-                isFavorite={isFavorite}
-                isBlacklisted={isBlacklisted}
-                onToggleFavorite={toggleFavorite}
-                onToggleBlacklist={toggleBlacklist}
-                onTagManagement={setTaggingRestaurant}
             />
             <BlacklistDialog
                 isOpen={isBlacklistOpen}

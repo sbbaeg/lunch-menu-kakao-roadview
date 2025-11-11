@@ -37,7 +37,6 @@ import { ContactAdminDialog } from "@/components/ContactAdminDialog";
 interface MyPageProps {
     onShowBlacklist: () => void;
     onShowTagManagement: () => void;
-    onShowLikedRestaurants: () => void;
     onShowRanking: () => void;
     onShowNotifications: () => void; // 알림 핸들러 추가
 }
@@ -45,15 +44,15 @@ interface MyPageProps {
 export default function MyPage({ 
     onShowBlacklist,
     onShowTagManagement,
-    onShowLikedRestaurants,
     onShowRanking,
     onShowNotifications,
 }: MyPageProps) {
     const { data: session, status } = useSession();
     const showFavoritesPage = useAppStore((state) => state.showFavoritesPage);
+    const showLikedRestaurantsPage = useAppStore((state) => state.showLikedRestaurantsPage);
     const showTagExplore = useAppStore((state) => state.showTagExplore);
     const showMyReviews = useAppStore((state) => state.showMyReviews);
-    const { unreadCount } = useNotifications(); // 읽지 않은 알림 수 가져오기
+    const { unreadCount } = useNotifications(); // 알림 훅 임포트
     const { unreadInquiryCount } = useInquiryNotifications();
     const { theme, setTheme } = useTheme();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
@@ -175,7 +174,7 @@ export default function MyPage({
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={showFavoritesPage}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
                         </Button>
-                        <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowLikedRestaurants}>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={showLikedRestaurantsPage}>
                             <ThumbsUp className="mr-2 h-4 w-4" /> 좋아요한 음식점
                         </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={showMyReviews}>
