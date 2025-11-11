@@ -7,22 +7,31 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShieldOff, ArrowLeft } from 'lucide-react';
+import { Shield, ShieldOff, ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 // --- TYPE DEFINITIONS ---
 interface UserDetails {
   id: string;
@@ -31,10 +40,12 @@ interface UserDetails {
   isAdmin: boolean;
   isBanned: boolean;
   reviews: { id: number; text: string | null; rating: number; restaurant: { placeName: string } }[];
-  tags: { id: number; name: string }[];
+  tags: { id: number; name: string; isPublic: boolean; }[];
 }
 
-export default function UserDetailPage({ params }: { params: { id: string } }) {
+type ItemToModify = { type: 'review' | 'tag'; data: any; };
+
+export default function UserDetailPage({ params }: { params: { id:string } }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const userId = params.id;
@@ -44,6 +55,14 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null);
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [banReason, setBanReason] = useState("");
+
+  // State for editing and deleting
+  const [itemToDelete, setItemToDelete] = useState<ItemToModify | null>(null);
+  const [itemToEdit, setItemToEdit] = useState<ItemToModify | null>(null);
+  const [editText, setEditText] = useState('');
+  const [editRating, setEditRating] = useState(3);
+  const [editIsPublic, setEditIsPublic] = useState(true);
+
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -102,6 +121,90 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
     setBanReason("");
   };
 
+  // --- Handlers for Edit/Delete ---
+
+  const handleEditItem = (type: 'review' | 'tag', item: any) => {
+    setItemToEdit({ type, data: item });
+    if (type === 'review') {
+      setEditText(item.text || '');
+      setEditRating(item.rating);
+    } else { // tag
+      setEditText(item.name);
+      setEditIsPublic(item.isPublic);
+    }
+  };
+
+  const handleSaveItem = async () => {
+    if (!itemToEdit || !user) return;
+    const { type, data } = itemToEdit;
+    const url = `/api/admin/${type}s/${data.id}`;
+    
+    let body;
+    if (type === 'review') {
+      body = JSON.stringify({ text: editText, rating: editRating });
+    } else { // tag
+      body = JSON.stringify({ name: editText, isPublic: editIsPublic });
+    }
+
+    try {
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || '저장에 실패했습니다.');
+      }
+      const updatedItem = await res.json();
+
+      // Update local state
+      if (type === 'review') {
+        setUser({
+          ...user,
+          reviews: user.reviews.map(r => r.id === updatedItem.id ? { ...r, ...updatedItem } : r),
+        });
+      } else { // tag
+        setUser({
+          ...user,
+          tags: user.tags.map(t => t.id === updatedItem.id ? { ...t, ...updatedItem } : t),
+        });
+      }
+      setItemToEdit(null);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+  const handleDeleteItem = (type: 'review' | 'tag', item: any) => {
+    setItemToDelete({ type, data: item });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete || !user) return;
+    const { type, data } = itemToDelete;
+    const url = `/api/admin/${type}s/${data.id}`;
+
+    try {
+      const res = await fetch(url, { method: 'DELETE' });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || '삭제에 실패했습니다.');
+      }
+      
+      // Update local state
+      if (type === 'review') {
+        setUser({ ...user, reviews: user.reviews.filter(r => r.id !== data.id) });
+      } else { // tag
+        setUser({ ...user, tags: user.tags.filter(t => t.id !== data.id) });
+      }
+      setItemToDelete(null);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+
   if (status === 'loading' || isLoading) {
     return <div className="p-8"><Skeleton className="h-screen w-full"/></div>;
   }
@@ -158,8 +261,16 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
             <TabsContent value="reviews" className="mt-4 max-h-[600px] overflow-y-auto space-y-4 pr-2">
               {user.reviews.length > 0 ? user.reviews.map(review => (
                 <div key={review.id} className="p-3 border rounded-md">
-                  <p className="font-semibold">{review.restaurant.placeName}</p>
-                  <p className="text-sm text-muted-foreground">평점: {review.rating}</p>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold">{review.restaurant.placeName}</p>
+                      <p className="text-sm text-muted-foreground">평점: {review.rating}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="icon" onClick={() => handleEditItem('review', review)}><Edit className="h-4 w-4" /></Button>
+                      <Button variant="destructive" size="icon" onClick={() => handleDeleteItem('review', review)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
                   <blockquote className="mt-1 p-2 border-l-4 bg-muted/50 text-sm">
                     {review.text || "(리뷰 내용 없음)"}
                   </blockquote>
@@ -168,8 +279,15 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
             </TabsContent>
             <TabsContent value="tags" className="mt-4 max-h-[600px] overflow-y-auto space-y-2 pr-2">
               {user.tags.length > 0 ? user.tags.map(tag => (
-                <div key={tag.id} className="p-2 border rounded-md">
-                  <p className="font-medium">{tag.name}</p>
+                <div key={tag.id} className="p-3 border rounded-md flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{tag.name}</p>
+                    <Badge variant={tag.isPublic ? "secondary" : "outline"}>{tag.isPublic ? '공개' : '비공개'}</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" onClick={() => handleEditItem('tag', tag)}><Edit className="h-4 w-4" /></Button>
+                    <Button variant="destructive" size="icon" onClick={() => handleDeleteItem('tag', tag)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
                 </div>
               )) : <p className="text-muted-foreground">생성한 태그가 없습니다.</p>}
             </TabsContent>
@@ -197,6 +315,64 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 작업은 되돌릴 수 없습니다. 선택한 {itemToDelete?.type === 'review' ? '리뷰' : '태그'}가 영구적으로 삭제됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>삭제 확인</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!itemToEdit} onOpenChange={() => setItemToEdit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{itemToEdit?.type === 'review' ? '리뷰 수정' : '태그 수정'}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {itemToEdit?.type === 'review' && (
+              <>
+                <div>
+                  <Label htmlFor="review-text">리뷰 내용</Label>
+                  <Textarea id="review-text" value={editText} onChange={(e) => setEditText(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label htmlFor="review-rating">별점</Label>
+                  <Input id="review-rating" type="number" value={editRating} onChange={(e) => setEditRating(Number(e.target.value))} max={5} min={0} step={0.5} className="mt-1" />
+                </div>
+              </>
+            )}
+            {itemToEdit?.type === 'tag' && (
+              <>
+                <div>
+                  <Label htmlFor="tag-name">태그 이름</Label>
+                  <Input id="tag-name" value={editText} onChange={(e) => setEditText(e.target.value)} className="mt-1" />
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Switch
+                        id="isPublic"
+                        checked={editIsPublic}
+                        onCheckedChange={setEditIsPublic}
+                    />
+                    <Label htmlFor="isPublic">공개 태그</Label>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setItemToEdit(null)}>취소</Button>
+            <Button onClick={handleSaveItem}>저장</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
