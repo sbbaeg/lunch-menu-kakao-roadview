@@ -194,7 +194,7 @@ export default function MobileLayout() {
     };
 
     return (
-        <div className="h-dvh w-screen relative">
+        <div className="h-dvh w-screen relative overflow-hidden">
             {activeView === 'tabs' ? (
                 <>
                     {/* 메인 컨텐츠 영역: 하단 탭 바(h-20)를 제외한 전체 공간 차지 */}
