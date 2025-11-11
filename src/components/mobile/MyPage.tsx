@@ -35,7 +35,6 @@ import BadgeManagementDialog from "@/components/BadgeManagementDialog";
 import { ContactAdminDialog } from "@/components/ContactAdminDialog";
 
 interface MyPageProps {
-    onShowFavorites: () => void;
     onShowBlacklist: () => void;
     onShowTagManagement: () => void;
     onShowLikedRestaurants: () => void;
@@ -44,7 +43,6 @@ interface MyPageProps {
 }
 
 export default function MyPage({ 
-    onShowFavorites,
     onShowBlacklist,
     onShowTagManagement,
     onShowLikedRestaurants,
@@ -52,6 +50,7 @@ export default function MyPage({
     onShowNotifications,
 }: MyPageProps) {
     const { data: session, status } = useSession();
+    const showFavoritesPage = useAppStore((state) => state.showFavoritesPage);
     const showTagExplore = useAppStore((state) => state.showTagExplore);
     const showMyReviews = useAppStore((state) => state.showMyReviews);
     const { unreadCount } = useNotifications(); // 읽지 않은 알림 수 가져오기
@@ -173,7 +172,7 @@ export default function MyPage({
                             알림
                             {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
                         </Button>
-                        <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowFavorites}>
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={showFavoritesPage}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
                         </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowLikedRestaurants}>
@@ -230,12 +229,12 @@ export default function MyPage({
                             <Separator className="my-4" />
                             <div className="px-4">
                                 <h3 className="text-lg font-semibold mb-2">관리</h3>
-                                <a href="/admin">
-                                    <Button variant="ghost" className="justify-start w-full p-2">
+                                <Button variant="ghost" className="justify-start w-full p-2" asChild>
+                                    <a href="/admin">
                                         <Shield className="mr-2 h-4 w-4" />
                                         관리자 페이지
-                                    </Button>
-                                </a>
+                                    </a>
+                                </Button>
                             </div>
                         </>
                     )}
