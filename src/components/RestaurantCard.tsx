@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useAppStore } from '@/store/useAppStore';
 import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 import { RestaurantDetails } from "./RestaurantDetails";
-import { Users, Utensils, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare } from 'lucide-react';
 
 import {
     Tooltip,
@@ -147,6 +147,30 @@ export function RestaurantCard({
                   })}
                 </div>
               </TooltipProvider>
+
+              {/* 추가 정보 아이콘 섹션 */}
+              <div className="flex items-center gap-3 text-muted-foreground pt-2">
+                {restaurant.googleDetails?.allowsDogs && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Dog className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>반려견 동반 가능</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {restaurant.googleDetails?.parkingOptions && Object.values(restaurant.googleDetails.parkingOptions).some(v => v === true) && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <ParkingSquare className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>주차 가능</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
 
             </CardContent>
           </div>

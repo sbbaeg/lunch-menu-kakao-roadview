@@ -15,7 +15,7 @@ interface AppState {
   activeRestaurantId: string | null;
 
   // Filter State
-  filters: Omit<FilterState, 'categories'> & { categories: string[] };
+  filters: Omit<FilterState, 'categories' | 'allowsDogsOnly' | 'hasParkingOnly'> & { categories: string[]; allowsDogsOnly: boolean; hasParkingOnly: boolean; };
 
   displayedSortOrder: 'accuracy' | 'distance' | 'rating';
   blacklistExcludedCount: number;
@@ -73,6 +73,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     openNowOnly: false,
     includeUnknownHours: true,
     tags: [],
+    allowsDogsOnly: false,
+    hasParkingOnly: false,
   },
 
   displayedSortOrder: 'accuracy',
@@ -144,6 +146,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     if (filters.searchInFavoritesOnly) {
       apiUrl += `&fromFavorites=true`;
+    }
+    if (filters.allowsDogsOnly) {
+      apiUrl += `&allowsDogsOnly=true`;
+    }
+    if (filters.hasParkingOnly) {
+      apiUrl += `&hasParkingOnly=true`;
     }
     apiUrl += `&_=${new Date().getTime()}`;
 
