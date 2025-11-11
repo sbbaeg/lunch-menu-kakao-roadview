@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, MessageSquare, HelpCircle } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, MessageSquare, HelpCircle, Shield } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -224,6 +224,21 @@ export default function MyPage({
                             <ThemeToggle />
                         </Button>
                     </div>
+
+                    {isMounted && session?.user?.isAdmin && (
+                        <>
+                            <Separator className="my-4" />
+                            <div className="px-4">
+                                <h3 className="text-lg font-semibold mb-2">관리</h3>
+                                <Link href="/admin" passHref>
+                                    <Button variant="ghost" className="justify-start w-full p-2">
+                                        <Shield className="mr-2 h-4 w-4" />
+                                        관리자 페이지
+                                    </Button>
+                                </Link>
+                            </div>
+                        </>
+                    )}
 
                     {status === 'authenticated' && (
                         <>

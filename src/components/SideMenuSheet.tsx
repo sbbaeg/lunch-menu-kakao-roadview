@@ -1,9 +1,6 @@
-// components/SideMenuSheet.tsx (새 파일)
-
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
-import Link from "next/link";
 import { useTheme } from "next-themes";
 import {
     Accordion,
@@ -31,7 +28,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Menu, Heart, EyeOff, Tags, FileText, HelpCircle } from "lucide-react";
+import Link from "next/link";
+import { Menu, Heart, EyeOff, Tags, FileText, HelpCircle, Shield } from "lucide-react";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -190,6 +188,20 @@ export function SideMenuSheet({
                         </div>
                     )}
                     {/* --- [수정된 부분 끝] --- */}
+
+                    {isMounted && session?.user?.isAdmin && (
+                        <>
+                            <Separator className="my-4" />
+                            <div className="px-4">
+                                <Link href="/admin" passHref>
+                                    <Button variant="secondary" className="w-full justify-start">
+                                        <Shield className="mr-2 h-4 w-4" />
+                                        관리자 페이지
+                                    </Button>
+                                </Link>
+                            </div>
+                        </>
+                    )}
                     
                     <Separator className="my-4" />
 
