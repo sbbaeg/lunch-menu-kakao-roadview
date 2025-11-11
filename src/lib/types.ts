@@ -1,8 +1,8 @@
 import { VoteType, Badge } from '@prisma/client';
 
 export interface GoogleOpeningHours {
-  open_now: boolean;
-  weekday_text?: string[];
+  openNow: boolean;
+  weekdayDescriptions?: string[];
 }
 
 export interface Review {
