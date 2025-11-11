@@ -6,10 +6,11 @@ import { ArrowLeft } from 'lucide-react';
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { Accordion } from "@/components/ui/accordion";
 
-// This is a presentational component for the Favorites tab.
-export default function FavoritesPage(props: any) {
+// This is a presentational component for the Liked Restaurants page.
+export default function LikedRestaurantsPage(props: any) {
     const {
-        favorites,
+        likedRestaurants,
+        isLoading,
         session,
         subscribedTagIds,
         selectedItemId,
@@ -29,10 +30,14 @@ export default function FavoritesPage(props: any) {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     뒤로가기
                 </Button>
-                <h1 className="text-2xl font-bold">즐겨찾기</h1>
+                <h1 className="text-2xl font-bold">좋아요한 음식점</h1>
             </header>
-            <main className="flex-1 overflow-y-auto p-2 min-h-0 mt-4">
-                {favorites.length > 0 ? (
+            <main className="flex-1 min-h-0 overflow-y-auto p-2 mt-4">
+                {isLoading ? (
+                    <div className="text-center py-16 text-muted-foreground">
+                        <p>좋아요한 음식점 목록을 불러오는 중...</p>
+                    </div>
+                ) : likedRestaurants.length > 0 ? (
                     <Accordion
                         type="single"
                         collapsible
@@ -40,7 +45,7 @@ export default function FavoritesPage(props: any) {
                         value={selectedItemId}
                         onValueChange={setSelectedItemId}
                     >
-                        {favorites.map((place: any) => (
+                        {likedRestaurants.map((place: any) => (
                             <RestaurantCard
                                 key={place.id}
                                 restaurant={place}
@@ -56,7 +61,7 @@ export default function FavoritesPage(props: any) {
                     </Accordion>
                 ) : (
                     <div className="text-center py-16 text-muted-foreground">
-                        <p>아직 즐겨찾기에 등록된 음식점이 없습니다.</p>
+                        <p>아직 좋아요한 음식점이 없습니다.</p>
                     </div>
                 )}
             </main>
