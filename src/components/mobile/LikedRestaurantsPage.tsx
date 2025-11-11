@@ -25,10 +25,9 @@ export default function LikedRestaurantsPage(props: any) {
 
     return (
         <div className="p-4 h-full flex flex-col bg-card">
-            <header className="flex-shrink-0">
-                <Button variant="ghost" onClick={goBack} className="w-fit p-0 h-auto text-muted-foreground mb-2">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    뒤로가기
+            <header className="p-4 border-b flex-shrink-0 flex items-center gap-2">
+                <Button variant="ghost" onClick={goBack} className="p-2 h-auto">
+                    <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <h1 className="text-2xl font-bold">좋아요한 음식점</h1>
             </header>
