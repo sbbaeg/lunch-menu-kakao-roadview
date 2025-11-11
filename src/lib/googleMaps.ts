@@ -1,80 +1,125 @@
-// src/lib/googleMaps.ts
 
-import { KakaoPlaceItem, Review, GoogleOpeningHours } from './types';
+import { KakaoPlaceItem, GoogleDetails, GoogleOpeningHours, Review, GoogleParkingOptions } from './types';
 
-// Google API 응답 결과에 대한 타입 정의
-interface GooglePhoto {
-  photo_reference: string;
+// --- NEW API Type Definitions ---
+
+interface NewGooglePhoto {
+  name: string; // e.g. "places/ChIJ.../photos/Aap_..."
 }
 
-interface GoogleParkingOptions {
-  freeParkingLot?: boolean;
-  paidParkingLot?: boolean;
-  freeStreetParking?: boolean;
-  paidStreetParking?: boolean;
-  valetParking?: boolean;
-  freeGarageParking?: boolean;
-  paidGarageParking?: boolean;
+interface NewGoogleReview {
+  authorAttribution?: {
+    displayName: string;
+    photoUri: string;
+  };
+  rating: number;
+  relativePublishTimeDescription: string;
+  text?: {
+    text: string;
+  };
 }
 
-interface GooglePlaceDetailsResult {
-  url?: string;
+interface NewGooglePlace {
+  id: string;
+  displayName?: {
+    text: string;
+  };
+  internationalPhoneNumber?: string;
+  regularOpeningHours?: GoogleOpeningHours;
   rating?: number;
-  photos?: GooglePhoto[];
-  opening_hours?: GoogleOpeningHours;
-  formatted_phone_number?: string;
-  reviews?: Review[];
-  dine_in?: boolean;
+  websiteUri?: string;
+  reviews?: NewGoogleReview[];
+  photos?: NewGooglePhoto[];
+  dineIn?: boolean;
   takeout?: boolean;
-  allows_dogs?: boolean;
-  parking_options?: GoogleParkingOptions;
+  allowsDogs?: boolean;
+  parkingOptions?: GoogleParkingOptions;
 }
+
+// --- Migration of fetchFullGoogleDetails ---
 
 export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<KakaoPlaceItem> {
   try {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
     if (!GOOGLE_API_KEY) throw new Error("Google API Key is not configured");
 
-    // 1. 장소 이름과 위치 정보로 Google Place ID 검색
-    const findPlaceUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(place.place_name)}&inputtype=textquery&fields=place_id&locationbias=point:${place.y},${place.x}&key=${GOOGLE_API_KEY}`;
-    const findPlaceResponse = await fetch(findPlaceUrl);
-    const findPlaceData = await findPlaceResponse.json();
+    // Step 1: Find Place ID using Text Search (New)
+    const textSearchUrl = 'https://places.googleapis.com/v1/places:searchText';
+    const textSearchBody = {
+      textQuery: `${place.place_name} ${place.road_address_name}`,
+    };
     
-    // ⭐ 누락되었던 'placeId' 선언 부분입니다.
-    const placeId = findPlaceData.candidates?.[0]?.place_id;
+    const textSearchResponse = await fetch(textSearchUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_API_KEY,
+        'X-Goog-FieldMask': 'places.id',
+      },
+      body: JSON.stringify(textSearchBody),
+    });
 
-    if (!placeId) return place; // 구글에서 장소를 못 찾으면 카카오 정보만 반환
+    const textSearchData = await textSearchResponse.json();
+    const placeId = textSearchData.places?.[0]?.id;
 
-    // 2. Place ID로 상세 정보 요청
-    const fields = 'url,photos,rating,opening_hours,formatted_phone_number,reviews,dine_in,takeout';
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}&language=ko`;
-    const detailsResponse = await fetch(detailsUrl);
-    const detailsData: { result?: GooglePlaceDetailsResult } = await detailsResponse.json();
-    const result = detailsData.result;
-    
-    if (!result) return place; // 상세 정보 없으면 카카오 정보만 반환
+    if (!placeId) {
+      // console.log(`[Google API Info] for ${place.place_name}: Could not find placeId.`);
+      return place;
+    }
 
-    const photos = result.photos?.map(p => 
-      `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${p.photo_reference}&key=${GOOGLE_API_KEY}`
-    ) || [];
+    // Step 2: Get Place Details using Place Details (New)
+    const detailsUrl = `https://places.googleapis.com/v1/places/${placeId}`;
+    const fieldMask = [
+      'displayName', 'rating', 'regularOpeningHours', 'internationalPhoneNumber',
+      'websiteUri', 'reviews', 'photos', 'dineIn', 'takeout',
+      'allowsDogs', 'parkingOptions'
+    ].join(',');
+
+    const detailsResponse = await fetch(detailsUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_API_KEY,
+        'X-Goog-FieldMask': fieldMask,
+      },
+    });
+
+    const detailsData: NewGooglePlace = await detailsResponse.json();
+
+    if (!detailsData) {
+      // console.log(`[Google API Info] for ${place.place_name}: Could not find details for placeId ${placeId}.`);
+      return place;
+    }
+
+    // Map the new response to the existing GoogleDetails structure
+    const googleDetails: GoogleDetails = {
+      url: detailsData.websiteUri,
+      rating: detailsData.rating,
+      photos: detailsData.photos?.map(p => 
+        `https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=400&key=${GOOGLE_API_KEY}`
+      ) || [],
+      opening_hours: detailsData.regularOpeningHours,
+      phone: detailsData.internationalPhoneNumber,
+      reviews: detailsData.reviews?.map(review => ({
+        author_name: review.authorAttribution?.displayName || 'Anonymous',
+        profile_photo_url: review.authorAttribution?.photoUri || '',
+        rating: review.rating || 0,
+        relative_time_description: review.relativePublishTimeDescription || '',
+        text: review.text?.text || '',
+      })) || [],
+      dine_in: detailsData.dineIn,
+      takeout: detailsData.takeout,
+      allowsDogs: detailsData.allowsDogs,
+      parkingOptions: detailsData.parkingOptions,
+    };
 
     return {
       ...place,
-      googleDetails: {
-        url: result.url,
-        rating: result.rating,
-        photos,
-        opening_hours: result.opening_hours,
-        phone: result.formatted_phone_number,
-        reviews: result.reviews,
-        dine_in: result.dine_in,
-        takeout: result.takeout,
-        allowsDogs: result.allows_dogs,
-        parkingOptions: result.parking_options,
-      }
+      googleDetails,
     };
+
   } catch (error) {
     console.error(`[Google API Error] for ${place.place_name}:`, error);
-    return place; // 에러 발생 시 원본 카카오 정보 유지
+    return place;
   }
 }

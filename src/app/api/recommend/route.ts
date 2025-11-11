@@ -161,7 +161,7 @@ export async function GET(request: Request) {
 
             if (openNow) {
                 const hours = enriched.googleDetails?.opening_hours;
-                const isOpen = hours?.open_now === true || (includeUnknown && hours === undefined);
+                const isOpen = hours?.openNow === true || (includeUnknown && hours === undefined);
                 if (!isOpen) {
                     continue;
                 }
