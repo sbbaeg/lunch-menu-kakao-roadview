@@ -92,12 +92,19 @@ export default function MobileLayout() {
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
     const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
     const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
     const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
     const [isLikedRestaurantsOpen, setIsLikedRestaurantsOpen] = useState(false);
+
+    useEffect(() => {
+        // PWA 모바일 뷰포트 스크롤 방지
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, []);
 
     // Handlers
     const handleTagsChange = (updatedRestaurant: AppRestaurant) => {
@@ -185,7 +192,6 @@ export default function MobileLayout() {
     }
 
     const myPageProps = {
-        onShowFavorites: () => setIsFavoritesListOpen(true),
         onShowBlacklist: () => setIsBlacklistOpen(true),
         onShowTagManagement: () => setIsTagManagementOpen(true),
         onShowLikedRestaurants: () => setIsLikedRestaurantsOpen(true),
@@ -242,6 +248,10 @@ export default function MobileLayout() {
                 <main className="absolute inset-0">
                     <NotificationsPage />
                 </main>
+            ) : activeView === 'favorites' ? (
+                <main className="absolute inset-0">
+                    <FavoritesPage {...favoritesPageProps} />
+                </main>
             ) : null}
 
             {/* 다이얼로그들은 레이아웃 흐름에 영향을 주지 않음 */}
@@ -259,21 +269,6 @@ export default function MobileLayout() {
                 onCreateTag={createTag}
                 onDeleteTag={deleteTag}
                 onToggleTagPublic={toggleTagPublic}
-            />
-            <FavoritesDialog
-                isOpen={isFavoritesListOpen}
-                onOpenChange={setIsFavoritesListOpen}
-                onNavigate={() => setIsFavoritesListOpen(false)} // 네비게이트 시 다이얼로그 닫기
-                favorites={favorites}
-                session={session}
-                subscribedTagIds={subscribedTagIds}
-                selectedItemId={selectedItemId}
-                setSelectedItemId={setSelectedItemId}
-                isFavorite={isFavorite}
-                isBlacklisted={isBlacklisted}
-                onToggleFavorite={toggleFavorite}
-                onToggleBlacklist={toggleBlacklist}
-                onTagManagement={setTaggingRestaurant}
             />
             <LikedRestaurantsDialog
                 isOpen={isLikedRestaurantsOpen}
