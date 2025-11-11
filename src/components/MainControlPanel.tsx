@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 
 interface MainControlPanelProps {
   isSearchDisabled: boolean;
@@ -13,6 +14,8 @@ export function MainControlPanel({
   onRouletteClick,
   onFilterClick,
 }: MainControlPanelProps) {
+  const { isStandalone } = usePwaDisplayMode();
+
   return (
     <div className="w-full flex gap-2 justify-center">
       <Button 
@@ -31,13 +34,15 @@ export function MainControlPanel({
       >
         룰렛
       </Button>
-      <Button 
-        variant="outline" 
-        size="lg" 
-        onClick={onFilterClick}
-      >
-        필터
-      </Button>
+      {!isStandalone && (
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={onFilterClick}
+        >
+          필터
+        </Button>
+      )}
     </div>
   );
 }

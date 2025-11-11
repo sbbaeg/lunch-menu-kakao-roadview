@@ -152,7 +152,7 @@ export function MapPanel({
               <Switch id="search-mode" checked={searchMode === 'food'} onCheckedChange={(checked) => setSearchMode(checked ? 'food' : 'place')} />
               <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'food' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>음식점</Label>
             </div>
-            <Button size="lg" className="h-11 shrink-0" onClick={handleSearch}>검색</Button>
+            <Button size="lg" className="h-11 shrink-0" onClick={handleSearch}>{searchMode === 'place' ? '이동' : '검색'}</Button>
           </div>
         </div>
       )}
