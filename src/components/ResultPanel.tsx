@@ -147,6 +147,13 @@ export function ResultPanel({
       <Card className="w-full flex flex-col flex-1 min-h-0 relative"> {/* relative 추가 */}
         {expansionHandler}
         <div className="w-full flex-1 flex flex-col min-h-0 pt-4"> {/* pt-4 추가 */}
+          {isStandalone && (
+            <div className="flex justify-end px-4">
+              <Button variant="ghost" size="icon" onClick={onOpenFilter}>
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
           <div className="w-full h-full flex items-center justify-center">
             <p className="text-muted-foreground">검색 결과가 여기에 표시됩니다.</p>
           </div>
@@ -168,9 +175,11 @@ export function ResultPanel({
           <p className="text-sm font-semibold text-gray-600">
             {getSortTitle(displayedSortOrder)}: {restaurants.length}개
           </p>
-          <Button variant="ghost" size="icon" onClick={onOpenFilter}>
-            <Settings className="h-5 w-5" />
-          </Button>
+          {isStandalone && (
+            <Button variant="ghost" size="icon" onClick={onOpenFilter}>
+              <Settings className="h-5 w-5" />
+            </Button>
+          )}
         </div>
         <CardContent className="px-2 pt-1 pb-2 thin-scrollbar overflow-y-auto flex-1">
           <Accordion
