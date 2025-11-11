@@ -230,12 +230,12 @@ export default function MyPage({
                             <Separator className="my-4" />
                             <div className="px-4">
                                 <h3 className="text-lg font-semibold mb-2">관리</h3>
-                                <Link href="/admin" passHref>
+                                <a href="/admin">
                                     <Button variant="ghost" className="justify-start w-full p-2">
                                         <Shield className="mr-2 h-4 w-4" />
                                         관리자 페이지
                                     </Button>
-                                </Link>
+                                </a>
                             </div>
                         </>
                     )}
