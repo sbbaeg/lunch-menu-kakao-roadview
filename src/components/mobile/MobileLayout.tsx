@@ -42,6 +42,7 @@ import { useAppStore } from '@/store/useAppStore';
 import TagDetailPage from './TagDetailPage';
 import RestaurantDetailPage from './RestaurantDetailPage';
 import TagExplorePage from './TagExplorePage';
+import LikedRestaurantsPage from './LikedRestaurantsPage';
 import RankingPage from '@/app/ranking/page'; // 1. Import RankingPage
 import NotificationsPage from './NotificationsPage'; // 알림 페이지 임포트
 import { AppRestaurant, Tag } from '@/lib/types';
@@ -186,6 +187,20 @@ export default function MobileLayout() {
         onTagManagement: setTaggingRestaurant,
     };
 
+    const likedRestaurantsPageProps = { // Props for LikedRestaurantsPage
+        likedRestaurants,
+        isLoading: isLoadingLiked,
+        session,
+        subscribedTagIds,
+        selectedItemId,
+        setSelectedItemId,
+        isFavorite,
+        isBlacklisted,
+        onToggleFavorite: toggleFavorite,
+        onToggleBlacklist: toggleBlacklist,
+        onTagManagement: setTaggingRestaurant,
+    };
+
     if (!isMapReady) {
         return <SplashScreen />;
     }
@@ -249,6 +264,10 @@ export default function MobileLayout() {
             ) : activeView === 'favorites' ? (
                 <main className="absolute inset-0">
                     <FavoritesPage {...favoritesPageProps} />
+                </main>
+            ) : activeView === 'likedRestaurants' ? (
+                <main className="absolute inset-0">
+                    <LikedRestaurantsPage {...likedRestaurantsPageProps} />
                 </main>
             ) : null}
 
