@@ -26,7 +26,6 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export async function GET(request: Request) {
-    console.log("--- [API] /api/recommend received a request ---");
     const { searchParams } = new URL(request.url);
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
@@ -41,8 +40,6 @@ export async function GET(request: Request) {
     const allowsDogsOnly = searchParams.get('allowsDogsOnly') === 'true';
     const hasParkingOnly = searchParams.get('hasParkingOnly') === 'true';
     const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
-
-    console.log("[API PARAMS]", { lat, lng, query, radius, sort, size, minRating, openNow, includeUnknown, fromFavorites, allowsDogsOnly, hasParkingOnly });
 
 
     const tagsParam = searchParams.get('tags');
@@ -117,8 +114,6 @@ export async function GET(request: Request) {
             }
         }
 
-        console.log(`[API] Fetched ${candidates.length} candidates from source (Kakao or Favorites).`);
-
         // ✅ 이하 로직은 '즐겨찾기 검색'과 '일반 검색'의 공통 로직입니다.
         let tagExcludedCount = 0;
         let taggedRestaurantIds: Set<string> | null = null;
@@ -138,13 +133,11 @@ export async function GET(request: Request) {
         const countBeforeBlacklist = candidates.length;
         let filteredCandidates = candidates.filter(place => !blacklistIds.includes(place.id));
         const blacklistExcludedCount = countBeforeBlacklist - filteredCandidates.length;
-        console.log(`[API] ${filteredCandidates.length} candidates after blacklist filter.`);
 
         if (taggedRestaurantIds) {
             const countBeforeTagFilter = filteredCandidates.length;
             filteredCandidates = filteredCandidates.filter(place => taggedRestaurantIds!.has(place.id));
             tagExcludedCount = countBeforeTagFilter - filteredCandidates.length;
-            console.log(`[API] ${filteredCandidates.length} candidates after tag filter.`);
         }
 
         if (sort === 'accuracy') {
@@ -156,19 +149,13 @@ export async function GET(request: Request) {
         }
 
         const finalResults: KakaoPlaceItem[] = [];
-        for (const [index, candidate] of filteredCandidates.entries()) {
+        for (const candidate of filteredCandidates) {
             if (finalResults.length >= size) break;
 
             const enriched = await fetchFullGoogleDetails(candidate);
             
-            // Log the first candidate's enriched details
-            if (index === 0) {
-                console.log("[API] Enriched details for first candidate:", JSON.stringify(enriched.googleDetails, null, 2));
-            }
-
             const ratingMatch = (enriched.googleDetails?.rating || 0) >= minRating;
             if (!ratingMatch) {
-                console.log(`[API] FILTERED by minRating: ${candidate.place_name} (Rating: ${enriched.googleDetails?.rating || 'N/A'})`);
                 continue;
             }
 
@@ -176,14 +163,12 @@ export async function GET(request: Request) {
                 const hours = enriched.googleDetails?.opening_hours;
                 const isOpen = hours?.open_now === true || (includeUnknown && hours === undefined);
                 if (!isOpen) {
-                    console.log(`[API] FILTERED by openNow: ${candidate.place_name}`);
                     continue;
                 }
             }
 
             if (allowsDogsOnly) {
                 if (!enriched.googleDetails?.allowsDogs) {
-                    console.log(`[API] FILTERED by allowsDogsOnly: ${candidate.place_name}`);
                     continue;
                 }
             }
@@ -192,14 +177,12 @@ export async function GET(request: Request) {
                 const parking = enriched.googleDetails?.parkingOptions;
                 const hasAnyParking = parking && Object.values(parking).some(val => val === true);
                 if (!hasAnyParking) {
-                    console.log(`[API] FILTERED by hasParkingOnly: ${candidate.place_name}`);
                     continue;
                 }
             }
             finalResults.push(enriched);
         }
 
-        console.log(`[API] Total final results before sorting: ${finalResults.length}`);
 
         let sortedResults: KakaoPlaceItem[] = [];
         if (sort === 'rating') {
