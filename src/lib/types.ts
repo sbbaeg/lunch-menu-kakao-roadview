@@ -27,6 +27,7 @@ export interface GoogleDetails {
   url?: string;
   photos: string[];
   rating?: number;
+  userRatingCount?: number;
   opening_hours?: GoogleOpeningHours;
   phone?: string;
   reviews?: Review[];
