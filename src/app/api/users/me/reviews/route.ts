@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET: 현재 로그인한 사용자가 작성한 모든 리뷰를 조회합니다.
  */
