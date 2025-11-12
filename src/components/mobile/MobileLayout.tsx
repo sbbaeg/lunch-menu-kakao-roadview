@@ -219,7 +219,7 @@ export default function MobileLayout() {
                     {/* 메인 컨텐츠 영역: 하단 탭 바(h-20)를 제외한 전체 공간 차지 */}
                     <main className="absolute top-0 left-0 right-0 bottom-20">
                         <div className={`w-full h-full ${activeTab === 'map' ? 'block' : 'hidden'}`}><MapPage {...mapPageProps} /></div>
-                        <div className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} /></div>
+                        <div className={`w-full h-full ${activeTab === 'favorites' ? 'block' : 'hidden'}`}><FavoritesPage {...favoritesPageProps} showBackButton={false} /></div>
                         <div className={`w-full h-full ${activeTab === 'roulette' ? 'block' : 'hidden'}`}><RoulettePage /></div>
                         <div className={`w-full h-full ${activeTab === 'my-page' ? 'block' : 'hidden'}`}><MyPage {...myPageProps} /></div>
                     </main>
@@ -263,7 +263,7 @@ export default function MobileLayout() {
                 </main>
             ) : activeView === 'favorites' ? (
                 <main className="absolute inset-0">
-                    <FavoritesPage {...favoritesPageProps} />
+                    <FavoritesPage {...favoritesPageProps} showBackButton={true} />
                 </main>
             ) : activeView === 'likedRestaurants' ? (
                 <main className="absolute inset-0">
