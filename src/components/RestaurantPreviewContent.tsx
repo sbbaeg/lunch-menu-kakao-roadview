@@ -11,10 +11,14 @@ import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 
 const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null => {
-    if (!openingHours?.weekday_text) return null;
+    if (!openingHours?.weekdayDescriptions) return null;
     const today = new Date().getDay();
-    const googleApiIndex = (today + 6) % 7;
-    const todaysHours = openingHours.weekday_text[googleApiIndex];
+    // JavaScript getDay()는 일요일=0, 월요일=1, ..., 토요일=6
+    // Google API weekday_text는 월요일부터 시작하므로 인덱스 조정 필요 없음 (단, 일요일이 0이므로 주의)
+    // Google API의 periods.open.day는 일요일=0, 월요일=1...
+    // 여기서는 weekdayDescriptions 배열을 사용하므로, 월요일이 0 인덱스.
+    const googleApiIndex = (today === 0) ? 6 : today - 1; // 일요일(0) -> 6, 월요일(1) -> 0, ...
+    const todaysHours = openingHours.weekdayDescriptions[googleApiIndex];
     return todaysHours ? todaysHours.substring(todaysHours.indexOf(":") + 2) : "정보 없음";
 };
 
@@ -68,7 +72,7 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
 
             {isMounted && details?.opening_hours && (
                 <div className="flex flex-col">
-                <p><strong>영업:</strong> <span className={details.opening_hours.open_now ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{details.opening_hours.open_now ? "영업 중" : "영업 종료"}</span></p>
+                <p><strong>영업:</strong> <span className={details.opening_hours.openNow ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{details.opening_hours.openNow ? "영업 중" : "영업 종료"}</span></p>
                 <p className="text-xs text-gray-500 ml-1">(오늘: {getTodaysOpeningHours(details.opening_hours)})</p>
                 </div>
             )}
