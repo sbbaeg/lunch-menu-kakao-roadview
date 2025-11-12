@@ -76,11 +76,15 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id;
-        session.user.isAdmin = token.isAdmin;
-        session.user.isBanned = token.isBanned;
-      }
+      // token에서 가져온 정보로 user 객체를 완전히 새로 구성하여 할당합니다.
+      session.user = {
+        id: token.id,
+        name: token.name,
+        email: token.email,
+        image: token.picture,
+        isAdmin: token.isAdmin,
+        isBanned: token.isBanned,
+      };
       return session;
     },
   },
