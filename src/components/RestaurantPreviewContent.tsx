@@ -13,11 +13,7 @@ import { Loader2 } from "lucide-react";
 const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null => {
     if (!openingHours?.weekdayDescriptions) return null;
     const today = new Date().getDay();
-    // JavaScript getDay()는 일요일=0, 월요일=1, ..., 토요일=6
-    // Google API weekday_text는 월요일부터 시작하므로 인덱스 조정 필요 없음 (단, 일요일이 0이므로 주의)
-    // Google API의 periods.open.day는 일요일=0, 월요일=1...
-    // 여기서는 weekdayDescriptions 배열을 사용하므로, 월요일이 0 인덱스.
-    const googleApiIndex = (today === 0) ? 6 : today - 1; // 일요일(0) -> 6, 월요일(1) -> 0, ...
+    const googleApiIndex = (today === 0) ? 6 : today - 1;
     const todaysHours = openingHours.weekdayDescriptions[googleApiIndex];
     return todaysHours ? todaysHours.substring(todaysHours.indexOf(":") + 2) : "정보 없음";
 };

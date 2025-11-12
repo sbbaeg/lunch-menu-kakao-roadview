@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useAppStore } from '@/store/useAppStore';
 import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 import { RestaurantDetails } from "./RestaurantDetails";
-import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare } from 'lucide-react';
+import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare, Wheelchair } from 'lucide-react';
 
 import {
     Tooltip,
@@ -167,6 +167,46 @@ export function RestaurantCard({
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>주차 가능</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {restaurant.googleDetails?.wheelchairAccessibleParking && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Wheelchair className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>휠체어 이용 가능 주차장</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {restaurant.googleDetails?.wheelchairAccessibleEntrance && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Wheelchair className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>휠체어 이용 가능 입구</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {restaurant.googleDetails?.wheelchairAccessibleRestroom && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Wheelchair className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>휠체어 이용 가능 화장실</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {restaurant.googleDetails?.wheelchairAccessibleSeating && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Wheelchair className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>휠체어 이용 가능 좌석</p>
                     </TooltipContent>
                   </Tooltip>
                 )}

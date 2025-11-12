@@ -36,6 +36,10 @@ interface NewGooglePlace {
   parkingOptions?: GoogleParkingOptions;
   userRatingCount?: number;
   adrFormatAddress?: string;
+  wheelchairAccessibleParking?: boolean;
+  wheelchairAccessibleEntrance?: boolean;
+  wheelchairAccessibleRestroom?: boolean;
+  wheelchairAccessibleSeating?: boolean;
 }
 
 // --- Migration of fetchFullGoogleDetails ---
@@ -75,7 +79,8 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
     const fieldMask = [
       'id', 'displayName', 'rating', 'regularOpeningHours', 'internationalPhoneNumber',
       'websiteUri', 'reviews', 'photos', 'dineIn', 'takeout',
-      'allowsDogs', 'parkingOptions', 'userRatingCount', 'adrFormatAddress'
+      'allowsDogs', 'parkingOptions', 'userRatingCount', 'adrFormatAddress',
+      'wheelchairAccessibleParking', 'wheelchairAccessibleEntrance', 'wheelchairAccessibleRestroom', 'wheelchairAccessibleSeating'
     ].join(',');
 
     const detailsResponse = await fetch(detailsUrl, {
@@ -117,6 +122,10 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
       takeout: detailsData.takeout,
       allowsDogs: detailsData.allowsDogs,
       parkingOptions: detailsData.parkingOptions,
+      wheelchairAccessibleParking: detailsData.wheelchairAccessibleParking,
+      wheelchairAccessibleEntrance: detailsData.wheelchairAccessibleEntrance,
+      wheelchairAccessibleRestroom: detailsData.wheelchairAccessibleRestroom,
+      wheelchairAccessibleSeating: detailsData.wheelchairAccessibleSeating,
     };
 
     return {
