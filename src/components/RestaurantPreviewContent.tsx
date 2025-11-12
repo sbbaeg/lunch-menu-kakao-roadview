@@ -82,7 +82,7 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
             {details?.photos && details.photos.length > 0 && (
                 <div>
                 <strong>사진:</strong>
-                <Carousel className="w-full max-w-xs mx-auto mt-2">
+                <Carousel className="w-full mt-2">
                     <CarouselContent>
                     {details.photos.map((photoUrl, index) => (
                         <CarouselItem key={index}>
