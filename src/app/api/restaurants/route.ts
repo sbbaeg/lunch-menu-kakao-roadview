@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { AppRestaurant } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 // 식당 정보를 DB에 생성하거나 업데이트하는 POST 요청 핸들러
 export async function POST(request: Request) {
   try {

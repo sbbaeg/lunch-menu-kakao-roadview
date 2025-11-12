@@ -5,6 +5,8 @@ import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET: 현재 로그인한 사용자가 생성한 모든 태그 목록을 조회합니다.
  */

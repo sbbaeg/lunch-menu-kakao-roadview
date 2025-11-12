@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // 카카오내비 API 응답 타입 정의
 interface Road {
   vertexes: number[];

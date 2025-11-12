@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/notifications - 현재 사용자의 알림 가져오기
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);

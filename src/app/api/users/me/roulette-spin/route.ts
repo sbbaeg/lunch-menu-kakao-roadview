@@ -5,6 +5,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {

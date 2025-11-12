@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // Prisma.TagGetPayload를 사용하여 쿼리 결과에 대한 정확한 타입을 생성합니다.
 type TagWithCountsAndUser = Prisma.TagGetPayload<{
     include: {

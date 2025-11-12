@@ -5,6 +5,8 @@ import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET: 현재 로그인한 사용자가 구독한 모든 태그 목록을 조회합니다.
  */

@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { AppRestaurant } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET: 현재 사용자의 블랙리스트 목록을 반환합니다.
  * '관리' UI에서 목록을 보여주기 위해 전체 Restaurant 객체 배열을 반환합니다.
