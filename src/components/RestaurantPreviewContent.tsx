@@ -133,7 +133,7 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
                     </Button>
                 </a>
                 {details?.placeId && (
-                    <a href={`https://www.google.com/maps/search/?api=1&query_place_id=${details.placeId}`} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <a href={`https://www.google.com/maps/place/?q=place_id:${details.placeId}`} target="_blank" rel="noopener noreferrer" className="flex-1">
                         <Button variant="outline" className="w-full font-bold">
                             <span className="flex items-center justify-center">
                                 <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
