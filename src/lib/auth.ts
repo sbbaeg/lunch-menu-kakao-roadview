@@ -34,17 +34,21 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Initial sign in
+      // 1. 최초 로그인 시: user 객체가 존재함
       if (user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { isAdmin: true, isBanned: true, createdAt: true },
+        });
+
         token.id = user.id;
-        token.isAdmin = (user as any).isAdmin;
-        token.isBanned = (user as any).isBanned;
+        token.isAdmin = dbUser?.isAdmin ?? false;
+        token.isBanned = dbUser?.isBanned ?? false;
 
         // --- Early Bird Badge Logic ---
-        // TODO: 실제 서비스 런칭 날짜로 변경해주세요.
-        const LAUNCH_DATE = new Date('2023-10-01');
+        const LAUNCH_DATE = new Date('2023-10-01'); // TODO: 실제 런칭 날짜로 변경
         const ONE_MONTH_IN_MS = 30 * 24 * 60 * 60 * 1000;
-        const userCreatedAt = (user as any).createdAt ? new Date((user as any).createdAt) : new Date();
+        const userCreatedAt = dbUser?.createdAt ? new Date(dbUser.createdAt) : new Date();
 
         if (userCreatedAt < new Date(LAUNCH_DATE.getTime() + ONE_MONTH_IN_MS)) {
           const earlyBirdBadge = await prisma.badge.findUnique({ where: { name: '얼리버드' } });
@@ -57,17 +61,16 @@ export const authOptions: NextAuthOptions = {
           }
         }
         // --- End of Early Bird Badge Logic ---
-      } else {
-        // Subsequent requests: refresh token with latest user data
-        if (token.id) {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.id },
-            select: { isAdmin: true, isBanned: true },
-          });
-          if (dbUser) {
-            token.isAdmin = dbUser.isAdmin;
-            token.isBanned = dbUser.isBanned;
-          }
+      } 
+      // 2. 그 이후의 요청 시: user 객체는 없지만 token은 존재함
+      else if (token.id) {
+        // isBanned 상태는 실시간으로 갱신
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: { isBanned: true },
+        });
+        if (dbUser) {
+          token.isBanned = dbUser.isBanned;
         }
       }
       return token;
