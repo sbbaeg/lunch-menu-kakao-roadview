@@ -36,6 +36,10 @@ export interface GoogleDetails {
   takeout?: boolean;
   allowsDogs?: boolean;
   parkingOptions?: GoogleParkingOptions;
+  wheelchairAccessibleParking?: boolean;
+  wheelchairAccessibleEntrance?: boolean;
+  wheelchairAccessibleRestroom?: boolean;
+  wheelchairAccessibleSeating?: boolean;
 }
 
 // 우리 앱의 리뷰 요약 정보 타입
