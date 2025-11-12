@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Trash2, Edit, UserX, Users, Utensils, MessageSquare, Tag, ThumbsUp, GitCompareArrows, Search } from 'lucide-react';
+import { Trash2, Edit, UserX, Users, Utensils, MessageSquare, Tag, ThumbsUp, GitCompareArrows, Search, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AdminEditDialog } from '@/components/ui/AdminEditDialog';
 import {
@@ -431,7 +431,12 @@ export default function AdminPageClient() {
     return (
         <>
             <main className="container mx-auto p-4 md:p-8">
-                <h1 className="text-3xl font-bold mb-6">관리자 페이지</h1>
+                <div className="flex items-center mb-6">
+                    <Button variant="ghost" onClick={() => router.push('/')} className="p-2 h-auto mr-2">
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <h1 className="text-3xl font-bold">관리자 페이지</h1>
+                </div>
                 
                 <Tabs defaultValue="dashboard">
                     <TabsList className="mb-4">
