@@ -34,6 +34,8 @@ interface NewGooglePlace {
   takeout?: boolean;
   allowsDogs?: boolean;
   parkingOptions?: GoogleParkingOptions;
+  userRatingCount?: number;
+  adrFormatAddress?: string;
 }
 
 // --- Migration of fetchFullGoogleDetails ---
@@ -68,11 +70,11 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
     }
 
     // Step 2: Get Place Details using Place Details (New)
-    const detailsUrl = `https://places.googleapis.com/v1/places/${placeId}`;
+    const detailsUrl = `https://places.googleapis.com/v1/places/${placeId}?languageCode=ko`;
     const fieldMask = [
-      'displayName', 'rating', 'regularOpeningHours', 'internationalPhoneNumber',
+      'id', 'displayName', 'rating', 'regularOpeningHours', 'internationalPhoneNumber',
       'websiteUri', 'reviews', 'photos', 'dineIn', 'takeout',
-      'allowsDogs', 'parkingOptions'
+      'allowsDogs', 'parkingOptions', 'userRatingCount', 'adrFormatAddress'
     ].join(',');
 
     const detailsResponse = await fetch(detailsUrl, {
@@ -95,13 +97,14 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
     const googleDetails: GoogleDetails = {
       url: detailsData.websiteUri,
       rating: detailsData.rating,
+      userRatingCount: detailsData.userRatingCount,
       photos: detailsData.photos?.map(p => 
         `https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=400&key=${GOOGLE_API_KEY}`
       ) || [],
       opening_hours: detailsData.regularOpeningHours,
       phone: detailsData.internationalPhoneNumber,
       reviews: detailsData.reviews?.map(review => ({
-        author_name: review.authorAttribution?.displayName || 'Anonymous',
+        author_name: review.authorAttribution?.displayName || '익명',
         profile_photo_url: review.authorAttribution?.photoUri || '',
         rating: review.rating || 0,
         relative_time_description: review.relativePublishTimeDescription || '',
@@ -115,6 +118,9 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
 
     return {
       ...place,
+      // Google의 이름과 주소가 더 정확할 수 있으므로 덮어씁니다.
+      place_name: detailsData.displayName?.text || place.place_name,
+      road_address_name: detailsData.adrFormatAddress || place.road_address_name,
       googleDetails,
     };
 
