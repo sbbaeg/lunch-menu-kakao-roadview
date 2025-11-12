@@ -41,6 +41,7 @@ interface NewGooglePlace {
 // --- Migration of fetchFullGoogleDetails ---
 
 export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<KakaoPlaceItem> {
+  console.log('Checking GOOGLE_API_KEY in googleMaps.ts:', process.env.GOOGLE_API_KEY); // 진단용 로그
   try {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
     if (!GOOGLE_API_KEY) throw new Error("Google API Key is not configured");
@@ -87,6 +88,7 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
     });
 
     const detailsData: NewGooglePlace = await detailsResponse.json();
+    console.log(`[Google API Response for ${place.place_name}]:`, JSON.stringify(detailsData, null, 2)); // 진단용 로그
 
     if (!detailsData) {
       // console.log(`[Google API Info] for ${place.place_name}: Could not find details for placeId ${placeId}.`);
