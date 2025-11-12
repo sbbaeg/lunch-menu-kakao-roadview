@@ -123,7 +123,7 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
       ...place,
       // Google의 이름과 주소가 더 정확할 수 있으므로 덮어씁니다.
       place_name: detailsData.displayName?.text || place.place_name,
-      road_address_name: detailsData.adrFormatAddress || place.road_address_name,
+      road_address_name: detailsData.adrFormatAddress ? detailsData.adrFormatAddress.replace(/<[^>]*>?/gm, '') : place.road_address_name,
       googleDetails,
     };
 
