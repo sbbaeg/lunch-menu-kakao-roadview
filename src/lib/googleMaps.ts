@@ -97,6 +97,7 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
 
     // Map the new response to the existing GoogleDetails structure
     const googleDetails: GoogleDetails = {
+      placeId: detailsData.id,
       url: detailsData.websiteUri,
       rating: detailsData.rating,
       userRatingCount: detailsData.userRatingCount,

@@ -24,6 +24,7 @@ export interface GoogleParkingOptions {
 }
 
 export interface GoogleDetails {
+  placeId?: string;
   url?: string;
   photos: string[];
   rating?: number;
