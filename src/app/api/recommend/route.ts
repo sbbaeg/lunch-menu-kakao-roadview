@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 import { KakaoPlaceItem, RestaurantWithTags } from '@/lib/types';
+import { getExpandedCategoryTypes, getDisplayCategoryLabel } from '@/lib/categories';
 
 export const dynamic = 'force-dynamic';
 
@@ -138,6 +139,8 @@ export async function GET(request: Request) {
 
             const searchData = await searchResponse.json();
 
+// ... (inside export async function GET(request: Request))
+
             if (searchData.places) {
                 interface GoogleCandidate {
                     id: string;
@@ -155,7 +158,7 @@ export async function GET(request: Request) {
                 let googleCandidates: GoogleCandidate[] = searchData.places.map((place: any) => ({
                     id: place.id,
                     place_name: place.displayName?.text || '',
-                    category_name: place.primaryTypeDisplayName?.text || (place.types?.length > 0 ? place.types[0] : ''),
+                    category_name: getDisplayCategoryLabel(place.types), // Use helper to get display label
                     road_address_name: place.formattedAddress || '',
                     address_name: place.formattedAddress || '',
                     x: String(place.location?.longitude || 0),
@@ -168,8 +171,9 @@ export async function GET(request: Request) {
                 // Filter by categories if provided in the query
                 const selectedCategories = query.split(',').map(c => c.trim()).filter(c => c && c !== '음식점');
                 if (selectedCategories.length > 0) {
+                    const expandedTypes = getExpandedCategoryTypes(selectedCategories); // Expand selected categories
                     googleCandidates = googleCandidates.filter((candidate: GoogleCandidate) => 
-                        candidate.googleTypes.some((type: string) => selectedCategories.includes(type))
+                        candidate.googleTypes.some((type: string) => expandedTypes.has(type))
                     );
                 }
                 

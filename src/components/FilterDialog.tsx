@@ -14,22 +14,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Tag } from "@/lib/types";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { CATEGORIES, MAIN_CATEGORIES } from "@/lib/categories";
 
 // --- 상수 정의 ---
-const CATEGORIES = [
-  { value: "korean_restaurant", label: "한식" },
-  { value: "japanese_restaurant", label: "일식" },
-  { value: "chinese_restaurant", label: "중식" },
-  { value: "american_restaurant", label: "양식" },
-  { value: "italian_restaurant", label: "이탈리안" },
-  { value: "cafe", label: "카페" },
-  { value: "bar", label: "주점" },
-  { value: "bakery", label: "베이커리" },
-  { value: "fast_food_restaurant", label: "패스트푸드" },
-  { value: "pizza_restaurant", label: "피자" },
-  { value: "chicken_restaurant", label: "치킨" },
-  { value: "buffet", label: "뷔페" },
-];
 const DISTANCES = [
   { value: "500", label: "가까워요", walkTime: "약 5분" },
   { value: "800", label: "적당해요", walkTime: "약 10분" },
@@ -109,16 +97,25 @@ export function FilterDialog({
   }, [isOpen, initialFilters]);
 
   // 다이얼로그 내부에서만 사용되던 핸들러 함수들
-  const handleTempCategoryChange = (categoryValue: string) => {
-    setTempSelectedCategories((prev) =>
-      prev.includes(categoryValue)
-        ? prev.filter((c) => c !== categoryValue)
-        : [...prev, categoryValue]
-    );
+  const handleParentCategoryChange = (parentCategoryValue: string, isChecked: boolean) => {
+    const parentCategory = CATEGORIES.find(c => c.value === parentCategoryValue);
+    if (!parentCategory) return;
+
+    const childrenValues = parentCategory.children || [];
+    const allRelatedCategories = [parentCategoryValue, ...childrenValues];
+
+    setTempSelectedCategories(prev => {
+      const otherCategories = prev.filter(c => !allRelatedCategories.includes(c));
+      return isChecked ? [...otherCategories, ...allRelatedCategories] : otherCategories;
+    });
   };
 
-  const handleTempSelectAll = (checked: boolean | "indeterminate") => {
-    setTempSelectedCategories(checked === true ? CATEGORIES.map(c => c.value) : []);
+  const handleChildCategoryChange = (childCategoryValue: string) => {
+    setTempSelectedCategories(prev =>
+      prev.includes(childCategoryValue)
+        ? prev.filter(c => c !== childCategoryValue)
+        : [...prev, childCategoryValue]
+    );
   };
   
   const handleTempTagChange = (tagId: number) => {
@@ -211,18 +208,62 @@ export function FilterDialog({
             <div className="border-t border-gray-200 dark:border-gray-700"></div>
             <div>
                 <Label className="text-lg font-semibold">음식 종류</Label>
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                    {CATEGORIES.map((category) => (
-                        <div key={category.value} className="flex items-center space-x-2">
-                            <Checkbox id={`temp-${category.value}`} checked={tempSelectedCategories.includes(category.value)} onCheckedChange={() => handleTempCategoryChange(category.value)} />
-                            <Label htmlFor={`temp-${category.value}`}>{category.label}</Label>
-                        </div>
-                    ))}
-                </div>
-                <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
-                    <Checkbox id="temp-select-all" checked={tempSelectedCategories.length === CATEGORIES.length} onCheckedChange={(checked) => handleTempSelectAll(checked)} />
-                    <Label htmlFor="temp-select-all" className="font-semibold">모두 선택</Label>
-                </div>
+                <Accordion type="multiple" className="w-full">
+                    {MAIN_CATEGORIES.map((category) => {
+                        const children = CATEGORIES.filter(c => category.children?.includes(c.value));
+                        const isParentChecked = tempSelectedCategories.includes(category.value);
+                        const areSomeChildrenChecked = children.some(child => tempSelectedCategories.includes(child.value));
+                        const isIndeterminate = !isParentChecked && areSomeChildrenChecked;
+
+                        // If a category has no children, render it as a simple checkbox
+                        if (!category.children || category.children.length === 0) {
+                            return (
+                                <div key={category.value} className="flex items-center space-x-2 py-2">
+                                    <Checkbox
+                                        id={`cat-${category.value}`}
+                                        checked={tempSelectedCategories.includes(category.value)}
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
+                                                setTempSelectedCategories(prev => [...prev, category.value]);
+                                            } else {
+                                                setTempSelectedCategories(prev => prev.filter(c => c !== category.value));
+                                            }
+                                        }}
+                                    />
+                                    <Label htmlFor={`cat-${category.value}`}>{category.label}</Label>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <AccordionItem value={category.value} key={category.value}>
+                                <AccordionTrigger>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`cat-parent-${category.value}`}
+                                            checked={isIndeterminate ? 'indeterminate' : isParentChecked}
+                                            onCheckedChange={() => handleParentCategoryChange(category.value, !isParentChecked)}
+                                            aria-label={`Select all ${category.label}`}
+                                        />
+                                        <Label htmlFor={`cat-parent-${category.value}`}>{category.label}</Label>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pl-6">
+                                    {children.map(child => (
+                                        <div key={child.value} className="flex items-center space-x-2 py-1">
+                                            <Checkbox
+                                                id={`cat-child-${child.value}`}
+                                                checked={tempSelectedCategories.includes(child.value)}
+                                                onCheckedChange={() => handleChildCategoryChange(child.value)}
+                                            />
+                                            <Label htmlFor={`cat-child-${child.value}`}>{child.label}</Label>
+                                        </div>
+                                    ))}
+                                </AccordionContent>
+                            </AccordionItem>
+                        );
+                    })}
+                </Accordion>
             </div>
             <div className="border-t border-gray-200 dark:border-gray-700"></div>
             <div>
