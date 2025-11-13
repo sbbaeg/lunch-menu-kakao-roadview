@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useAppStore } from '@/store/useAppStore';
 import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 import { RestaurantDetails } from "./RestaurantDetails";
-import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare, Wheelchair } from 'lucide-react';
+import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare, Accessibility } from 'lucide-react';
 
 import {
     Tooltip,
@@ -173,7 +173,7 @@ export function RestaurantCard({
                 {restaurant.googleDetails?.wheelchairAccessibleParking && (
                   <Tooltip>
                     <TooltipTrigger>
-                      <Wheelchair className="h-4 w-4" />
+                      <Accessibility className="h-4 w-4" />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>휠체어 이용 가능 주차장</p>
@@ -183,7 +183,7 @@ export function RestaurantCard({
                 {restaurant.googleDetails?.wheelchairAccessibleEntrance && (
                   <Tooltip>
                     <TooltipTrigger>
-                      <Wheelchair className="h-4 w-4" />
+                      <Accessibility className="h-4 w-4" />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>휠체어 이용 가능 입구</p>
@@ -193,7 +193,7 @@ export function RestaurantCard({
                 {restaurant.googleDetails?.wheelchairAccessibleRestroom && (
                   <Tooltip>
                     <TooltipTrigger>
-                      <Wheelchair className="h-4 w-4" />
+                      <Accessibility className="h-4 w-4" />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>휠체어 이용 가능 화장실</p>
@@ -203,7 +203,7 @@ export function RestaurantCard({
                 {restaurant.googleDetails?.wheelchairAccessibleSeating && (
                   <Tooltip>
                     <TooltipTrigger>
-                      <Wheelchair className="h-4 w-4" />
+                      <Accessibility className="h-4 w-4" />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>휠체어 이용 가능 좌석</p>

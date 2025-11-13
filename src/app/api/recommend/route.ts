@@ -41,6 +41,11 @@ export async function GET(request: Request) {
     const hasParkingOnly = searchParams.get('hasParkingOnly') === 'true';
     const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
 
+    const wheelchairAccessibleEntrance = searchParams.get('wheelchairAccessibleEntrance') === 'true';
+    const wheelchairAccessibleRestroom = searchParams.get('wheelchairAccessibleRestroom') === 'true';
+    const wheelchairAccessibleSeating = searchParams.get('wheelchairAccessibleSeating') === 'true';
+    const wheelchairAccessibleParking = searchParams.get('wheelchairAccessibleParking') === 'true';
+
 
     const tagsParam = searchParams.get('tags');
     const tagIds = tagsParam ? tagsParam.split(',').map(Number).filter(id => !isNaN(id)) : [];
@@ -180,6 +185,20 @@ export async function GET(request: Request) {
                     continue;
                 }
             }
+
+            if (wheelchairAccessibleEntrance && !enriched.googleDetails?.wheelchairAccessibleEntrance) {
+                continue;
+            }
+            if (wheelchairAccessibleRestroom && !enriched.googleDetails?.wheelchairAccessibleRestroom) {
+                continue;
+            }
+            if (wheelchairAccessibleSeating && !enriched.googleDetails?.wheelchairAccessibleSeating) {
+                continue;
+            }
+            if (wheelchairAccessibleParking && !enriched.googleDetails?.wheelchairAccessibleParking) {
+                continue;
+            }
+
             finalResults.push(enriched);
         }
 
