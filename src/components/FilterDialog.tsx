@@ -17,8 +17,18 @@ import { Tag } from "@/lib/types";
 
 // --- 상수 정의 ---
 const CATEGORIES = [
-  "한식", "중식", "일식", "양식", "아시아음식", "분식",
-  "패스트푸드", "치킨", "피자", "뷔페", "카페", "술집",
+  { value: "korean_restaurant", label: "한식" },
+  { value: "japanese_restaurant", label: "일식" },
+  { value: "chinese_restaurant", label: "중식" },
+  { value: "american_restaurant", label: "양식" },
+  { value: "italian_restaurant", label: "이탈리안" },
+  { value: "cafe", label: "카페" },
+  { value: "bar", label: "주점" },
+  { value: "bakery", label: "베이커리" },
+  { value: "fast_food_restaurant", label: "패스트푸드" },
+  { value: "pizza_restaurant", label: "피자" },
+  { value: "chicken_restaurant", label: "치킨" },
+  { value: "buffet", label: "뷔페" },
 ];
 const DISTANCES = [
   { value: "500", label: "가까워요", walkTime: "약 5분" },
@@ -99,16 +109,16 @@ export function FilterDialog({
   }, [isOpen, initialFilters]);
 
   // 다이얼로그 내부에서만 사용되던 핸들러 함수들
-  const handleTempCategoryChange = (category: string) => {
+  const handleTempCategoryChange = (categoryValue: string) => {
     setTempSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
+      prev.includes(categoryValue)
+        ? prev.filter((c) => c !== categoryValue)
+        : [...prev, categoryValue]
     );
   };
 
   const handleTempSelectAll = (checked: boolean | "indeterminate") => {
-    setTempSelectedCategories(checked === true ? CATEGORIES : []);
+    setTempSelectedCategories(checked === true ? CATEGORIES.map(c => c.value) : []);
   };
   
   const handleTempTagChange = (tagId: number) => {
@@ -203,9 +213,9 @@ export function FilterDialog({
                 <Label className="text-lg font-semibold">음식 종류</Label>
                 <div className="grid grid-cols-2 gap-4 pt-2">
                     {CATEGORIES.map((category) => (
-                        <div key={category} className="flex items-center space-x-2">
-                            <Checkbox id={`temp-${category}`} checked={tempSelectedCategories.includes(category)} onCheckedChange={() => handleTempCategoryChange(category)} />
-                            <Label htmlFor={`temp-${category}`}>{category}</Label>
+                        <div key={category.value} className="flex items-center space-x-2">
+                            <Checkbox id={`temp-${category.value}`} checked={tempSelectedCategories.includes(category.value)} onCheckedChange={() => handleTempCategoryChange(category.value)} />
+                            <Label htmlFor={`temp-${category.value}`}>{category.label}</Label>
                         </div>
                     ))}
                 </div>
