@@ -39,6 +39,10 @@ export interface FilterState {
   tags: number[];
   allowsDogsOnly: boolean;
   hasParkingOnly: boolean;
+  wheelchairAccessibleEntrance: boolean;
+  wheelchairAccessibleRestroom: boolean;
+  wheelchairAccessibleSeating: boolean;
+  wheelchairAccessibleParking: boolean;
 }
 
 interface FilterDialogProps {
@@ -68,6 +72,10 @@ export function FilterDialog({
   const [tempSelectedTags, setTempSelectedTags] = useState(initialFilters.tags);
   const [tempAllowsDogsOnly, setTempAllowsDogsOnly] = useState(initialFilters.allowsDogsOnly);
   const [tempHasParkingOnly, setTempHasParkingOnly] = useState(initialFilters.hasParkingOnly);
+  const [tempWheelchairAccessibleEntrance, setTempWheelchairAccessibleEntrance] = useState(initialFilters.wheelchairAccessibleEntrance);
+  const [tempWheelchairAccessibleRestroom, setTempWheelchairAccessibleRestroom] = useState(initialFilters.wheelchairAccessibleRestroom);
+  const [tempWheelchairAccessibleSeating, setTempWheelchairAccessibleSeating] = useState(initialFilters.wheelchairAccessibleSeating);
+  const [tempWheelchairAccessibleParking, setTempWheelchairAccessibleParking] = useState(initialFilters.wheelchairAccessibleParking);
 
   // 다이얼로그가 열릴 때마다 page.tsx의 현재 필터 값으로 상태를 초기화합니다.
   useEffect(() => {
@@ -83,6 +91,10 @@ export function FilterDialog({
       setTempSelectedTags(initialFilters.tags);
       setTempAllowsDogsOnly(initialFilters.allowsDogsOnly);
       setTempHasParkingOnly(initialFilters.hasParkingOnly);
+      setTempWheelchairAccessibleEntrance(initialFilters.wheelchairAccessibleEntrance);
+      setTempWheelchairAccessibleRestroom(initialFilters.wheelchairAccessibleRestroom);
+      setTempWheelchairAccessibleSeating(initialFilters.wheelchairAccessibleSeating);
+      setTempWheelchairAccessibleParking(initialFilters.wheelchairAccessibleParking);
     }
   }, [isOpen, initialFilters]);
 
@@ -119,6 +131,10 @@ export function FilterDialog({
       tags: tempSelectedTags,
       allowsDogsOnly: tempAllowsDogsOnly,
       hasParkingOnly: tempHasParkingOnly,
+      wheelchairAccessibleEntrance: tempWheelchairAccessibleEntrance,
+      wheelchairAccessibleRestroom: tempWheelchairAccessibleRestroom,
+      wheelchairAccessibleSeating: tempWheelchairAccessibleSeating,
+      wheelchairAccessibleParking: tempWheelchairAccessibleParking,
     });
     onOpenChange(false); // 다이얼로그 닫기
   };
@@ -148,16 +164,38 @@ export function FilterDialog({
                     <Label htmlFor="temp-include-unknown" className={tempOpenNowOnly ? "cursor-pointer" : "text-gray-400 dark:text-gray-500"}>영업 정보 없는 가게 포함</Label>
                 </div>
             </div>
-            <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="temp-allows-dogs" checked={tempAllowsDogsOnly} onCheckedChange={(checked) => setTempAllowsDogsOnly(Boolean(checked))} />
-                    <Label htmlFor="temp-allows-dogs" className="font-semibold text-lg cursor-pointer">애견 동반 가능</Label>
-                </div>
-            </div>
-            <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="temp-has-parking" checked={tempHasParkingOnly} onCheckedChange={(checked) => setTempHasParkingOnly(Boolean(checked))} />
-                    <Label htmlFor="temp-has-parking" className="font-semibold text-lg cursor-pointer">주차 가능</Label>
+            <div className="space-y-4">
+                <Label className="text-lg font-semibold">편의 시설</Label>
+                <div className="space-y-2 pl-2">
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="temp-allows-dogs" checked={tempAllowsDogsOnly} onCheckedChange={(checked) => setTempAllowsDogsOnly(Boolean(checked))} />
+                        <Label htmlFor="temp-allows-dogs" className="cursor-pointer">반려견 동반 가능</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="temp-has-parking" checked={tempHasParkingOnly} onCheckedChange={(checked) => setTempHasParkingOnly(Boolean(checked))} />
+                        <Label htmlFor="temp-has-parking" className="cursor-pointer">주차 가능</Label>
+                    </div>
+                    <div className="space-y-2 pt-2">
+                        <Label className="font-semibold">휠체어 접근성</Label>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 pl-2">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="temp-wc-entrance" checked={tempWheelchairAccessibleEntrance} onCheckedChange={(checked) => setTempWheelchairAccessibleEntrance(Boolean(checked))} />
+                                <Label htmlFor="temp-wc-entrance" className="cursor-pointer">휠체어 접근 가능 입구</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="temp-wc-restroom" checked={tempWheelchairAccessibleRestroom} onCheckedChange={(checked) => setTempWheelchairAccessibleRestroom(Boolean(checked))} />
+                                <Label htmlFor="temp-wc-restroom" className="cursor-pointer">휠체어 사용 가능 화장실</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="temp-wc-seating" checked={tempWheelchairAccessibleSeating} onCheckedChange={(checked) => setTempWheelchairAccessibleSeating(Boolean(checked))} />
+                                <Label htmlFor="temp-wc-seating" className="cursor-pointer">휠체어 사용 가능 좌석</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="temp-wc-parking" checked={tempWheelchairAccessibleParking} onCheckedChange={(checked) => setTempWheelchairAccessibleParking(Boolean(checked))} />
+                                <Label htmlFor="temp-wc-parking" className="cursor-pointer">휠체어 전용 주차장</Label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div className="border-t border-gray-200 dark:border-gray-700"></div>
