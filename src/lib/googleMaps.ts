@@ -36,16 +36,17 @@ interface NewGooglePlace {
   parkingOptions?: GoogleParkingOptions;
   userRatingCount?: number;
   adrFormatAddress?: string;
-  wheelchairAccessibleParking?: boolean;
-  wheelchairAccessibleEntrance?: boolean;
-  wheelchairAccessibleRestroom?: boolean;
-  wheelchairAccessibleSeating?: boolean;
+  accessibilityOptions?: {
+    wheelchairAccessibleParking?: boolean;
+    wheelchairAccessibleEntrance?: boolean;
+    wheelchairAccessibleRestroom?: boolean;
+    wheelchairAccessibleSeating?: boolean;
+  }
 }
 
 // --- Migration of fetchFullGoogleDetails ---
 
 export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<KakaoPlaceItem> {
-  console.log('Checking GOOGLE_API_KEY in googleMaps.ts:', process.env.GOOGLE_API_KEY); // 진단용 로그
   try {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
     if (!GOOGLE_API_KEY) throw new Error("Google API Key is not configured");
@@ -80,7 +81,10 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
       'id', 'displayName', 'rating', 'regularOpeningHours', 'internationalPhoneNumber',
       'websiteUri', 'reviews', 'photos', 'dineIn', 'takeout',
       'allowsDogs', 'parkingOptions', 'userRatingCount', 'adrFormatAddress',
-      'wheelchairAccessibleParking', 'wheelchairAccessibleEntrance', 'wheelchairAccessibleRestroom', 'wheelchairAccessibleSeating'
+      'accessibilityOptions.wheelchairAccessibleParking', 
+      'accessibilityOptions.wheelchairAccessibleEntrance', 
+      'accessibilityOptions.wheelchairAccessibleRestroom', 
+      'accessibilityOptions.wheelchairAccessibleSeating'
     ].join(',');
 
     const detailsResponse = await fetch(detailsUrl, {
@@ -93,7 +97,6 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
     });
 
     const detailsData: NewGooglePlace = await detailsResponse.json();
-    console.log(`[Google API Response for ${place.place_name}]:`, JSON.stringify(detailsData, null, 2)); // 진단용 로그
 
     if (!detailsData) {
       // console.log(`[Google API Info] for ${place.place_name}: Could not find details for placeId ${placeId}.`);
@@ -122,10 +125,10 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
       takeout: detailsData.takeout,
       allowsDogs: detailsData.allowsDogs,
       parkingOptions: detailsData.parkingOptions,
-      wheelchairAccessibleParking: detailsData.wheelchairAccessibleParking,
-      wheelchairAccessibleEntrance: detailsData.wheelchairAccessibleEntrance,
-      wheelchairAccessibleRestroom: detailsData.wheelchairAccessibleRestroom,
-      wheelchairAccessibleSeating: detailsData.wheelchairAccessibleSeating,
+      wheelchairAccessibleParking: detailsData.accessibilityOptions?.wheelchairAccessibleParking,
+      wheelchairAccessibleEntrance: detailsData.accessibilityOptions?.wheelchairAccessibleEntrance,
+      wheelchairAccessibleRestroom: detailsData.accessibilityOptions?.wheelchairAccessibleRestroom,
+      wheelchairAccessibleSeating: detailsData.accessibilityOptions?.wheelchairAccessibleSeating,
     };
 
     return {
