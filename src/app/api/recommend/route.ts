@@ -94,28 +94,86 @@ export async function GET(request: Request) {
                 }));
 
         } else {
-            // ✅ 기존의 일반 검색 로직 (카카오 API 호출)
-            const categories = query.split(',');
-            const fetchedIds = new Set<string>();
-            for (const category of categories) {
-                for (let page = 1; page <= 3; page++) {
-                    const response = await fetch(
-                        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(category.trim())}&y=${lat}&x=${lng}&radius=${radius}&sort=${kakaoSort}&size=15&page=${page}`,
-                        {
-                            headers: { Authorization: `KakaoAK ${process.env.KAKAO_REST_API_KEY}` },
-                            cache: 'no-store' 
-                        }
-                    );
-                    const data: { documents?: KakaoPlaceItem[] } = await response.json();
-                    if (data.documents) {
-                        for (const place of data.documents) {
-                            if (!fetchedIds.has(place.id)) {
-                                fetchedIds.add(place.id);
-                                candidates.push(place);
-                            }
-                        }
-                    }
+            const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+            if (!GOOGLE_API_KEY) {
+                throw new Error("Google API Key is not configured");
+            }
+
+            const searchNearbyUrl = 'https://places.googleapis.com/v1/places:searchNearby';
+            
+            let rankPreference = 'POPULARITY';
+            if (sort === 'distance') {
+                rankPreference = 'DISTANCE';
+            }
+
+            const requestBody: any = {
+                includedTypes: ["restaurant"],
+                locationRestriction: {
+                    circle: {
+                        center: {
+                            latitude: Number(lat),
+                            longitude: Number(lng),
+                        },
+                        radius: Number(radius),
+                    },
+                },
+                languageCode: "ko",
+                maxResultCount: 20, // Google's max is 20
+                rankPreference: rankPreference,
+            };
+
+            if (rankPreference === 'DISTANCE') {
+                delete requestBody.locationRestriction.circle.radius;
+            }
+
+            const searchResponse = await fetch(searchNearbyUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': GOOGLE_API_KEY,
+                    'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types,places.primaryTypeDisplayName,places.location',
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            const searchData = await searchResponse.json();
+
+            if (searchData.places) {
+                interface GoogleCandidate {
+                    id: string;
+                    place_name: string;
+                    category_name: string;
+                    road_address_name: string;
+                    address_name: string;
+                    x: string;
+                    y: string;
+                    place_url: string;
+                    distance: string;
+                    googleTypes: string[];
                 }
+
+                let googleCandidates: GoogleCandidate[] = searchData.places.map((place: any) => ({
+                    id: place.id,
+                    place_name: place.displayName?.text || '',
+                    category_name: place.primaryTypeDisplayName?.text || (place.types?.length > 0 ? place.types[0] : ''),
+                    road_address_name: place.formattedAddress || '',
+                    address_name: place.formattedAddress || '',
+                    x: String(place.location?.longitude || 0),
+                    y: String(place.location?.latitude || 0),
+                    place_url: `https://www.google.com/maps/place/?q=place_id:${place.id}`,
+                    distance: '', // This will be calculated later
+                    googleTypes: place.types || [],
+                }));
+
+                // Filter by categories if provided in the query
+                const selectedCategories = query.split(',').map(c => c.trim()).filter(c => c && c !== '음식점');
+                if (selectedCategories.length > 0) {
+                    googleCandidates = googleCandidates.filter((candidate: GoogleCandidate) => 
+                        candidate.googleTypes.some((type: string) => selectedCategories.includes(type))
+                    );
+                }
+                
+                candidates = googleCandidates;
             }
         }
 

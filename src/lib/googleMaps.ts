@@ -51,27 +51,10 @@ export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<Kak
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
     if (!GOOGLE_API_KEY) throw new Error("Google API Key is not configured");
 
-    // Step 1: Find Place ID using Text Search (New)
-    const textSearchUrl = 'https://places.googleapis.com/v1/places:searchText';
-    const textSearchBody = {
-      textQuery: `${place.place_name} ${place.road_address_name}`,
-    };
-    
-    const textSearchResponse = await fetch(textSearchUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': GOOGLE_API_KEY,
-        'X-Goog-FieldMask': 'places.id',
-      },
-      body: JSON.stringify(textSearchBody),
-    });
-
-    const textSearchData = await textSearchResponse.json();
-    const placeId = textSearchData.places?.[0]?.id;
+    const placeId = place.id; // The ID from the candidate is now the Google Place ID.
 
     if (!placeId) {
-      // console.log(`[Google API Info] for ${place.place_name}: Could not find placeId.`);
+      // console.log(`[Google API Info] for ${place.place_name}: No placeId provided.`);
       return place;
     }
 
