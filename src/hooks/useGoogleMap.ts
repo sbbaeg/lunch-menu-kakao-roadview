@@ -1,0 +1,156 @@
+// src/hooks/useGoogleMap.ts
+
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useAppStore } from '@/store/useAppStore';
+import { AppRestaurant } from '@/lib/types';
+
+// Define Google Maps types (simplified for now, will refine as needed)
+// This will be replaced by actual Google Maps types if a library is used,
+// or by global window.google.maps types.
+declare global {
+    interface Window {
+        kakao: any; // 3단계에서 제거 예정
+        google: any; // 타입 충돌 해결을 위해 'any' 사용. 더 나은 타입을 원하면 @types/google.maps 설치 필요
+        initGoogleMap?: () => void; // delete 연산자 사용을 위해 선택적으로 변경
+    }
+}
+
+interface DirectionPoint { lat: number; lng: number; }
+
+export function useGoogleMap() {
+    const mapContainer = useRef<HTMLDivElement | null>(null);
+    const mapInstance = useRef<google.maps.Map | null>(null);
+    const [isMapInitialized, setIsMapInitialized] = useState(false);
+    const markers = useRef<google.maps.Marker[]>([]);
+    const polylineInstance = useRef<google.maps.Polyline | null>(null);
+    const streetviewContainer = useRef<HTMLDivElement | null>(null);
+    const streetviewPanorama = useRef<google.maps.StreetViewPanorama | null>(null);
+    const streetviewService = useRef<google.maps.StreetViewService | null>(null);
+    const isMapReady = useAppStore((state) => state.isMapReady);
+
+    // Map Initialization
+    useEffect(() => {
+        if (isMapReady && mapContainer.current && !mapInstance.current) {
+            const mapOptions: google.maps.MapOptions = {
+                center: { lat: 36.3504, lng: 127.3845 }, // Default center (Daejeon)
+                zoom: 15, // Equivalent to Kakao's level 5
+            };
+            mapInstance.current = new window.google.maps.Map(mapContainer.current, mapOptions);
+            setIsMapInitialized(true);
+        }
+    }, [isMapReady]);
+
+    // Street View Initialization
+    useEffect(() => {
+        if (isMapReady && streetviewContainer.current && !streetviewPanorama.current) {
+            streetviewPanorama.current = new window.google.maps.StreetViewPanorama(streetviewContainer.current, {
+                position: { lat: 36.3504, lng: 127.3845 }, // Default position
+                pov: { heading: 270, pitch: 0 },
+                zoom: 1,
+            });
+            streetviewService.current = new window.google.maps.StreetViewService();
+        }
+    }, [isMapReady]);
+
+    const displayMarkers = useCallback((places: AppRestaurant[]) => {
+        if (!mapInstance.current) return;
+        markers.current.forEach((marker) => marker.setMap(null)); // Clear existing markers
+        markers.current = [];
+
+        const newMarkers = places.map((place) => {
+            const marker = new window.google.maps.Marker({
+                position: { lat: Number(place.y), lng: Number(place.x) },
+                map: mapInstance.current,
+                title: place.placeName, // Fix: place_name -> placeName
+            });
+            return marker;
+        });
+        markers.current = newMarkers;
+    }, []);
+
+    const setCenter = useCallback((lat: number, lng: number) => {
+        if (!mapInstance.current) return;
+        mapInstance.current.setCenter({ lat, lng });
+    }, []);
+
+    const setZoom = useCallback((zoom: number) => {
+        if (!mapInstance.current) return;
+        mapInstance.current.setZoom(zoom);
+    }, []);
+
+    const drawDirections = useCallback(async (origin: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
+        if (!mapInstance.current) return;
+        if (polylineInstance.current) polylineInstance.current.setMap(null); // Clear existing polyline
+
+        try {
+            // This API call needs to be updated to use Google Directions API
+            // For now, we'll assume the /api/directions endpoint is updated to Google's format
+            const response = await fetch(`/api/directions?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}`);
+            const data = await response.json();
+
+            if (data.path && data.path.length > 0) {
+                const linePath = data.path.map((point: DirectionPoint) => ({ lat: point.lat, lng: point.lng }));
+                polylineInstance.current = new window.google.maps.Polyline({
+                    path: linePath,
+                    strokeColor: "#007BFF",
+                    strokeWeight: 6,
+                    strokeOpacity: 0.8,
+                    map: mapInstance.current,
+                });
+            }
+        } catch (error) {
+            console.error("Directions fetch failed:", error);
+        }
+    }, []);
+
+    const displayStreetView = useCallback((position: { lat: number, lng: number }) => {
+        if (!streetviewService.current || !streetviewPanorama.current) {
+            console.warn("Street View objects not ready.");
+            return;
+        }
+
+        const latLng = new window.google.maps.LatLng(position.lat, position.lng);
+        streetviewService.current.getPanorama({ location: latLng, radius: 50 }, (data: google.maps.StreetViewPanoramaData | null, status: google.maps.StreetViewStatus) => {
+            if (status === window.google.maps.StreetViewStatus.OK && data?.location?.pano && data?.location?.latLng) {
+                streetviewPanorama.current?.setPano(data.location.pano);
+                streetviewPanorama.current?.setPosition(data.location.latLng);
+            } else {
+                alert("해당 위치에 스트리트뷰 정보가 없습니다.");
+                console.error("Street View data not found for this location:", status);
+            }
+        });
+    }, []);
+
+    const clearOverlays = useCallback(() => {
+        markers.current.forEach((marker) => marker.setMap(null));
+        markers.current = [];
+        if (polylineInstance.current) {
+            polylineInstance.current.setMap(null);
+            polylineInstance.current = null;
+        }
+    }, []);
+
+    const relayout = useCallback(() => {
+        // Google Maps usually handles relayout automatically.
+        // If map size changes, trigger resize event.
+        window.google.maps.event.trigger(mapInstance.current, 'resize');
+        // For Street View, if it's visible, it might also need a resize.
+        // streetviewPanorama.current?.setVisible(true); // This might trigger a relayout
+    }, []);
+
+    return {
+        isMapReady, // This comes from useAppStore, indicating Google Maps script is loaded
+        isMapInitialized,
+        mapContainerRef: mapContainer,
+        mapInstance: mapInstance.current,
+        streetviewContainerRef: streetviewContainer,
+        streetviewPanorama: streetviewPanorama.current,
+        displayMarkers,
+        setCenter,
+        setZoom, // Renamed from setLevel
+        drawDirections,
+        clearOverlays,
+        displayStreetView, // Renamed from displayRoadview
+        relayout,
+    };
+}

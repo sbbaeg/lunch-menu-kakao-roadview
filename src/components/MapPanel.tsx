@@ -1,7 +1,7 @@
 // src/components/MapPanel.tsx
 
-import { useState, useEffect, useRef } from 'react';
-import { useKakaoMap } from '@/hooks/useKakaoMap';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useGoogleMap } from '@/hooks/useGoogleMap';
 import { AppRestaurant } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,12 +29,12 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, roadviewContainerRef, roadviewInstance, clearOverlays, displayMarkers, setCenter, drawDirections, displayRoadview, relayout } = useKakaoMap();
+  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, displayStreetView, relayout } = useGoogleMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
   const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
-  const [isRoadviewVisible, setRoadviewVisible] = useState(false);
+  const [isStreetviewVisible, setStreetviewVisible] = useState(false); // Renamed from isRoadviewVisible
 
   useEffect(() => {
     if (onMapReady) {
@@ -63,13 +63,13 @@ export function MapPanel({
       clearOverlays();
       displayMarkers(restaurants);
     }
-  }, [restaurants, isMapReady]);
+  }, [restaurants, isMapReady, clearOverlays, displayMarkers]);
 
   useEffect(() => {
     if (isMapReady && selectedRestaurant) {
         setCenter(Number(selectedRestaurant.y), Number(selectedRestaurant.x));
-        displayRoadview({ lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
-        setRoadviewVisible(false);
+        displayStreetView({ lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
+        setStreetviewVisible(false); // Renamed from setRoadviewVisible
         if (userLocation) {
             drawDirections(
                 { lat: userLocation.lat, lng: userLocation.lng },
@@ -77,53 +77,66 @@ export function MapPanel({
             );
         }
     }
-}, [selectedRestaurant, userLocation, isMapReady]);
+}, [selectedRestaurant, userLocation, isMapReady, setCenter, displayStreetView, drawDirections]);
 
   useEffect(() => {
     if (!mapInstance) return;
     const handleDragEnd = () => { setShowSearchAreaButton(true); };
-    window.kakao.maps.event.addListener(mapInstance, 'dragend', handleDragEnd);
+    const listener = window.google.maps.event.addListener(mapInstance, 'dragend', handleDragEnd);
     return () => {
-      window.kakao.maps.event.removeListener(mapInstance, 'dragend', handleDragEnd);
+      window.google.maps.event.removeListener(listener);
     };
   }, [mapInstance]);
 
   useEffect(() => {
     const timerId = setTimeout(() => {
-        if (isRoadviewVisible) roadviewInstance?.relayout();
-        mapInstance?.relayout();
+        if (isStreetviewVisible) streetviewPanorama?.setVisible(true);
+        const currentCenter = mapInstance?.getCenter(); // Get center once
+        if (mapInstance && currentCenter) { // Check if mapInstance and currentCenter are defined
+            mapInstance.setCenter(currentCenter); // Trigger map relayout
+        }
     }, 10);
     return () => clearTimeout(timerId);
-  }, [isRoadviewVisible, mapInstance, roadviewInstance]);
+  }, [isStreetviewVisible, mapInstance, streetviewPanorama]);
 
   useEffect(() => {
     if (userLocation && !selectedRestaurant) {
       setCenter(userLocation.lat, userLocation.lng);
     }
-  }, [userLocation]);
+  }, [userLocation, selectedRestaurant, setCenter]);
 
   useEffect(() => {
     if (isMapReady && restaurants.length > 0 && !userLocation && !selectedRestaurant) {
       const firstRestaurant = restaurants[0];
       setCenter(Number(firstRestaurant.y), Number(firstRestaurant.x));
     }
-  }, [isMapReady, restaurants, userLocation, selectedRestaurant]);
+  }, [isMapReady, restaurants, userLocation, selectedRestaurant, setCenter]);
 
   const handleSearch = () => {
-    if (!mapInstance || !searchAddress.trim()) return;
+    if (!mapInstance || !searchAddress.trim() || !window.google || !window.google.maps.places) return;
+
     if (searchMode === 'place') {
-      const ps = new window.kakao.maps.services.Places();
-      ps.keywordSearch(searchAddress, (data, status) => {
-        if (status === window.kakao.maps.services.Status.OK) {
-          const firstPlace = data[0];
-          setCenter(Number(firstPlace.y), Number(firstPlace.x));
+      const service = new window.google.maps.places.PlacesService(mapInstance);
+      const request = {
+        query: searchAddress,
+        fields: ['geometry'], // Request geometry to get location
+      };
+
+      service.findPlaceFromQuery(request, (results: google.maps.places.PlaceResult[] | null, status: google.maps.places.PlacesServiceStatus) => { // Fix: Add types
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results[0].geometry) {
+          const firstPlace = results[0];
+          if (firstPlace.geometry?.location) {
+            setCenter(firstPlace.geometry.location.lat(), firstPlace.geometry.location.lng());
+          }
         } else {
           alert('검색 결과가 없습니다.');
         }
       });
     } else {
       const center = mapInstance.getCenter();
-      onAddressSearch(searchAddress, searchMode, { lat: center.getLat(), lng: center.getLng() });
+      if (center) { // Fix: Check if center is defined
+        onAddressSearch(searchAddress, searchMode, { lat: center.lat(), lng: center.lng() });
+      }
     }
   };
   
@@ -131,7 +144,9 @@ export function MapPanel({
     if (!mapInstance) return;
     setShowSearchAreaButton(false);
     const center = mapInstance.getCenter();
-    onSearchInArea({ lat: center.getLat(), lng: center.getLng() });
+    if (center) { // Fix: Check if center is defined
+      onSearchInArea({ lat: center.lat(), lng: center.lng() });
+    }
   }
 
   return (
@@ -166,12 +181,12 @@ export function MapPanel({
           </div>
         )}
         
-        <div ref={mapContainerRef} className={`w-full h-full transition-opacity duration-300 ${isRoadviewVisible ? "opacity-0 invisible" : "opacity-100 visible"}`} />
-        <div ref={roadviewContainerRef} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isRoadviewVisible ? "opacity-100 visible" : "opacity-0 invisible"}`} />
+        <div ref={mapContainerRef} className={`w-full h-full transition-opacity duration-300 ${isStreetviewVisible ? "opacity-0 invisible" : "opacity-100 visible"}`} />
+        <div ref={streetviewContainerRef} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isStreetviewVisible ? "opacity-100 visible" : "opacity-0 invisible"}`} />
 
         {!hideControls && selectedRestaurant && (
-            <Button onClick={() => setRoadviewVisible((prev) => !prev)} variant="secondary" className="absolute top-3 right-3 z-10 shadow-lg">
-                {isRoadviewVisible ? "지도 보기" : "로드뷰 보기"}
+            <Button onClick={() => setStreetviewVisible((prev) => !prev)} variant="secondary" className="absolute top-3 right-3 z-10 shadow-lg">
+                {isStreetviewVisible ? "지도 보기" : "스트리트뷰 보기"}
             </Button>
         )}
       </div>
