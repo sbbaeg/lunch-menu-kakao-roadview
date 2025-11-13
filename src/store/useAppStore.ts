@@ -77,6 +77,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     tags: [],
     allowsDogsOnly: false,
     hasParkingOnly: false,
+    wheelchairAccessibleEntrance: false,
+    wheelchairAccessibleRestroom: false,
+    wheelchairAccessibleSeating: false,
+    wheelchairAccessibleParking: false,
   },
 
   displayedSortOrder: 'accuracy',
@@ -158,6 +162,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     if (filters.hasParkingOnly) {
       apiUrl += `&hasParkingOnly=true`;
+    }
+    if (filters.wheelchairAccessibleEntrance) {
+      apiUrl += `&wheelchairAccessibleEntrance=true`;
+    }
+    if (filters.wheelchairAccessibleRestroom) {
+      apiUrl += `&wheelchairAccessibleRestroom=true`;
+    }
+    if (filters.wheelchairAccessibleSeating) {
+      apiUrl += `&wheelchairAccessibleSeating=true`;
+    }
+    if (filters.wheelchairAccessibleParking) {
+      apiUrl += `&wheelchairAccessibleParking=true`;
     }
     apiUrl += `&_=${new Date().getTime()}`;
 
