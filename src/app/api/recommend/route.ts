@@ -167,13 +167,34 @@ export async function GET(request: Request) {
                     }
                 }
             } else {
-                const searchTerms = (query || 'restaurant').split(',').map(term => term.trim()).filter(term => term);
-                for (const term of searchTerms) {
-                    const searchData = await performCategorySearch(term, sort, lat, lng, radius, GOOGLE_API_KEY);
+                // Category Search Logic (from filter)
+                let searchTerms = (query || 'restaurant').split(',').map(term => term.trim()).filter(term => term);
+
+                // If "음식점" is present and it's the only term, expand it to meal-focused categories
+                if (searchTerms.length === 1 && searchTerms[0] === '음식점') {
+                    searchTerms = [
+                        'korean_restaurant', 'korean_bbq_restaurant', 'korean_noodles_restaurant', 'korean_soup_restaurant',
+                        'japanese_restaurant', 'sushi_restaurant', 'ramen_restaurant', 'japanese_curry_restaurant', 'tonkatsu_restaurant', 'udon_and_soba_restaurant',
+                        'chinese_restaurant', 'dim_sum_restaurant', 'sichuan_restaurant',
+                        'western_restaurant', 'italian_restaurant', 'french_restaurant', 'spanish_restaurant', 'steak_house', 'pizza_restaurant',
+                        'asian_restaurant', 'thai_restaurant', 'vietnamese_restaurant', 'indian_restaurant',
+                        'fast_food_restaurant', 'hamburger_restaurant', 'chicken_restaurant', 'korean_street_food_restaurant',
+                        'vegetarian_restaurant', 'buffet', 'restaurant'
+                    ];
+                } else {
+                    // Otherwise, translate "음식점" if it's part of a list, or just use the term
+                    searchTerms = searchTerms.map(term => (term === '음식점' ? 'restaurant' : term));
+                }
+
+                // Execute all category searches in parallel
+                const searchPromises = searchTerms.map(term => performCategorySearch(term, sort, lat, lng, radius, GOOGLE_API_KEY));
+                const results = await Promise.all(searchPromises);
+
+                results.forEach(searchData => {
                     if (searchData.places) {
                         allPlaces.push(...searchData.places);
                     }
-                }
+                });
             }
             const uniquePlaces = allPlaces.filter((place, index, self) => index === self.findIndex(p => p.id === place.id));
             candidates = mapGoogleToAppPlace(uniquePlaces);
