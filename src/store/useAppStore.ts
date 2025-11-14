@@ -151,6 +151,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       query
     )}&radius=${filters.distance}&sort=${filters.sortOrder}&size=${filters.resultCount}&minRating=${filters.minRating}&openNow=${filters.openNowOnly}&includeUnknown=${filters.includeUnknownHours}`;
 
+    if (queryOverride) {
+      apiUrl += `&source=search_bar`;
+    }
+
     if (filters.tags.length > 0) {
       apiUrl += `&tags=${filters.tags.join(',')}`;
     }
