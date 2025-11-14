@@ -79,24 +79,24 @@ export function useGoogleMap() {
     }, []);
 
     const drawDirections = useCallback(async (origin: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
-        if (!mapInstance.current) return;
+        if (!mapInstance.current || !window.google?.maps?.geometry?.encoding) return;
         if (polylineInstance.current) polylineInstance.current.setMap(null); // Clear existing polyline
 
         try {
-            // This API call needs to be updated to use Google Directions API
-            // For now, we'll assume the /api/directions endpoint is updated to Google's format
             const response = await fetch(`/api/directions?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}`);
             const data = await response.json();
 
-            if (data.path && data.path.length > 0) {
-                const linePath = data.path.map((point: DirectionPoint) => ({ lat: point.lat, lng: point.lng }));
+            if (data.path_encoded) {
+                const decodedPath = window.google.maps.geometry.encoding.decodePath(data.path_encoded);
                 polylineInstance.current = new window.google.maps.Polyline({
-                    path: linePath,
+                    path: decodedPath,
                     strokeColor: "#007BFF",
                     strokeWeight: 6,
                     strokeOpacity: 0.8,
                     map: mapInstance.current,
                 });
+            } else if (data.error) {
+                console.error("Directions API error:", data.error);
             }
         } catch (error) {
             console.error("Directions fetch failed:", error);
