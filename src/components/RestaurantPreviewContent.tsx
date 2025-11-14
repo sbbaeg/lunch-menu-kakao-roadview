@@ -116,29 +116,18 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
                             </Button>
                         </a>
                     )}
+                    {details?.placeId && (
+                        <a href={`https://www.google.com/maps/place/?q=place_id:${details.placeId}`} target="_blank" rel="noopener noreferrer">
+                            <Button size="sm" variant="outline" className="font-bold px-8">
+                                <span className="flex items-center justify-center">
+                                    <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
+                                    구글맵
+                                </span>
+                            </Button>
+                        </a>
+                    )}
                 </div>
             )}
-
-            <div className="flex justify-center gap-2 pt-2">
-                <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                    <Button className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold">
-                        <span className="flex items-center justify-center">
-                            <Image src="/kakaomap_icon.png" alt="카카오맵 로고" width={16} height={16} className="mr-2" />
-                            카카오맵
-                        </span>
-                    </Button>
-                </a>
-                {details?.placeId && (
-                    <a href={`https://www.google.com/maps/place/?q=place_id:${details.placeId}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                        <Button variant="outline" className="w-full font-bold">
-                            <span className="flex items-center justify-center">
-                                <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
-                                구글맵
-                            </span>
-                        </Button>
-                    </a>
-                )}
-            </div>
         </div>
     );
 }
