@@ -328,14 +328,14 @@ export default function Home() {
                 </div>
 
                 {/* 오른쪽 제어 패널 */}
-                <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start space-y-4 md:h-[800px]">
+                <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start md:h-[800px]">
                     <MainControlPanel
                         isSearchDisabled={loading || !isMapReady} 
                         onSearchClick={handleSearchClick} 
                         onRouletteClick={handleRouletteClick} 
                         onFilterClick={() => setIsFilterOpen(true)}
                     />
-                    <p className="text-xs text-muted-foreground text-center px-4 !mt-2">
+                    <p className="text-xs text-muted-foreground text-center px-4 py-2">
                         기본 검색은 식사 위주의 장소를 추천합니다.<br />
                         카페, 주점, 베이커리 등은 필터에서 직접 선택해주세요.
                     </p>
