@@ -256,21 +256,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   handleSearchInArea: async (center) => {
     get().resetResultPanelState();
-    set({ loading: true });
+    set({ loading: true, userLocation: center }); // 1. Update userLocation to the new center
     get().clearMapAndResults();
     try {
         const restaurants = await get().getNearbyRestaurants(center);
+        // 2. Set the results directly, removing the incorrect random sort.
+        // The API already handles sorting and limits.
+        set({ restaurantList: restaurants, displayedSortOrder: get().filters.sortOrder });
         if (restaurants.length === 0) {
-        } else {
-            const { sortOrder, resultCount } = get().filters;
-            const finalRestaurants = (sortOrder === 'distance' || sortOrder === 'rating')
-                ? restaurants
-                : [...restaurants].sort(() => 0.5 - Math.random()).slice(0, resultCount);
-            set({ restaurantList: finalRestaurants });
+            // Optionally, add a user-facing message here in the future.
         }
     } catch (error) {
-        console.error("Error:", error);
-
+        console.error("Error in handleSearchInArea:", error);
     } finally {
         set({ loading: false });
     }

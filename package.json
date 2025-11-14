@@ -12,6 +12,7 @@
     "seed": "node dist/prisma/seed.js"
   },
   "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.3.42",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/client": "^6.16.2",
     "@radix-ui/react-accordion": "^1.2.12",

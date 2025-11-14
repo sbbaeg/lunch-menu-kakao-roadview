@@ -100,15 +100,17 @@ export async function GET(request: Request) {
                 throw new Error("Google API Key is not configured");
             }
 
-            const searchNearbyUrl = 'https://places.googleapis.com/v1/places:searchNearby';
-            
+            const useTextSearch = query && query !== '음식점';
+            const searchUrl = useTextSearch 
+                ? 'https://places.googleapis.com/v1/places:searchText'
+                : 'https://places.googleapis.com/v1/places:searchNearby';
+
             let rankPreference = 'POPULARITY';
             if (sort === 'distance') {
                 rankPreference = 'DISTANCE';
             }
 
             const requestBody: any = {
-                includedTypes: ["restaurant"],
                 locationRestriction: {
                     circle: {
                         center: {
@@ -119,15 +121,27 @@ export async function GET(request: Request) {
                     },
                 },
                 languageCode: "ko",
-                maxResultCount: 20, // Google's max is 20
+                maxResultCount: 20,
                 rankPreference: rankPreference,
             };
 
-            if (rankPreference === 'DISTANCE') {
-                delete requestBody.locationRestriction.circle.radius;
+            if (useTextSearch) {
+                requestBody.textQuery = query;
+                // For text search, includedType is not a top-level param, but can be part of the query.
+                // We will rely on the query itself for now.
+            } else {
+                requestBody.includedTypes = ["restaurant"];
             }
 
-            const searchResponse = await fetch(searchNearbyUrl, {
+            if (rankPreference === 'DISTANCE') {
+                delete requestBody.locationRestriction.circle.radius;
+                if (useTextSearch) {
+                    // textQuery is mandatory for searchText, so we can't remove it.
+                    // Distance ranking might not be ideal with a text query but we'll allow it.
+                }
+            }
+
+            const searchResponse = await fetch(searchUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

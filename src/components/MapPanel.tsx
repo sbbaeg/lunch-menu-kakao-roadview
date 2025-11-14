@@ -127,6 +127,7 @@ export function MapPanel({
           const firstPlace = results[0];
           if (firstPlace.geometry?.location) {
             setCenter(firstPlace.geometry.location.lat(), firstPlace.geometry.location.lng());
+            setShowSearchAreaButton(true); // Show the button after moving the map
           }
         } else {
           alert('검색 결과가 없습니다.');
@@ -185,7 +186,7 @@ export function MapPanel({
         <div ref={streetviewContainerRef} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isStreetviewVisible ? "opacity-100 visible" : "opacity-0 invisible"}`} />
 
         {!hideControls && selectedRestaurant && (
-            <Button onClick={() => setStreetviewVisible((prev) => !prev)} variant="secondary" className="absolute top-3 right-3 z-10 shadow-lg">
+            <Button onClick={() => setStreetviewVisible((prev) => !prev)} variant="secondary" className="absolute top-3 right-14 z-10 shadow-lg">
                 {isStreetviewVisible ? "지도 보기" : "스트리트뷰 보기"}
             </Button>
         )}

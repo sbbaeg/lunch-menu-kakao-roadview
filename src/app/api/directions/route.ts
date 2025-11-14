@@ -1,68 +1,47 @@
 import { NextResponse } from 'next/server';
+import { Client, DirectionsRequest, TravelMode } from "@googlemaps/google-maps-services-js";
 
 export const dynamic = 'force-dynamic';
 
-// 카카오내비 API 응답 타입 정의
-interface Road {
-  vertexes: number[];
-}
-
-interface Section {
-  roads: Road[];
-}
-
-interface Route {
-  sections: Section[];
-}
-
-interface KakaoNaviResponse {
-  routes: Route[];
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const origin = searchParams.get('origin'); // "lng,lat"
-  const destination = searchParams.get('destination'); // "lng,lat"
+  const origin = searchParams.get('origin'); // "lat,lng"
+  const destination = searchParams.get('destination'); // "lat,lng"
 
   if (!origin || !destination) {
     return NextResponse.json({ error: 'Origin and destination are required' }, { status: 400 });
   }
 
-  const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
+  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+  if (!GOOGLE_API_KEY) {
+    console.error('Google API key is not configured');
+    return NextResponse.json({ error: 'API key is not configured' }, { status: 500 });
+  }
+
+  const client = new Client({});
+
+  const params: DirectionsRequest['params'] = {
+    origin: origin,
+    destination: destination,
+    mode: TravelMode.driving,
+    key: GOOGLE_API_KEY,
+  };
 
   try {
-    const response = await fetch(
-      `https://apis-navi.kakaomobility.com/v1/directions?origin=${origin}&destination=${destination}&waypoints=&priority=RECOMMEND&car_type=1&car_fuel=GASOLINE&alternatives=false&road_details=false`,
-      {
-        headers: {
-          Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await client.directions({ params });
+    const data = response.data;
 
-    const data: KakaoNaviResponse = await response.json();
-
-    if (data.routes && data.routes.length > 0) {
-      // 경로를 구성하는 모든 좌표를 하나의 배열로 합칩니다.
-      const linePath = data.routes[0].sections
-        .flatMap(section => section.roads)
-        .flatMap(road => {
-          const path = [];
-          for (let i = 0; i < road.vertexes.length; i += 2) {
-            path.push({ lng: road.vertexes[i], lat: road.vertexes[i + 1] });
-          }
-          return path;
-        });
-      
-      return NextResponse.json({ path: linePath });
+    if (data.status === 'OK' && data.routes.length > 0) {
+      // Return the encoded polyline string
+      const encodedPolyline = data.routes[0].overview_polyline.points;
+      return NextResponse.json({ path_encoded: encodedPolyline });
     } else {
-      return NextResponse.json({ path: [] });
+      console.error('Google Directions API Error:', data.status, data.error_message);
+      return NextResponse.json({ path: [], error: data.error_message || 'No routes found' }, { status: 404 });
     }
 
   } catch (error) {
-    console.error('Kakao Navi API Error:', error);
+    console.error('Google Directions Request Failed:', error);
     return NextResponse.json({ error: 'Failed to fetch directions' }, { status: 500 });
   }
 }
-
