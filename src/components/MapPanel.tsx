@@ -153,29 +153,8 @@ export function MapPanel({
 
   return (
     <div className="w-full h-full rounded-lg border shadow-sm flex flex-col overflow-hidden">
-      {showSearchBar && (
-        <div className="p-4 border-b bg-muted/40">
-          <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              placeholder={searchMode === 'place' ? "예: 강남역 (장소로 이동)" : "예: 마라탕 (주변 음식점 검색)"}
-              value={searchAddress}
-              onChange={(e) => setSearchAddress(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="bg-background text-base h-11 flex-grow"
-            />
-            <div className="flex items-center justify-center space-x-2 shrink-0">
-              <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'place' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>장소</Label>
-              <Switch id="search-mode" checked={searchMode === 'food'} onCheckedChange={(checked) => setSearchMode(checked ? 'food' : 'place')} />
-              <Label htmlFor="search-mode" className={`text-sm ${searchMode === 'food' ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>음식점</Label>
-            </div>
-            <Button size="lg" className="h-11 shrink-0" onClick={handleSearch}>{searchMode === 'place' ? '이동' : '검색'}</Button>
-          </div>
-        </div>
-      )}
-
       <div className="relative flex-1">
-        {showSearchAreaButton && !hideControls && showSearchBar && (
+        {showSearchAreaButton && !hideControls && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 shadow-md">
             <Button size="lg" onClick={handleSearchAreaClick} className="bg-white text-black rounded-full hover:bg-gray-200 shadow-lg">
               이 지역에서 재검색
