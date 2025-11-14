@@ -232,18 +232,12 @@ export async function GET(request: Request) {
 
         const finalResults: GooglePlaceItem[] = [];
         for (const candidate of filteredCandidates) {
-            console.log(`[DIAG] Processing candidate: ${candidate.place_name} (ID: ${candidate.id})`);
-            if (finalResults.length >= size) {
-                console.log(`[DIAG] Breaking loop: finalResults.length (${finalResults.length}) >= size (${size})`);
-                break;
-            }
+            if (finalResults.length >= size) break;
 
             const enriched = await fetchFullGoogleDetails(candidate);
-            console.log(`[DIAG] Enriched candidate: ${enriched.place_name}, GoogleDetails: ${JSON.stringify(enriched.googleDetails)}`);
             
             const ratingMatch = (enriched.googleDetails?.rating || 0) >= minRating;
             if (!ratingMatch) {
-                console.log(`[DIAG] Skipping ${candidate.place_name}: Rating (${enriched.googleDetails?.rating || 0}) < minRating (${minRating})`);
                 continue;
             }
 
@@ -251,40 +245,35 @@ export async function GET(request: Request) {
                 const hours = enriched.googleDetails?.opening_hours;
                 const isOpen = hours?.openNow === true || (includeUnknown && hours === undefined);
                 if (!isOpen) {
-                    console.log(`[DIAG] Skipping ${candidate.place_name}: Not open now or unknown hours (openNow: ${hours?.openNow}, includeUnknown: ${includeUnknown})`);
                     continue;
                 }
             }
 
-            if (allowsDogsOnly && !enriched.googleDetails?.allowsDogs) {
-                console.log(`[DIAG] Skipping ${candidate.place_name}: allowsDogsOnly is true, but allowsDogs is false/undefined`);
-                continue;
+            if (allowsDogsOnly) {
+                if (!enriched.googleDetails?.allowsDogs) {
+                    continue;
+                }
             }
+
             if (hasParkingOnly) {
                 const parking = enriched.googleDetails?.parkingOptions;
                 if (!parking || !Object.values(parking).some(val => val === true)) {
-                    console.log(`[DIAG] Skipping ${candidate.place_name}: hasParkingOnly is true, but no parking options`);
                     continue;
                 }
             }
             if (wheelchairAccessibleEntrance && !enriched.googleDetails?.wheelchairAccessibleEntrance) {
-                console.log(`[DIAG] Skipping ${candidate.place_name}: wheelchairAccessibleEntrance is true, but not accessible`);
                 continue;
             }
             if (wheelchairAccessibleRestroom && !enriched.googleDetails?.wheelchairAccessibleRestroom) {
-                console.log(`[DIAG] Skipping ${candidate.place_name}: wheelchairAccessibleRestroom is true, but not accessible`);
                 continue;
             }
             if (wheelchairAccessibleSeating && !enriched.googleDetails?.wheelchairAccessibleSeating) {
-                console.log(`[DIAG] Skipping ${candidate.place_name}: wheelchairAccessibleSeating is true, but not accessible`);
                 continue;
             }
             if (wheelchairAccessibleParking && !enriched.googleDetails?.wheelchairAccessibleParking) {
-                console.log(`[DIAG] Skipping ${candidate.place_name}: wheelchairAccessibleParking is true, but not accessible`);
                 continue;
             }
 
-            console.log(`[DIAG] Adding ${candidate.place_name} to final results.`);
             finalResults.push(enriched);
         }
 

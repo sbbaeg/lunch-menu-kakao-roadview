@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
-import { Client, DirectionsRequest, TravelMode } from "@googlemaps/google-maps-services-js";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const origin = searchParams.get('origin'); // "lat,lng"
-  const destination = searchParams.get('destination'); // "lat,lng"
+export async function POST(request: Request) {
+  const { origin, destination } = await request.json(); // Expecting JSON body for POST
 
   if (!origin || !destination) {
     return NextResponse.json({ error: 'Origin and destination are required' }, { status: 400 });
@@ -18,30 +15,61 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'API key is not configured' }, { status: 500 });
   }
 
-  const client = new Client({});
+  // Convert "lat,lng" strings to { latitude, longitude } objects
+  const [originLat, originLng] = origin.split(',').map(Number);
+  const [destinationLat, destinationLng] = destination.split(',').map(Number);
 
-  const params: DirectionsRequest['params'] = {
-    origin: origin,
-    destination: destination,
-    mode: TravelMode.driving,
-    key: GOOGLE_API_KEY,
+  const requestBody = {
+    origin: {
+      location: {
+        latLng: {
+          latitude: originLat,
+          longitude: originLng,
+        },
+      },
+    },
+    destination: {
+      location: {
+        latLng: {
+          latitude: destinationLat,
+          longitude: destinationLng,
+        },
+      },
+    },
+    travelMode: 'DRIVE', // Or 'WALK', 'BICYCLE', 'TRANSIT'
+    routingPreference: 'TRAFFIC_AWARE_OPTIMAL', // Optional: 'TRAFFIC_AWARE', 'TRAFFIC_UNAWARE'
+    polylineEncoding: 'ENCODED_POLYLINE', // Request encoded polyline
+    computeAlternativeRoutes: false, // Optional
+    languageCode: 'ko',
+    units: 'METRIC',
   };
 
   try {
-    const response = await client.directions({ params });
-    const data = response.data;
+    const routesResponse = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_API_KEY,
+        // Specify which fields to return to optimize cost
+        'X-Goog-FieldMask': 'routes.polyline.encodedPolyline,routes.duration,routes.distanceMeters',
+      },
+      body: JSON.stringify(requestBody),
+    });
 
-    if (data.status === 'OK' && data.routes.length > 0) {
-      // Return the encoded polyline string
-      const encodedPolyline = data.routes[0].overview_polyline.points;
-      return NextResponse.json({ path_encoded: encodedPolyline });
+    const data = await routesResponse.json();
+
+    if (routesResponse.ok && data.routes && data.routes.length > 0) {
+      const encodedPolyline = data.routes[0].polyline.encodedPolyline;
+      const duration = data.routes[0].duration; // e.g., "1234s"
+      const distanceMeters = data.routes[0].distanceMeters; // e.g., 1234
+      return NextResponse.json({ path_encoded: encodedPolyline, duration, distanceMeters });
     } else {
-      console.error('Google Directions API Error:', data.status, data.error_message);
-      return NextResponse.json({ path: [], error: data.error_message || 'No routes found' }, { status: 404 });
+      console.error('Google Routes API Error:', data);
+      return NextResponse.json({ path_encoded: '', error: data.error?.message || 'No routes found' }, { status: routesResponse.status });
     }
 
   } catch (error) {
-    console.error('Google Directions Request Failed:', error);
+    console.error('Google Routes Request Failed:', error);
     return NextResponse.json({ error: 'Failed to fetch directions' }, { status: 500 });
   }
 }
