@@ -40,14 +40,10 @@ export async function GET(request: Request) {
     const fromFavorites = searchParams.get('fromFavorites') === 'true';
     const allowsDogsOnly = searchParams.get('allowsDogsOnly') === 'true';
     const hasParkingOnly = searchParams.get('hasParkingOnly') === 'true';
-    const kakaoSort = sort === 'rating' ? 'accuracy' : sort;
-
     const wheelchairAccessibleEntrance = searchParams.get('wheelchairAccessibleEntrance') === 'true';
     const wheelchairAccessibleRestroom = searchParams.get('wheelchairAccessibleRestroom') === 'true';
     const wheelchairAccessibleSeating = searchParams.get('wheelchairAccessibleSeating') === 'true';
     const wheelchairAccessibleParking = searchParams.get('wheelchairAccessibleParking') === 'true';
-
-
     const tagsParam = searchParams.get('tags');
     const tagIds = tagsParam ? tagsParam.split(',').map(Number).filter(id => !isNaN(id)) : [];
 
@@ -55,27 +51,88 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
     }
 
-    const session = await getServerSession(authOptions);
-    let blacklistIds: string[] = [];
-    if (session?.user?.id) {
-        const blacklistEntries = await prisma.blacklist.findMany({
-            where: { userId: session.user.id },
-            select: { restaurant: { select: { googlePlaceId: true } } },
+    // Helper function for Text Search
+    async function performTextSearch(term: string, sort: string, lat: string, lng: string, radius: string, apiKey: string) {
+        const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
+        const requestBody: any = {
+            textQuery: term,
+            locationRestriction: {
+                circle: { center: { latitude: Number(lat), longitude: Number(lng) }, radius: Number(radius) },
+            },
+            languageCode: "ko",
+            maxResultCount: 20,
+        };
+        if (sort === 'distance') {
+            requestBody.rankPreference = 'DISTANCE';
+            delete requestBody.locationRestriction.circle.radius;
+        }
+        const searchResponse = await fetch(searchUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types,places.primaryTypeDisplayName,places.location' },
+            body: JSON.stringify(requestBody),
         });
-        blacklistIds = blacklistEntries.map(entry => entry.restaurant.googlePlaceId);
+        return searchResponse.json();
     }
-    
+
+    // Helper function for Category Search
+    async function performCategorySearch(type: string, sort: string, lat: string, lng: string, radius: string, apiKey: string) {
+        const searchUrl = 'https://places.googleapis.com/v1/places:searchNearby';
+        const requestBody: any = {
+            includedTypes: [type],
+            locationRestriction: {
+                circle: { center: { latitude: Number(lat), longitude: Number(lng) }, radius: Number(radius) },
+            },
+            languageCode: "ko",
+            maxResultCount: 20,
+        };
+        if (sort === 'distance') {
+            requestBody.rankPreference = 'DISTANCE';
+            delete requestBody.locationRestriction.circle.radius;
+        } else {
+            requestBody.rankPreference = 'POPULARITY';
+        }
+        const searchResponse = await fetch(searchUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types,places.primaryTypeDisplayName,places.location' },
+            body: JSON.stringify(requestBody),
+        });
+        return searchResponse.json();
+    }
+
+    // Common mapping function
+    function mapGoogleToAppPlace(places: any[]): GooglePlaceItem[] {
+        return places.map((place: any) => ({
+            id: place.id,
+            place_name: place.displayName?.text || '',
+            category_name: getDisplayCategoryLabel(place.types),
+            road_address_name: place.formattedAddress || '',
+            address_name: place.formattedAddress || '',
+            x: String(place.location?.longitude || 0),
+            y: String(place.location?.latitude || 0),
+            place_url: `https://www.google.com/maps/place/?q=place_id:${place.id}`,
+            distance: '', // This will be calculated later
+            googleTypes: place.types || [],
+        }));
+    }
+
     try {
+        const session = await getServerSession(authOptions);
+        let blacklistIds: string[] = [];
+        if (session?.user?.id) {
+            const blacklistEntries = await prisma.blacklist.findMany({
+                where: { userId: session.user.id },
+                select: { restaurant: { select: { googlePlaceId: true } } },
+            });
+            blacklistIds = blacklistEntries.map(entry => entry.restaurant.googlePlaceId);
+        }
+
         let candidates: GooglePlaceItem[] = [];
 
         if (fromFavorites && session?.user?.id) {
-            // ✅ 1. DB에서 사용자의 모든 즐겨찾기 목록을 좌표 정보와 함께 가져옵니다.
             const favoriteRestaurants = await prisma.favorite.findMany({
                 where: { userId: session.user.id },
                 include: { restaurant: true },
             });
-            
-            // ✅ 2. 현재 위치와의 거리를 계산하여 반경 내에 있는 즐겨찾기만 필터링합니다.
             candidates = favoriteRestaurants
                 .map(({ restaurant }) => ({
                     ...restaurant,
@@ -93,107 +150,41 @@ export async function GET(request: Request) {
                     place_url: `https://www.google.com/maps/place/?q=place_id:${restaurant.googlePlaceId}`,
                     distance: String(Math.round(restaurant.calculatedDistance)),
                 }));
-
         } else {
             const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
             if (!GOOGLE_API_KEY) {
                 throw new Error("Google API Key is not configured");
             }
-
             const source = searchParams.get('source');
+            const allPlaces: any[] = [];
 
             if (source === 'search_bar') {
-                // Logic for search bar: Use only the first term to limit API calls.
                 const searchTerm = (query.split(',')[0].trim()) || '음식점';
-                const searchData = await performGoogleSearch(searchTerm, sort, lat, lng, radius, GOOGLE_API_KEY);
-                if (searchData.places) {
-                    candidates = mapGoogleToAppPlace(searchData.places);
-                }
-            } else {
-                // Logic for filters: Search for each category term.
-                const searchTerms = (query || '음식점').split(',').map(term => term.trim()).filter(term => term);
-                const allPlaces: any[] = [];
-                for (const term of searchTerms) {
-                    const searchData = await performGoogleSearch(term, sort, lat, lng, radius, GOOGLE_API_KEY);
+                if (searchTerm) {
+                    const searchData = await performTextSearch(searchTerm, sort, lat, lng, radius, GOOGLE_API_KEY);
                     if (searchData.places) {
                         allPlaces.push(...searchData.places);
                     }
                 }
-                // De-duplicate results
-                const uniquePlaces = allPlaces.filter((place, index, self) => index === self.findIndex(p => p.id === place.id));
-                candidates = mapGoogleToAppPlace(uniquePlaces);
+            } else {
+                const searchTerms = (query || 'restaurant').split(',').map(term => term.trim()).filter(term => term);
+                for (const term of searchTerms) {
+                    const searchData = await performCategorySearch(term, sort, lat, lng, radius, GOOGLE_API_KEY);
+                    if (searchData.places) {
+                        allPlaces.push(...searchData.places);
+                    }
+                }
             }
+            const uniquePlaces = allPlaces.filter((place, index, self) => index === self.findIndex(p => p.id === place.id));
+            candidates = mapGoogleToAppPlace(uniquePlaces);
         }
 
-async function performGoogleSearch(term: string, sort: string, lat: string, lng: string, radius: string, apiKey: string) {
-    const isTextSearch = term && term !== '음식점';
-    const searchUrl = isTextSearch
-        ? 'https://places.googleapis.com/v1/places:searchText'
-        : 'https://places.googleapis.com/v1/places:searchNearby';
-
-    const requestBody: any = {
-        locationRestriction: {
-            circle: {
-                center: { latitude: Number(lat), longitude: Number(lng) },
-                radius: Number(radius),
-            },
-        },
-        languageCode: "ko",
-        maxResultCount: 20,
-    };
-
-    if (isTextSearch) {
-        requestBody.textQuery = term;
-        if (sort === 'distance') {
-            requestBody.rankPreference = 'DISTANCE';
-            delete requestBody.locationRestriction.circle.radius;
-        }
-    } else { // searchNearby
-        requestBody.includedTypes = ["restaurant"];
-        if (sort === 'distance') {
-            requestBody.rankPreference = 'DISTANCE';
-            delete requestBody.locationRestriction.circle.radius;
-        } else {
-            requestBody.rankPreference = 'POPULARITY';
-        }
-    }
-
-    const searchResponse = await fetch(searchUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': apiKey,
-            'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types,places.primaryTypeDisplayName,places.location',
-        },
-        body: JSON.stringify(requestBody),
-    });
-    return searchResponse.json();
-}
-
-function mapGoogleToAppPlace(places: any[]): GooglePlaceItem[] {
-    return places.map((place: any) => ({
-        id: place.id,
-        place_name: place.displayName?.text || '',
-        category_name: getDisplayCategoryLabel(place.types),
-        road_address_name: place.formattedAddress || '',
-        address_name: place.formattedAddress || '',
-        x: String(place.location?.longitude || 0),
-        y: String(place.location?.latitude || 0),
-        place_url: `https://www.google.com/maps/place/?q=place_id:${place.id}`,
-        distance: '', // This will be calculated later
-        googleTypes: place.types || [],
-    }));
-}
-
-        // ✅ 이하 로직은 '즐겨찾기 검색'과 '일반 검색'의 공통 로직입니다.
         let tagExcludedCount = 0;
         let taggedRestaurantIds: Set<string> | null = null;
         if (tagIds.length > 0) {
             const taggedRestaurants = await prisma.restaurant.findMany({
                 where: {
                     taggedBy: { some: { tagId: { in: tagIds } } },
-                    // 즐겨찾기 검색 시, 후보군이 이미 즐겨찾기 목록이므로 추가 필터링 불필요.
-                    // 일반 검색 시에는 모든 레스토랑을 대상으로 검색.
                     ...(fromFavorites ? { googlePlaceId: { in: candidates.map(c => c.id) } } : {})
                 },
                 select: { googlePlaceId: true }
@@ -212,7 +203,6 @@ function mapGoogleToAppPlace(places: any[]): GooglePlaceItem[] {
         }
 
         if (sort === 'accuracy') {
-            // 후보군을 무작위로 섞습니다. (Fisher-Yates shuffle)
             for (let i = filteredCandidates.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [filteredCandidates[i], filteredCandidates[j]] = [filteredCandidates[j], filteredCandidates[i]];
@@ -222,128 +212,61 @@ function mapGoogleToAppPlace(places: any[]): GooglePlaceItem[] {
         const finalResults: GooglePlaceItem[] = [];
         for (const candidate of filteredCandidates) {
             if (finalResults.length >= size) break;
-
             const enriched = await fetchFullGoogleDetails(candidate);
-            
-            const ratingMatch = (enriched.googleDetails?.rating || 0) >= minRating;
-            if (!ratingMatch) {
-                continue;
-            }
-
+            if ((enriched.googleDetails?.rating || 0) < minRating) continue;
             if (openNow) {
                 const hours = enriched.googleDetails?.opening_hours;
-                const isOpen = hours?.openNow === true || (includeUnknown && hours === undefined);
-                if (!isOpen) {
-                    continue;
-                }
+                if (!(hours?.openNow === true || (includeUnknown && hours === undefined))) continue;
             }
-
-            if (allowsDogsOnly) {
-                if (!enriched.googleDetails?.allowsDogs) {
-                    continue;
-                }
-            }
-
+            if (allowsDogsOnly && !enriched.googleDetails?.allowsDogs) continue;
             if (hasParkingOnly) {
                 const parking = enriched.googleDetails?.parkingOptions;
-                const hasAnyParking = parking && Object.values(parking).some(val => val === true);
-                if (!hasAnyParking) {
-                    continue;
-                }
+                if (!parking || !Object.values(parking).some(val => val === true)) continue;
             }
-
-            if (wheelchairAccessibleEntrance && !enriched.googleDetails?.wheelchairAccessibleEntrance) {
-                continue;
-            }
-            if (wheelchairAccessibleRestroom && !enriched.googleDetails?.wheelchairAccessibleRestroom) {
-                continue;
-            }
-            if (wheelchairAccessibleSeating && !enriched.googleDetails?.wheelchairAccessibleSeating) {
-                continue;
-            }
-            if (wheelchairAccessibleParking && !enriched.googleDetails?.wheelchairAccessibleParking) {
-                continue;
-            }
-
+            if (wheelchairAccessibleEntrance && !enriched.googleDetails?.wheelchairAccessibleEntrance) continue;
+            if (wheelchairAccessibleRestroom && !enriched.googleDetails?.wheelchairAccessibleRestroom) continue;
+            if (wheelchairAccessibleSeating && !enriched.googleDetails?.wheelchairAccessibleSeating) continue;
+            if (wheelchairAccessibleParking && !enriched.googleDetails?.wheelchairAccessibleParking) continue;
             finalResults.push(enriched);
         }
-
 
         let sortedResults: GooglePlaceItem[] = [];
         if (sort === 'rating') {
             sortedResults = finalResults.sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
         } else if (sort === 'distance' && fromFavorites) {
-            // 즐겨찾기 검색 시 거리순 정렬은 계산된 거리를 사용
             sortedResults = finalResults.sort((a, b) => Number(a.distance) - Number(b.distance));
         } else {
             sortedResults = finalResults;
         }
 
         const resultIds = sortedResults.map(r => r.id);
-
-        // DB에서 태그 정보와 레스토랑 ID를 가져옵니다.
         const dbRestaurants = await prisma.restaurant.findMany({
             where: { googlePlaceId: { in: resultIds } },
-            // ⬇️ include 대신 select 사용
             select: {
-              id: true,            // dbId (리뷰 집계에 필요)
+              id: true,
               googlePlaceId: true,
-              likeCount: true,     // 명시적으로 선택
-              dislikeCount: true,  // 명시적으로 선택
-              taggedBy: {          // 관계된 데이터도 select 안에 포함
-                select: {
-                  tag: {           // tag 정보 선택 (필요한 필드만)
-                    select: {
-                      id: true,
-                      name: true,
-                      isPublic: true,
-                      userId: true,
-                      user: { select: { id: true, name: true } },
-                      _count: { select: { restaurants: true, subscribers: true } }
-                    }
-                  }
-                }
-              }
+              likeCount: true,
+              dislikeCount: true,
+              taggedBy: { select: { tag: { select: { id: true, name: true, isPublic: true, userId: true, user: { select: { id: true, name: true } }, _count: { select: { restaurants: true, subscribers: true } } } } } }
             }
         });
         const dbRestaurantMap = new Map(dbRestaurants.map(r => [r.googlePlaceId, r]));
 
-        // 리뷰 평점 및 개수 집계
         const reviewAggregations = await prisma.review.groupBy({
             by: ['restaurantId'],
-            where: {
-                restaurantId: { in: dbRestaurants.map(r => r.id) },
-            },
-            _avg: {
-                rating: true,
-            },
-            _count: {
-                id: true,
-            },
+            where: { restaurantId: { in: dbRestaurants.map(r => r.id) } },
+            _avg: { rating: true },
+            _count: { id: true },
         });
         const reviewAggsMap = new Map(reviewAggregations.map(agg => [agg.restaurantId, agg]));
 
-        // 최종 데이터 조합
         const finalDocuments: (RestaurantWithTags & { likeCount: number, dislikeCount: number })[] = sortedResults.map(result => {
             const dbRestaurant = dbRestaurantMap.get(result.id);
             const reviewAggs = dbRestaurant ? reviewAggsMap.get(dbRestaurant.id) : null;
-
             return {
                 ...result,
-                tags: dbRestaurant ? dbRestaurant.taggedBy.map(t => ({ 
-                    id: t.tag.id, 
-                    name: t.tag.name, 
-                    isPublic: t.tag.isPublic, 
-                    creatorId: t.tag.user.id, 
-                    creatorName: t.tag.user.name,
-                    restaurantCount: t.tag._count.restaurants,
-                    subscriberCount: t.tag._count.subscribers
-                })) : [],
-                appReview: reviewAggs ? {
-                    averageRating: reviewAggs._avg.rating || 0,
-                    reviewCount: reviewAggs._count.id,
-                } : undefined,
-                
+                tags: dbRestaurant ? dbRestaurant.taggedBy.map(t => ({ id: t.tag.id, name: t.tag.name, isPublic: t.tag.isPublic, creatorId: t.tag.user.id, creatorName: t.tag.user.name, restaurantCount: t.tag._count.restaurants, subscriberCount: t.tag._count.subscribers })) : [],
+                appReview: reviewAggs ? { averageRating: reviewAggs._avg.rating || 0, reviewCount: reviewAggs._count.id } : undefined,
                 likeCount: dbRestaurant?.likeCount ?? 0,
                 dislikeCount: dbRestaurant?.dislikeCount ?? 0,
             };
