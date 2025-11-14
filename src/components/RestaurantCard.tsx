@@ -79,6 +79,19 @@ export function RestaurantCard({
             <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
               <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
                 <span>{restaurant.categoryName?.split(">").pop()?.trim()}</span>
+                {likePercentage !== null && (
+                  <div className="flex items-center gap-1" title="좋아요 비율">
+                    {likePercentage >= 50 ? (
+                      <ThumbsUp className="h-4 w-4 text-sky-500" />
+                    ) : (
+                      <ThumbsDown className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className={`font-medium ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`}>{likePercentage}%</span>
+                  </div>
+                )}
+              </div>
+              <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
+                <div/>
                 <div className="flex items-center gap-2">
                   {/* App Rating */}
                   {restaurant.appReview && restaurant.appReview.reviewCount > 0 && (
@@ -97,23 +110,6 @@ export function RestaurantCard({
                 </div>
               </div>
 
-              {likePercentage !== null && ( // likePercentage 계산 로직은 컴포넌트 상단에 있어야 함
-                <div className="flex items-center gap-3 text-sm text-muted-foreground pt-1"> {/* pt-1 추가 */}
-                  {/* 좋아요 비율 */}
-                  <div className="flex items-center gap-1" title="좋아요 비율">
-                    <ThumbsUp className={`h-4 w-4 ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`} />
-                    <span className={`font-medium ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`}>{likePercentage}%</span>
-                  </div>
-                  {/* 좋아요 수 */}
-                  <div className="flex items-center gap-1 text-xs" title="좋아요 수">
-                    <ThumbsUp className="h-3 w-3" /> {restaurant.likeCount ?? 0}
-                  </div>
-                  {/* 싫어요 수 */}
-                  <div className="flex items-center gap-1 text-xs" title="싫어요 수">
-                    <ThumbsDown className="h-3 w-3" /> {restaurant.dislikeCount ?? 0}
-                  </div>
-                </div>
-              )}
               <TooltipProvider delayDuration={100}>
                 <div className="flex flex-wrap gap-1">
                   {isMounted && restaurant.tags?.map(tag => {

@@ -8,7 +8,7 @@ import { StarRating } from "./ui/StarRating";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, ThumbsUp, ThumbsDown, Heart } from "lucide-react";
 
 const getTodaysOpeningHours = (openingHours?: GoogleOpeningHours): string | null => {
     if (!openingHours?.weekdayDescriptions) return null;
@@ -27,6 +27,10 @@ interface RestaurantPreviewContentProps {
 
 export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetails, showViewDetailsButton = true }: RestaurantPreviewContentProps) {
     const details = restaurant.googleDetails;
+    const totalVotes = (restaurant.likeCount ?? 0) + (restaurant.dislikeCount ?? 0);
+    const likePercentage = totalVotes > 0 
+      ? Math.round(((restaurant.likeCount ?? 0) / totalVotes) * 100) 
+      : null;
 
     const [isMounted, setIsMounted] = useState(false);
     useEffect(() => {
@@ -37,6 +41,28 @@ export function RestaurantPreviewContent({ restaurant, isNavigating, onViewDetai
         <div className="space-y-3">
             {!details && <p className="text-gray-500">Google에서 추가 정보를 찾지 못했습니다.</p>}
             
+            {/* Like/Dislike Stats */}
+            {likePercentage !== null && (
+              <div className="flex items-center justify-around gap-3 text-sm text-muted-foreground pt-1 border-b pb-3">
+                <div className="flex items-center gap-1.5" title="좋아요 수">
+                  <ThumbsUp className="h-4 w-4" /> 
+                  <span className="font-medium">{restaurant.likeCount ?? 0}</span>
+                </div>
+                <div className="flex items-center gap-1.5" title="싫어요 수">
+                  <ThumbsDown className="h-4 w-4" /> 
+                  <span className="font-medium">{restaurant.dislikeCount ?? 0}</span>
+                </div>
+                <div className="flex items-center gap-1.5" title="좋아요 비율">
+                  {likePercentage >= 50 ? (
+                    <ThumbsUp className="h-4 w-4 text-sky-500" />
+                  ) : (
+                    <ThumbsDown className="h-4 w-4 text-red-500" />
+                  )}
+                  <span className={`font-bold ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`}>{likePercentage}%</span>
+                </div>
+              </div>
+            )}
+
             {details?.rating && (
                 <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="reviews" className="border-none">
