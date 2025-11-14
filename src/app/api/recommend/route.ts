@@ -100,62 +100,68 @@ export async function GET(request: Request) {
                 throw new Error("Google API Key is not configured");
             }
 
-            const useTextSearch = query && query !== '음식점';
-            const searchUrl = useTextSearch 
-                ? 'https://places.googleapis.com/v1/places:searchText'
-                : 'https://places.googleapis.com/v1/places:searchNearby';
+            const searchTerms = (query || '음식점').split(',').map(term => term.trim()).filter(term => term);
+            const allGoogleCandidates: any[] = [];
 
-            let rankPreference = 'POPULARITY';
-            if (sort === 'distance') {
-                rankPreference = 'DISTANCE';
-            }
+            for (const term of searchTerms) {
+                const isTextSearch = term && term !== '음식점';
+                const searchUrl = isTextSearch
+                    ? 'https://places.googleapis.com/v1/places:searchText'
+                    : 'https://places.googleapis.com/v1/places:searchNearby';
 
-            const requestBody: any = {
-                locationRestriction: {
-                    circle: {
-                        center: {
-                            latitude: Number(lat),
-                            longitude: Number(lng),
+                const requestBody: any = {
+                    locationRestriction: {
+                        circle: {
+                            center: {
+                                latitude: Number(lat),
+                                longitude: Number(lng),
+                            },
+                            radius: Number(radius),
                         },
-                        radius: Number(radius),
                     },
-                },
-                languageCode: "ko",
-                maxResultCount: 20,
-                rankPreference: rankPreference,
-            };
+                    languageCode: "ko",
+                    maxResultCount: 20,
+                };
 
-            if (useTextSearch) {
-                requestBody.textQuery = query;
-                // For text search, includedType is not a top-level param, but can be part of the query.
-                // We will rely on the query itself for now.
-            } else {
-                requestBody.includedTypes = ["restaurant"];
-            }
+                if (isTextSearch) {
+                    requestBody.textQuery = term;
+                    if (sort === 'distance') {
+                        requestBody.rankPreference = 'DISTANCE';
+                        delete requestBody.locationRestriction.circle.radius;
+                    }
+                    // NOTE: 'POPULARITY' is not supported for searchText. Relevance is used by default.
+                } else { // searchNearby
+                    requestBody.includedTypes = ["restaurant"];
+                    if (sort === 'distance') {
+                        requestBody.rankPreference = 'DISTANCE';
+                        delete requestBody.locationRestriction.circle.radius;
+                    } else {
+                        requestBody.rankPreference = 'POPULARITY';
+                    }
+                }
 
-            if (rankPreference === 'DISTANCE') {
-                delete requestBody.locationRestriction.circle.radius;
-                if (useTextSearch) {
-                    // textQuery is mandatory for searchText, so we can't remove it.
-                    // Distance ranking might not be ideal with a text query but we'll allow it.
+                const searchResponse = await fetch(searchUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Goog-Api-Key': GOOGLE_API_KEY,
+                        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types,places.primaryTypeDisplayName,places.location',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
+
+                const searchData = await searchResponse.json();
+                if (searchData.places) {
+                    allGoogleCandidates.push(...searchData.places);
                 }
             }
 
-            const searchResponse = await fetch(searchUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Goog-Api-Key': GOOGLE_API_KEY,
-                    'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types,places.primaryTypeDisplayName,places.location',
-                },
-                body: JSON.stringify(requestBody),
-            });
+            // De-duplicate results based on place ID
+            const uniqueGoogleCandidates = allGoogleCandidates.filter(
+                (place, index, self) => index === self.findIndex((p) => p.id === place.id)
+            );
 
-            const searchData = await searchResponse.json();
-
-// ... (inside export async function GET(request: Request))
-
-            if (searchData.places) {
+            if (uniqueGoogleCandidates.length > 0) {
                 interface GoogleCandidate {
                     id: string;
                     place_name: string;
@@ -169,10 +175,10 @@ export async function GET(request: Request) {
                     googleTypes: string[];
                 }
 
-                let googleCandidates: GoogleCandidate[] = searchData.places.map((place: any) => ({
+                let googleCandidates: GoogleCandidate[] = uniqueGoogleCandidates.map((place: any) => ({
                     id: place.id,
                     place_name: place.displayName?.text || '',
-                    category_name: getDisplayCategoryLabel(place.types), // Use helper to get display label
+                    category_name: getDisplayCategoryLabel(place.types),
                     road_address_name: place.formattedAddress || '',
                     address_name: place.formattedAddress || '',
                     x: String(place.location?.longitude || 0),
@@ -181,15 +187,6 @@ export async function GET(request: Request) {
                     distance: '', // This will be calculated later
                     googleTypes: place.types || [],
                 }));
-
-                // Filter by categories if provided in the query
-                const selectedCategories = query.split(',').map(c => c.trim()).filter(c => c && c !== '음식점');
-                if (selectedCategories.length > 0) {
-                    const expandedTypes = getExpandedCategoryTypes(selectedCategories); // Expand selected categories
-                    googleCandidates = googleCandidates.filter((candidate: GoogleCandidate) => 
-                        candidate.googleTypes.some((type: string) => expandedTypes.has(type))
-                    );
-                }
                 
                 candidates = googleCandidates;
             }
