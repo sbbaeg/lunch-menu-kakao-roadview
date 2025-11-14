@@ -1,5 +1,5 @@
 
-import { KakaoPlaceItem, GoogleDetails, GoogleOpeningHours, Review, GoogleParkingOptions } from './types';
+import { GooglePlaceItem, GoogleDetails, GoogleOpeningHours, Review, GoogleParkingOptions } from './types';
 
 // --- NEW API Type Definitions ---
 
@@ -46,7 +46,7 @@ interface NewGooglePlace {
 
 // --- Migration of fetchFullGoogleDetails ---
 
-export async function fetchFullGoogleDetails(place: KakaoPlaceItem): Promise<KakaoPlaceItem> {
+export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<GooglePlaceItem> {
   try {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
     if (!GOOGLE_API_KEY) throw new Error("Google API Key is not configured");

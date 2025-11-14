@@ -24,7 +24,7 @@ export function useLikedRestaurants() {
                     // 2. 각 음식점의 전체 정보 (googleDetails 포함)를 가져오기
                     const detailedRestaurants = await Promise.all(
                         basicRestaurants.map(r => 
-                            fetch(`/api/restaurants/${r.kakaoPlaceId}`).then(res => { // BUG FIX: r.id -> r.kakaoPlaceId
+                            fetch(`/api/restaurants/${r.googlePlaceId}`).then(res => {
                                 if (!res.ok) return null; // 실패한 경우 null 반환
                                 return res.json();
                             })

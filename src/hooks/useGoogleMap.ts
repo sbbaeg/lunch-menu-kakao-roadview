@@ -9,7 +9,6 @@ import { AppRestaurant } from '@/lib/types';
 // or by global window.google.maps types.
 declare global {
     interface Window {
-        kakao: any; // 3단계에서 제거 예정
         google: any; // 타입 충돌 해결을 위해 'any' 사용. 더 나은 타입을 원하면 @types/google.maps 설치 필요
         initGoogleMap?: () => void; // delete 연산자 사용을 위해 선택적으로 변경
     }

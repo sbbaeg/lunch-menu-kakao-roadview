@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { Prisma } from '@prisma/client'; 
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
-import { AppRestaurant, KakaoPlaceItem } from '@/lib/types'; 
+import { AppRestaurant, GooglePlaceItem } from '@/lib/types'; 
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
 
 type FavoriteWithTags = Prisma.FavoriteGetPayload<{
@@ -54,27 +54,27 @@ export async function GET() {
             },
         });
 
-        const basicFavorites: KakaoPlaceItem[] = favorites.map(fav => ({
-            id: fav.restaurant.kakaoPlaceId,
+        const basicPlaces: GooglePlaceItem[] = favorites.map(fav => ({
+            id: fav.restaurant.googlePlaceId,
             place_name: fav.restaurant.placeName,
             category_name: fav.restaurant.categoryName || '',
             road_address_name: fav.restaurant.address || '',
             address_name: fav.restaurant.address || '',
             x: String(fav.restaurant.longitude),
             y: String(fav.restaurant.latitude),
-            place_url: `https://place.map.kakao.com/${fav.restaurant.kakaoPlaceId}`,
+            place_url: `https://www.google.com/maps/place/?q=place_id:${fav.restaurant.googlePlaceId}`,
             distance: '',
         }));
 
         const enrichedFavorites = await Promise.all(
-            basicFavorites.map(place => fetchFullGoogleDetails(place))
+            basicPlaces.map(place => fetchFullGoogleDetails(place))
         );
 
         const favoriteRestaurants: AppRestaurant[] = enrichedFavorites.map((place, index) => {
             const originalFavorite = favorites[index];
             return {
                 id: place.id,
-                kakaoPlaceId: place.id,
+                googlePlaceId: place.id,
                 placeName: place.place_name,
                 categoryName: place.category_name,
                 address: place.road_address_name,
@@ -90,7 +90,6 @@ export async function GET() {
                     creatorId: t.tag.user.id,
                     creatorName: t.tag.user.name,
                 })),
-                // ⬇️ dbId, likeCount, dislikeCount 추가
                 dbId: originalFavorite.restaurant.id,
                 likeCount: originalFavorite.restaurant.likeCount,
                 dislikeCount: originalFavorite.restaurant.dislikeCount,
@@ -115,7 +114,7 @@ export async function POST(request: Request) {
         const userId = session.user.id;
 
         let restaurant = await prisma.restaurant.findUnique({
-            where: { kakaoPlaceId: place.id },
+            where: { googlePlaceId: place.id },
         });
 
         if (!restaurant) {
@@ -124,7 +123,7 @@ export async function POST(request: Request) {
             }
             restaurant = await prisma.restaurant.create({
                 data: {
-                    kakaoPlaceId: place.id,
+                    googlePlaceId: place.id,
                     placeName:    place.placeName,
                     address:      place.address,
                     latitude:     parseFloat(place.y),
