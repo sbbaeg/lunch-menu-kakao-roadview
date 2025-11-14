@@ -82,10 +82,19 @@ export function useGoogleMap() {
         if (polylineInstance.current) polylineInstance.current.setMap(null); // Clear existing polyline
 
         try {
-            const response = await fetch(`/api/directions?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}`);
+            const response = await fetch(`/api/directions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    origin: `${origin.lat},${origin.lng}`,
+                    destination: `${destination.lat},${destination.lng}`,
+                }),
+            });
             const data = await response.json();
 
-            if (data.path_encoded) {
+            if (response.ok && data.path_encoded) {
                 const decodedPath = window.google.maps.geometry.encoding.decodePath(data.path_encoded);
                 polylineInstance.current = new window.google.maps.Polyline({
                     path: decodedPath,
@@ -94,11 +103,14 @@ export function useGoogleMap() {
                     strokeOpacity: 0.8,
                     map: mapInstance.current,
                 });
-            } else if (data.error) {
-                console.error("Directions API error:", data.error);
+            } else {
+                console.error("Directions API error:", data.error || "Unknown error");
+                // Optionally, show an alert to the user
+                // alert(`길찾기 오류: ${data.error || '경로를 찾을 수 없습니다.'}`);
             }
         } catch (error) {
             console.error("Directions fetch failed:", error);
+            // alert("길찾기 요청 중 네트워크 오류가 발생했습니다.");
         }
     }, []);
 
