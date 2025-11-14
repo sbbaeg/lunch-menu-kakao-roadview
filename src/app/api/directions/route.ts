@@ -44,6 +44,8 @@ export async function POST(request: Request) {
     units: 'METRIC',
   };
 
+  console.log('[DIAG] Google Routes API Request Body:', JSON.stringify(requestBody, null, 2));
+
   try {
     const routesResponse = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
       method: 'POST',
