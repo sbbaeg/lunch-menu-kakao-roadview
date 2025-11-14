@@ -50,28 +50,35 @@ export async function POST(request: Request) {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': GOOGLE_API_KEY,
-        // Specify which fields to return to optimize cost
         'X-Goog-FieldMask': 'routes.polyline.encodedPolyline,routes.duration,routes.distanceMeters',
       },
       body: JSON.stringify(requestBody),
     });
 
-    if (routesResponse.ok) {
-      const data = await routesResponse.json();
-      if (data.routes && data.routes.length > 0) {
-        const encodedPolyline = data.routes[0].polyline.encodedPolyline;
-        const duration = data.routes[0].duration; // e.g., "1234s"
-        const distanceMeters = data.routes[0].distanceMeters; // e.g., 1234
-        return NextResponse.json({ path_encoded: encodedPolyline, duration, distanceMeters });
+    if (!routesResponse.ok) {
+      const errorText = await routesResponse.text();
+      console.error(`Google Routes API Error: Status ${routesResponse.status}, Body: ${errorText}`);
+      let errorJson: any = {};
+      try {
+        errorJson = JSON.parse(errorText);
+      } catch (e) {
+        // Not a JSON response
       }
+      return NextResponse.json({ path_encoded: '', error: errorJson.error?.message || 'Failed to get routes' }, { status: routesResponse.status });
     }
-    
-    // If response is not OK or has no routes, log details
-    const errorText = await routesResponse.clone().text(); // Clone to read body text
-    console.error(`Google Routes API Error: Status ${routesResponse.status}, Body: ${errorText}`);
-    
-    const data = await routesResponse.json().catch(() => ({})); // Attempt to parse JSON, default to {} on failure
-    return NextResponse.json({ path_encoded: '', error: data.error?.message || 'No routes found' }, { status: routesResponse.status });
+
+    // If we are here, response is OK.
+    const data = await routesResponse.json();
+
+    if (data.routes && data.routes.length > 0) {
+      const encodedPolyline = data.routes[0].polyline.encodedPolyline;
+      const duration = data.routes[0].duration;
+      const distanceMeters = data.routes[0].distanceMeters;
+      return NextResponse.json({ path_encoded: encodedPolyline, duration, distanceMeters });
+    } else {
+      console.error('Google Routes API: OK response but no routes found', data);
+      return NextResponse.json({ path_encoded: '', error: 'No routes found' }, { status: 404 });
+    }
 
   } catch (error) {
     console.error('Google Routes Request Failed:', error);
