@@ -10,13 +10,13 @@ export async function POST(request: Request) {
   try {
     const restaurant: AppRestaurant = await request.json();
 
-    if (!restaurant || !restaurant.kakaoPlaceId) {
+    if (!restaurant || !restaurant.googlePlaceId) {
       return NextResponse.json({ error: 'Invalid restaurant data' }, { status: 400 });
     }
 
-    // kakaoPlaceId를 기준으로 식당이 이미 존재하면 업데이트, 없으면 생성 (upsert)
+    // googlePlaceId를 기준으로 식당이 이미 존재하면 업데이트, 없으면 생성 (upsert)
     const upsertedRestaurant = await prisma.restaurant.upsert({
-      where: { kakaoPlaceId: restaurant.kakaoPlaceId },
+      where: { googlePlaceId: restaurant.googlePlaceId },
       update: {
         placeName: restaurant.placeName,
         address: restaurant.address,
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         categoryName: restaurant.categoryName,
       },
       create: {
-        kakaoPlaceId: restaurant.kakaoPlaceId,
+        googlePlaceId: restaurant.googlePlaceId,
         placeName: restaurant.placeName,
         address: restaurant.address,
         latitude: Number(restaurant.y),
