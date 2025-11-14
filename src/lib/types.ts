@@ -83,8 +83,8 @@ export interface AppTagReview {
   };
 }
 
-// 카카오 API 원본 데이터 타입
-export interface KakaoPlaceItem {
+// Google API 원본 데이터 타입 (이제 Google Place ID를 사용)
+export interface GooglePlaceItem {
   id: string;
   place_name: string;
   category_name: string;
@@ -108,16 +108,16 @@ export interface Tag {
 }
 
 // API 응답에 최종적으로 사용될 타입
-export interface RestaurantWithTags extends KakaoPlaceItem {
+export interface RestaurantWithTags extends GooglePlaceItem {
   tags: Tag[];
   appReview?: AppReviewSummary;
 }
 
 // 우리 앱 내부에서 사용할 표준 데이터 타입 (camelCase)
 export interface AppRestaurant {
-  id: string; // kakaoPlaceId
+  id: string;
   dbId?: number; // DB auto-increment ID
-  kakaoPlaceId: string;
+  googlePlaceId: string; // Google Place ID
   placeName: string;
   categoryName: string;
   address: string;

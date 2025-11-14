@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
-import { KakaoPlaceItem, RestaurantWithTags } from '@/lib/types';
+import { GooglePlaceItem, RestaurantWithTags } from '@/lib/types';
 import { getExpandedCategoryTypes, getDisplayCategoryLabel } from '@/lib/categories';
 
 export const dynamic = 'force-dynamic';
@@ -60,13 +60,13 @@ export async function GET(request: Request) {
     if (session?.user?.id) {
         const blacklistEntries = await prisma.blacklist.findMany({
             where: { userId: session.user.id },
-            select: { restaurant: { select: { kakaoPlaceId: true } } },
+            select: { restaurant: { select: { googlePlaceId: true } } },
         });
-        blacklistIds = blacklistEntries.map(entry => entry.restaurant.kakaoPlaceId);
+        blacklistIds = blacklistEntries.map(entry => entry.restaurant.googlePlaceId);
     }
     
     try {
-        let candidates: KakaoPlaceItem[] = [];
+        let candidates: GooglePlaceItem[] = [];
 
         if (fromFavorites && session?.user?.id) {
             // ✅ 1. DB에서 사용자의 모든 즐겨찾기 목록을 좌표 정보와 함께 가져옵니다.
@@ -83,14 +83,14 @@ export async function GET(request: Request) {
                 }))
                 .filter(restaurant => restaurant.calculatedDistance <= Number(radius))
                 .map(restaurant => ({
-                    id: restaurant.kakaoPlaceId,
+                    id: restaurant.googlePlaceId,
                     place_name: restaurant.placeName,
                     category_name: restaurant.categoryName || '',
                     road_address_name: restaurant.address || '',
                     address_name: restaurant.address || '',
                     x: String(restaurant.longitude),
                     y: String(restaurant.latitude),
-                    place_url: `https://place.map.kakao.com/${restaurant.kakaoPlaceId}`,
+                    place_url: `https://www.google.com/maps/place/?q=place_id:${restaurant.googlePlaceId}`,
                     distance: String(Math.round(restaurant.calculatedDistance)),
                 }));
 
@@ -107,7 +107,7 @@ export async function GET(request: Request) {
                 const searchTerm = (query.split(',')[0].trim()) || '음식점';
                 const searchData = await performGoogleSearch(searchTerm, sort, lat, lng, radius, GOOGLE_API_KEY);
                 if (searchData.places) {
-                    candidates = mapGoogleToKakao(searchData.places);
+                    candidates = mapGoogleToAppPlace(searchData.places);
                 }
             } else {
                 // Logic for filters: Search for each category term.
@@ -121,7 +121,7 @@ export async function GET(request: Request) {
                 }
                 // De-duplicate results
                 const uniquePlaces = allPlaces.filter((place, index, self) => index === self.findIndex(p => p.id === place.id));
-                candidates = mapGoogleToKakao(uniquePlaces);
+                candidates = mapGoogleToAppPlace(uniquePlaces);
             }
         }
 
@@ -170,7 +170,7 @@ async function performGoogleSearch(term: string, sort: string, lat: string, lng:
     return searchResponse.json();
 }
 
-function mapGoogleToKakao(places: any[]): KakaoPlaceItem[] {
+function mapGoogleToAppPlace(places: any[]): GooglePlaceItem[] {
     return places.map((place: any) => ({
         id: place.id,
         place_name: place.displayName?.text || '',
@@ -194,11 +194,11 @@ function mapGoogleToKakao(places: any[]): KakaoPlaceItem[] {
                     taggedBy: { some: { tagId: { in: tagIds } } },
                     // 즐겨찾기 검색 시, 후보군이 이미 즐겨찾기 목록이므로 추가 필터링 불필요.
                     // 일반 검색 시에는 모든 레스토랑을 대상으로 검색.
-                    ...(fromFavorites ? { kakaoPlaceId: { in: candidates.map(c => c.id) } } : {})
+                    ...(fromFavorites ? { googlePlaceId: { in: candidates.map(c => c.id) } } : {})
                 },
-                select: { kakaoPlaceId: true }
+                select: { googlePlaceId: true }
             });
-            taggedRestaurantIds = new Set(taggedRestaurants.map(r => r.kakaoPlaceId));
+            taggedRestaurantIds = new Set(taggedRestaurants.map(r => r.googlePlaceId));
         }
 
         const countBeforeBlacklist = candidates.length;
@@ -219,7 +219,7 @@ function mapGoogleToKakao(places: any[]): KakaoPlaceItem[] {
             }
         }
 
-        const finalResults: KakaoPlaceItem[] = [];
+        const finalResults: GooglePlaceItem[] = [];
         for (const candidate of filteredCandidates) {
             if (finalResults.length >= size) break;
 
@@ -269,7 +269,7 @@ function mapGoogleToKakao(places: any[]): KakaoPlaceItem[] {
         }
 
 
-        let sortedResults: KakaoPlaceItem[] = [];
+        let sortedResults: GooglePlaceItem[] = [];
         if (sort === 'rating') {
             sortedResults = finalResults.sort((a, b) => (b.googleDetails?.rating || 0) - (a.googleDetails?.rating || 0));
         } else if (sort === 'distance' && fromFavorites) {
@@ -283,11 +283,11 @@ function mapGoogleToKakao(places: any[]): KakaoPlaceItem[] {
 
         // DB에서 태그 정보와 레스토랑 ID를 가져옵니다.
         const dbRestaurants = await prisma.restaurant.findMany({
-            where: { kakaoPlaceId: { in: resultIds } },
+            where: { googlePlaceId: { in: resultIds } },
             // ⬇️ include 대신 select 사용
             select: {
               id: true,            // dbId (리뷰 집계에 필요)
-              kakaoPlaceId: true,
+              googlePlaceId: true,
               likeCount: true,     // 명시적으로 선택
               dislikeCount: true,  // 명시적으로 선택
               taggedBy: {          // 관계된 데이터도 select 안에 포함
@@ -306,7 +306,7 @@ function mapGoogleToKakao(places: any[]): KakaoPlaceItem[] {
               }
             }
         });
-        const dbRestaurantMap = new Map(dbRestaurants.map(r => [r.kakaoPlaceId, r]));
+        const dbRestaurantMap = new Map(dbRestaurants.map(r => [r.googlePlaceId, r]));
 
         // 리뷰 평점 및 개수 집계
         const reviewAggregations = await prisma.review.groupBy({

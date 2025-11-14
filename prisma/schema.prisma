@@ -62,7 +62,7 @@ model User {
 // 2. 음식점 정보 모델
 model Restaurant {
   id           Int      @id @default(autoincrement())
-  kakaoPlaceId String   @unique // 카카오맵 ID로 중복 체크
+  googlePlaceId String   @unique // Google Place ID로 중복 체크
   placeName    String
   address      String?
   latitude     Float?

@@ -27,7 +27,7 @@ import { useInquiryNotifications } from "@/hooks/useInquiryNotifications";
 import { useAppStore } from '@/store/useAppStore';
 
 
-import { AppRestaurant, KakaoPlaceItem, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
+import { AppRestaurant, GoogleOpeningHours, RestaurantWithTags } from '@/lib/types';
 
 import { Tag } from '@/lib/types';
 

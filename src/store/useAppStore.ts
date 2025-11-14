@@ -186,7 +186,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const formattedRestaurants: AppRestaurant[] = (data.documents || []).map(place => ({
         id: place.id,
-        kakaoPlaceId: place.id,
+        googlePlaceId: place.id, // Add this line
         placeName: place.place_name,
         categoryName: place.category_name,
         address: place.road_address_name,
