@@ -127,3 +127,30 @@ export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<Go
     return place;
   }
 }
+
+export async function fetchDirections(origin: { lat: number, lng: number }, destination: { lat: number, lng: number }): Promise<string | null> {
+  try {
+    const response = await fetch(`/api/directions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        origin: `${origin.lat},${origin.lng}`,
+        destination: `${destination.lat},${destination.lng}`,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.path_encoded) {
+      return data.path_encoded;
+    } else {
+      console.error("Directions API error:", data.error || "Unknown error");
+      return null;
+    }
+  } catch (error) {
+    console.error("Directions fetch failed:", error);
+    return null;
+  }
+}
