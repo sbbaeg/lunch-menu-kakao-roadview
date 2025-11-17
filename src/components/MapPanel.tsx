@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { fetchDirections } from '@/lib/googleMaps';
 
 interface MapPanelProps {
   restaurants: AppRestaurant[];
@@ -31,7 +32,7 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
+  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawPolyline, drawFallbackLine, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
@@ -83,14 +84,23 @@ export function MapPanel({
 
   // Effect for drawing directions
   useEffect(() => {
-    if (isMapReady && userLocation && selectedRestaurant) {
-      console.log('[DIAG] Drawing directions from:', userLocation, 'to:', { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
-      drawDirections(
-        { lat: userLocation.lat, lng: userLocation.lng },
-        { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) }
-      );
-    }
-  }, [isMapReady, userLocation, selectedRestaurant, drawDirections]);
+    const getAndDrawDirections = async () => {
+      if (isMapReady && userLocation && selectedRestaurant) {
+        const origin = { lat: userLocation.lat, lng: userLocation.lng };
+        const destination = { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) };
+        
+        console.log('[DIAG] Fetching directions from:', origin, 'to:', destination);
+        const encodedPath = await fetchDirections(origin, destination);
+
+        if (encodedPath) {
+          drawPolyline(encodedPath);
+        } else {
+          drawFallbackLine(origin, destination);
+        }
+      }
+    };
+    getAndDrawDirections();
+  }, [isMapReady, userLocation, selectedRestaurant, drawPolyline, drawFallbackLine]);
 
   useEffect(() => {
     if (!mapInstance) return;

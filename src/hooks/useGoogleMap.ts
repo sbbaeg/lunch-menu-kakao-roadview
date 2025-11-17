@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
+import { fetchDirections } from '@/lib/googleMaps';
 
 // Define Google Maps types (simplified for now, will refine as needed)
 // This will be replaced by actual Google Maps types if a library is used,
@@ -103,56 +104,32 @@ export function useGoogleMap() {
         mapInstance.current.setZoom(zoom);
     }, []);
 
-    const drawDirections = useCallback(async (origin: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
+    const drawPolyline = useCallback((encodedPath: string) => {
         if (!mapInstance.current || !window.google?.maps?.geometry?.encoding) return;
-        if (polylineInstance.current) polylineInstance.current.setMap(null); // Clear existing polyline
+        if (polylineInstance.current) polylineInstance.current.setMap(null);
 
-        try {
-            const response = await fetch(`/api/directions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    origin: `${origin.lat},${origin.lng}`,
-                    destination: `${destination.lat},${destination.lng}`,
-                }),
-            });
-            const data = await response.json();
+        const decodedPath = window.google.maps.geometry.encoding.decodePath(encodedPath);
+        polylineInstance.current = new window.google.maps.Polyline({
+            path: decodedPath,
+            strokeColor: "#007BFF",
+            strokeWeight: 6,
+            strokeOpacity: 0.8,
+            map: mapInstance.current,
+        });
+    }, []);
 
-            if (response.ok && data.path_encoded) {
-                const decodedPath = window.google.maps.geometry.encoding.decodePath(data.path_encoded);
-                polylineInstance.current = new window.google.maps.Polyline({
-                    path: decodedPath,
-                    strokeColor: "#007BFF",
-                    strokeWeight: 6,
-                    strokeOpacity: 0.8,
-                    map: mapInstance.current,
-                });
-            } else {
-                console.error("Directions API error: No routes found, drawing straight line.", data.error || "Unknown error");
-                // API가 경로를 찾지 못하면 직선을 그립니다.
-                polylineInstance.current = new window.google.maps.Polyline({
-                    path: [origin, destination],
-                    strokeColor: "#FF0000", // 빨간색으로 표시하여 실제 경로가 아님을 나타냄
-                    strokeWeight: 3,
-                    strokeOpacity: 0.6,
-                    map: mapInstance.current,
-                    geodesic: true, // 구의 대원(Great Circle)을 따라 그립니다.
-                });
-            }
-        } catch (error) {
-            console.error("Directions fetch failed:", error);
-            // 네트워크 오류 시에도 직선을 그립니다.
-            polylineInstance.current = new window.google.maps.Polyline({
-                path: [origin, destination],
-                strokeColor: "#FF0000",
-                strokeWeight: 3,
-                strokeOpacity: 0.6,
-                map: mapInstance.current,
-                geodesic: true,
-            });
-        }
+    const drawFallbackLine = useCallback((origin: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
+        if (!mapInstance.current) return;
+        if (polylineInstance.current) polylineInstance.current.setMap(null);
+
+        polylineInstance.current = new window.google.maps.Polyline({
+            path: [origin, destination],
+            strokeColor: "#FF0000", // 빨간색으로 표시하여 실제 경로가 아님을 나타냄
+            strokeWeight: 3,
+            strokeOpacity: 0.6,
+            map: mapInstance.current,
+            geodesic: true, // 구의 대원(Great Circle)을 따라 그립니다.
+        });
     }, []);
 
     const displayStreetView = useCallback((position: { lat: number, lng: number }) => {
@@ -206,7 +183,8 @@ export function useGoogleMap() {
         displayMarkers,
         setCenter,
         setZoom, // Renamed from setLevel
-        drawDirections,
+        drawPolyline,
+        drawFallbackLine,
         drawUserLocationMarker,
         clearOverlays,
         displayStreetView, // Renamed from displayRoadview
