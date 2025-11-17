@@ -36,7 +36,7 @@ export async function POST(
         restaurant: {
           select: {
             placeName: true,
-            kakaoPlaceId: true,
+            googlePlaceId: true,
           }
         }
       },
@@ -128,7 +128,7 @@ export async function POST(
           type: 'REVIEW_UPVOTE',
           message: JSON.stringify({
             text: `'${review.restaurant.placeName}'에 대한 회원님의 리뷰를 다른 사용자가 추천했습니다.`,
-            restaurantId: review.restaurant.kakaoPlaceId,
+            restaurantId: review.restaurant.googlePlaceId,
           }),
         },
       });
@@ -142,7 +142,7 @@ export async function POST(
             type: 'BEST_REVIEW',
             message: JSON.stringify({
               text: `'${review.restaurant.placeName}'에 대한 회원님의 리뷰가 베스트 리뷰로 선정되었습니다.`,
-              restaurantId: review.restaurant.kakaoPlaceId,
+              restaurantId: review.restaurant.googlePlaceId,
             }),
           },
         });
