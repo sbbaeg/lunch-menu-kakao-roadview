@@ -13,10 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Notification } from '@prisma/client';
+import { Notification as PrismaNotification } from '@prisma/client';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface Inquiry {
     id: number;
@@ -24,12 +25,15 @@ interface Inquiry {
     message: string;
     adminReply: string | null;
     isFromAdmin: boolean;
+    user: {
+        name: string | null;
+    };
 }
 
 interface NotificationViewerDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    notification: Notification | null;
+    notification: PrismaNotification | null;
     onDelete: (notificationId: number) => void;
     link?: string | null;
 }
@@ -75,6 +79,25 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
         }
     };
 
+    const getCategoryLabel = () => {
+        if (!notification) return '';
+        if (inquiry?.isFromAdmin) return '관리자 메시지';
+        if (notification.inquiryId) return '문의 답변';
+        switch (notification.type) {
+            case 'TAG_SUBSCRIPTION': return '태그 알림';
+            case 'REVIEW_UPVOTE':
+            case 'BEST_REVIEW': return '리뷰 알림';
+            default: return '일반 알림';
+        }
+    };
+
+    const getSenderLabel = () => {
+        if (!notification) return '';
+        if (inquiry?.isFromAdmin) return '관리자';
+        if (inquiry) return inquiry.user.name || '사용자';
+        return '시스템';
+    }
+
     const renderContent = () => {
         if (isLoading) {
             return (
@@ -87,6 +110,7 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
         if (error) {
             return <p className="text-red-500 py-4 px-4">{error}</p>;
         }
+        // Case 1: It's an inquiry notification
         if (inquiry) {
             return (
                 <div className="space-y-4 py-4 px-4">
@@ -116,6 +140,7 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
                 </div>
             );
         }
+        // Case 2: It's a simple notification
         if (notification) {
              return (
                 <div className="py-4 px-4">
@@ -143,6 +168,22 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
                         )}
                         <DialogTitle className="truncate">{inquiry?.title || notification?.message || '알림 상세'}</DialogTitle>
                     </div>
+                    {notification && (
+                        <DialogDescription className="text-xs text-muted-foreground pt-2 space-y-1">
+                            <div className="flex gap-2">
+                                <span className="font-bold w-16">유형:</span>
+                                <span>{getCategoryLabel()}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="font-bold w-16">발신:</span>
+                                <span>{getSenderLabel()}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="font-bold w-16">수신 일시:</span>
+                                <span>{format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm:ss")}</span>
+                            </div>
+                        </DialogDescription>
+                    )}
                 </DialogHeader>
                 <div className="flex-grow overflow-y-auto">
                     {renderContent()}

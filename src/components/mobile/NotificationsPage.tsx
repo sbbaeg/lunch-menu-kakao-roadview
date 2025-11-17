@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, X } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { useState, useEffect } from "react";
-import { Notification } from "@prisma/client";
+import { Notification as PrismaNotification } from "@prisma/client";
 import { NotificationViewerDialog } from "@/components/ui/NotificationViewerDialog";
 
 
 // Helper component to render each notification
-const NotificationItem = ({ notification, onDelete, onClick }: { notification: Notification, onDelete: (id: number) => void, onClick: () => void }) => {
+const NotificationItem = ({ notification, onDelete, onClick }: { notification: PrismaNotification, onDelete: (id: number) => void, onClick: () => void }) => {
   return (
     <div
       key={notification.id}
@@ -41,7 +41,7 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: N
 export default function NotificationsPage() {
   const { notifications, deleteNotifications } = useNotifications();
   const goBack = useAppStore((state) => state.goBack);
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<PrismaNotification | null>(null);
 
   const hasReadNotifications = notifications.some(n => n.read);
 
@@ -54,7 +54,7 @@ export default function NotificationsPage() {
     setSelectedNotification(null);
   };
 
-  const getLinkForNotification = (notification: Notification | null): string | null => {
+  const getLinkForNotification = (notification: PrismaNotification | null): string | null => {
     if (!notification) return null;
     try {
       const parsed = JSON.parse(notification.message);
