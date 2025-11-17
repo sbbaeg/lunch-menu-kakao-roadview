@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface MapPanelProps {
   restaurants: AppRestaurant[];
@@ -29,12 +31,13 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, displayStreetView, relayout } = useGoogleMap();
+  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
   const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
   const [isStreetviewVisible, setStreetviewVisible] = useState(false); // Renamed from isRoadviewVisible
+  const hasShownStreetViewToast = useRef(false);
 
   useEffect(() => {
     if (onMapReady) {
@@ -151,6 +154,14 @@ export function MapPanel({
     }
   }
 
+  const handleStreetViewToggle = () => {
+    if (!isStreetviewVisible && !hasShownStreetViewToast.current) {
+      toast.info("스트리트뷰는 최신 정보가 아닐 수 있습니다. 더 정확한 주변 환경 정보가 필요하시면 위성 지도를 활용해 보세요.");
+      hasShownStreetViewToast.current = true;
+    }
+    setStreetviewVisible((prev) => !prev);
+  };
+
   return (
     <div className="w-full h-full rounded-lg border shadow-sm flex flex-col overflow-hidden">
       <div className="relative flex-1">
@@ -166,9 +177,14 @@ export function MapPanel({
         <div ref={streetviewContainerRef} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isStreetviewVisible ? "opacity-100 visible" : "opacity-0 invisible"}`} />
 
         {!hideControls && selectedRestaurant && (
-            <Button onClick={() => setStreetviewVisible((prev) => !prev)} variant="secondary" className="absolute top-3 right-14 z-10 shadow-lg">
+            <Button onClick={handleStreetViewToggle} variant="secondary" className="absolute top-3 right-14 z-10 shadow-lg">
                 {isStreetviewVisible ? "지도 보기" : "스트리트뷰 보기"}
             </Button>
+        )}
+        {isStreetviewVisible && streetViewImageDate && (
+          <Badge variant="secondary" className="absolute top-3 left-3 z-10 shadow-lg">
+            촬영일: {streetViewImageDate}
+          </Badge>
         )}
       </div>
     </div>

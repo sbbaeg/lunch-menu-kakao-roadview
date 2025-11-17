@@ -26,6 +26,7 @@ export function useGoogleMap() {
     const streetviewPanorama = useRef<google.maps.StreetViewPanorama | null>(null);
     const streetviewService = useRef<google.maps.StreetViewService | null>(null);
     const isMapReady = useAppStore((state) => state.isMapReady);
+    const [streetViewImageDate, setStreetViewImageDate] = useState('');
 
     // Map Initialization
     useEffect(() => {
@@ -125,9 +126,11 @@ export function useGoogleMap() {
             if (status === window.google.maps.StreetViewStatus.OK && data?.location?.pano && data?.location?.latLng) {
                 streetviewPanorama.current?.setPano(data.location.pano);
                 streetviewPanorama.current?.setPosition(data.location.latLng);
+                setStreetViewImageDate(data.imageDate || '');
             } else {
                 alert("해당 위치에 스트리트뷰 정보가 없습니다.");
                 console.error("Street View data not found for this location:", status);
+                setStreetViewImageDate('');
             }
         });
     }, []);
@@ -163,5 +166,6 @@ export function useGoogleMap() {
         clearOverlays,
         displayStreetView, // Renamed from displayRoadview
         relayout,
+        streetViewImageDate,
     };
 }
