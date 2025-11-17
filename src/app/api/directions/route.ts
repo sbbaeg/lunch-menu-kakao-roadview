@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         },
       },
     },
-    travelMode: 'DRIVE', // Or 'WALK', 'BICYCLE', 'TRANSIT'
+    travelMode: 'WALK', // Or 'DRIVE', 'BICYCLE', 'TRANSIT'
     routingPreference: 'TRAFFIC_AWARE_OPTIMAL', // Optional: 'TRAFFIC_AWARE', 'TRAFFIC_UNAWARE'
     polylineEncoding: 'ENCODED_POLYLINE', // Request encoded polyline
     computeAlternativeRoutes: false, // Optional
