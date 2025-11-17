@@ -31,7 +31,7 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
+  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
@@ -44,6 +44,13 @@ export function MapPanel({
       onMapReady(isMapReady);
     }
   }, [isMapReady, onMapReady]);
+
+  // Draw user location marker
+  useEffect(() => {
+    if (isMapReady && userLocation) {
+      drawUserLocationMarker(userLocation.lat, userLocation.lng);
+    }
+  }, [isMapReady, userLocation, drawUserLocationMarker]);
 
   // ResizeObserver를 사용하여 컨테이너 크기 변경 시 지도 리레이아웃
   useEffect(() => {

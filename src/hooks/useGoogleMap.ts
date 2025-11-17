@@ -27,6 +27,7 @@ export function useGoogleMap() {
     const streetviewService = useRef<google.maps.StreetViewService | null>(null);
     const isMapReady = useAppStore((state) => state.isMapReady);
     const [streetViewImageDate, setStreetViewImageDate] = useState('');
+    const [userLocationMarker, setUserLocationMarker] = useState<google.maps.Marker | null>(null);
 
     // Map Initialization
     useEffect(() => {
@@ -67,6 +68,30 @@ export function useGoogleMap() {
         });
         markers.current = newMarkers;
     }, []);
+
+    const drawUserLocationMarker = useCallback((lat: number, lng: number) => {
+        if (!mapInstance.current) return;
+
+        if (userLocationMarker) {
+            userLocationMarker.setMap(null); // Clear existing user location marker
+        }
+
+        const newUserMarker = new window.google.maps.Marker({
+            position: { lat, lng },
+            map: mapInstance.current,
+            icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                fillColor: '#4285F4', // Google Blue
+                fillOpacity: 1,
+                strokeColor: '#FFFFFF', // White border
+                strokeWeight: 2,
+                scale: 8, // Size of the circle
+            },
+            title: '내 위치',
+            zIndex: 1000, // Ensure it's on top
+        });
+        setUserLocationMarker(newUserMarker);
+    }, [mapInstance, userLocationMarker]);
 
     const setCenter = useCallback((lat: number, lng: number) => {
         if (!mapInstance.current) return;
@@ -157,7 +182,11 @@ export function useGoogleMap() {
             polylineInstance.current.setMap(null);
             polylineInstance.current = null;
         }
-    }, []);
+        if (userLocationMarker) {
+            userLocationMarker.setMap(null);
+            setUserLocationMarker(null);
+        }
+    }, [userLocationMarker]);
 
     const relayout = useCallback(() => {
         // Google Maps usually handles relayout automatically.
@@ -178,6 +207,7 @@ export function useGoogleMap() {
         setCenter,
         setZoom, // Renamed from setLevel
         drawDirections,
+        drawUserLocationMarker,
         clearOverlays,
         displayStreetView, // Renamed from displayRoadview
         relayout,
