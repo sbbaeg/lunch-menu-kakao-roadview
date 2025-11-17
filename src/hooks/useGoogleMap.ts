@@ -105,13 +105,28 @@ export function useGoogleMap() {
                     map: mapInstance.current,
                 });
             } else {
-                console.error("Directions API error:", data.error || "Unknown error");
-                // Optionally, show an alert to the user
-                // alert(`길찾기 오류: ${data.error || '경로를 찾을 수 없습니다.'}`);
+                console.error("Directions API error: No routes found, drawing straight line.", data.error || "Unknown error");
+                // API가 경로를 찾지 못하면 직선을 그립니다.
+                polylineInstance.current = new window.google.maps.Polyline({
+                    path: [origin, destination],
+                    strokeColor: "#FF0000", // 빨간색으로 표시하여 실제 경로가 아님을 나타냄
+                    strokeWeight: 3,
+                    strokeOpacity: 0.6,
+                    map: mapInstance.current,
+                    geodesic: true, // 구의 대원(Great Circle)을 따라 그립니다.
+                });
             }
         } catch (error) {
             console.error("Directions fetch failed:", error);
-            // alert("길찾기 요청 중 네트워크 오류가 발생했습니다.");
+            // 네트워크 오류 시에도 직선을 그립니다.
+            polylineInstance.current = new window.google.maps.Polyline({
+                path: [origin, destination],
+                strokeColor: "#FF0000",
+                strokeWeight: 3,
+                strokeOpacity: 0.6,
+                map: mapInstance.current,
+                geodesic: true,
+            });
         }
     }, []);
 
