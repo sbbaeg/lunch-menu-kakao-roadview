@@ -21,6 +21,13 @@ export async function GET(
   try {
     const inquiry = await prisma.inquiry.findUnique({
       where: { id: inquiryId },
+      include: {
+        user: {
+          select: {
+            name: true,
+          }
+        }
+      }
     });
 
     if (!inquiry || inquiry.userId !== session.user.id) {

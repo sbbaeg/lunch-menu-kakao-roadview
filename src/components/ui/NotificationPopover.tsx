@@ -10,10 +10,25 @@ import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { NotificationViewerDialog } from "./NotificationViewerDialog";
-import { Notification } from "@prisma/client";
+import { Notification as PrismaNotification } from "@prisma/client";
 
 // Helper component to render each notification
-const NotificationItem = ({ notification, onDelete, onClick }: { notification: Notification, onDelete: (id: number) => void, onClick: () => void }) => {
+const NotificationItem = ({ notification, onDelete, onClick }: { notification: PrismaNotification, onDelete: (id: number) => void, onClick: () => void }) => {
+  
+  const getNotificationTypeLabel = (type: PrismaNotification['type']) => {
+    switch (type) {
+      case 'GENERAL':
+        return '메시지';
+      case 'TAG_SUBSCRIPTION':
+        return '태그';
+      case 'REVIEW_UPVOTE':
+      case 'BEST_REVIEW':
+        return '리뷰';
+      default:
+        return '알림';
+    }
+  };
+
   return (
     <div
       key={notification.id}
@@ -24,9 +39,12 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: N
       onClick={onClick}
     >
       <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-        <div className="font-semibold flex items-center gap-2 overflow-hidden">
-          <p className="truncate">{notification.message}</p>
-          {!notification.read && <span className="block h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />}
+        <div className="flex items-center gap-2 overflow-hidden">
+          <p className="font-semibold truncate">{notification.message}</p>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+            <span className="border-l h-3"></span>
+            <span>{getNotificationTypeLabel(notification.type)}</span>
+          </div>
         </div>
         <div className="flex items-center flex-shrink-0">
           <div className={cn("text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
@@ -46,7 +64,7 @@ export function NotificationPopover() {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [lastNotificationDate, setLastNotificationDate] = useState<Date | null>(null);
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<PrismaNotification | null>(null);
 
   useEffect(() => {
     if (notifications.length > 0) {
@@ -113,7 +131,7 @@ export function NotificationPopover() {
     setSelectedNotification(null);
   };
 
-  const getLinkForNotification = (notification: Notification | null): string | null => {
+  const getLinkForNotification = (notification: PrismaNotification | null): string | null => {
     if (!notification) return null;
     try {
       // This is for older notifications that had a JSON message
