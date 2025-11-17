@@ -18,21 +18,21 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: N
     <div
       key={notification.id}
       className={cn(
-        "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all cursor-pointer hover:bg-muted/50",
+        "w-full items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all cursor-pointer hover:bg-muted/50",
         !notification.read && "bg-accent"
       )}
       onClick={onClick}
     >
-      <div className="flex w-full flex-col gap-1">
-        <div className="flex items-center">
-          <div className="font-semibold flex-grow flex items-center gap-2 overflow-hidden">
-            <p className="truncate">{notification.message}</p>
-            {!notification.read && <span className="block h-2 w-2 rounded-full bg-red-500" />}
+      <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+        <div className="font-semibold flex items-center gap-2 overflow-hidden">
+          <p className="truncate">{notification.message}</p>
+          {!notification.read && <span className="block h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />}
+        </div>
+        <div className="flex items-center flex-shrink-0">
+          <div className={cn("text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
+            {format(new Date(notification.createdAt), "MM-dd HH:mm")}
           </div>
-          <div className={cn("ml-auto text-xs pl-2 flex-shrink-0", !notification.read ? "text-foreground" : "text-muted-foreground")}>
-            {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
-          </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 flex-shrink-0" onClick={(e) => { e.stopPropagation(); onDelete(notification.id); }}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" onClick={(e) => { e.stopPropagation(); onDelete(notification.id); }}>
             <X className="h-4 w-4" />
           </Button>
         </div>

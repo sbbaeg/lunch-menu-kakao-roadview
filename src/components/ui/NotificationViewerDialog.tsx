@@ -14,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Notification } from '@prisma/client';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { ArrowLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Inquiry {
     id: number;
@@ -35,6 +38,7 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
     const [inquiry, setInquiry] = useState<Inquiry | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isMobile = useMediaQuery("(max-width: 768px)");
 
     useEffect(() => {
         if (isOpen && notification?.inquiryId) {
@@ -59,7 +63,6 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
             };
             fetchInquiryDetails();
         } else if (isOpen && notification) {
-            // No inquiry to fetch, just display the notification message
             setInquiry(null);
             setIsLoading(false);
             setError(null);
@@ -75,19 +78,18 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
     const renderContent = () => {
         if (isLoading) {
             return (
-                <div className="space-y-4 py-4">
+                <div className="space-y-4 py-4 px-4">
                     <Skeleton className="h-8 w-3/4" />
                     <Skeleton className="h-24 w-full" />
                 </div>
             );
         }
         if (error) {
-            return <p className="text-red-500 py-4">{error}</p>;
+            return <p className="text-red-500 py-4 px-4">{error}</p>;
         }
-        // Case 1: It's an inquiry notification
         if (inquiry) {
             return (
-                <div className="max-h-[60vh] overflow-y-auto space-y-4 py-4">
+                <div className="space-y-4 py-4 px-4">
                     {inquiry.isFromAdmin ? (
                         <div>
                             <Label className="font-semibold">관리자 메시지</Label>
@@ -114,10 +116,9 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
                 </div>
             );
         }
-        // Case 2: It's a simple notification
         if (notification) {
              return (
-                <div className="py-4">
+                <div className="py-4 px-4">
                     <p>{notification.message}</p>
                 </div>
              )
@@ -127,16 +128,28 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl min-h-[300px] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>{inquiry?.title || notification?.message || '알림 상세'}</DialogTitle>
+            <DialogContent className={cn(
+                "flex flex-col",
+                isMobile 
+                    ? "h-screen w-screen max-w-full rounded-none border-0" 
+                    : "max-w-2xl min-h-[300px]"
+            )}>
+                <DialogHeader className={cn("p-4 border-b", isMobile && "flex-shrink-0")}>
+                    <div className="flex items-center gap-4">
+                        {isMobile && (
+                            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                                <ArrowLeft className="h-6 w-6" />
+                            </Button>
+                        )}
+                        <DialogTitle className="truncate">{inquiry?.title || notification?.message || '알림 상세'}</DialogTitle>
+                    </div>
                 </DialogHeader>
                 <div className="flex-grow overflow-y-auto">
                     {renderContent()}
                 </div>
-                <DialogFooter>
+                <DialogFooter className={cn("p-4 border-t", isMobile && "flex-shrink-0")}>
                     <Button variant="destructive" onClick={handleDelete} disabled={!notification}>알림 삭제</Button>
-                    {link && <Button variant="outline" asChild><a href={link}>보러 가기</a></Button>}
+                    {link && <Button variant="outline" asChild><a href={link} onClick={() => onOpenChange(false)}>보러 가기</a></Button>}
                     <Button onClick={() => onOpenChange(false)}>확인</Button>
                 </DialogFooter>
             </DialogContent>
