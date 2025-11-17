@@ -127,11 +127,13 @@ export function NotificationViewerDialog({ isOpen, onOpenChange, notification, o
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="max-w-2xl min-h-[300px] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>{inquiry?.title || notification?.message || '알림 상세'}</DialogTitle>
                 </DialogHeader>
-                {renderContent()}
+                <div className="flex-grow overflow-y-auto">
+                    {renderContent()}
+                </div>
                 <DialogFooter>
                     <Button variant="destructive" onClick={handleDelete} disabled={!notification}>알림 삭제</Button>
                     {link && <Button variant="outline" asChild><a href={link}>보러 가기</a></Button>}

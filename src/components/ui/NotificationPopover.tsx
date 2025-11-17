@@ -25,7 +25,7 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: N
     >
       <div className="flex w-full flex-col gap-1">
         <div className="flex items-center">
-          <div className="font-semibold flex-grow flex items-center gap-2">
+          <div className="font-semibold flex-grow flex items-center gap-2 overflow-hidden">
             <p className="truncate">{notification.message}</p>
             {!notification.read && <span className="block h-2 w-2 rounded-full bg-red-500" />}
           </div>

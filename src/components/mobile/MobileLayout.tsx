@@ -47,6 +47,8 @@ import RankingPage from '@/app/ranking/page'; // 1. Import RankingPage
 import NotificationsPage from './NotificationsPage'; // 알림 페이지 임포트
 import { AppRestaurant, Tag } from '@/lib/types';
 import { useSession } from "next-auth/react";
+import { useNotifications } from '@/hooks/useNotifications';
+import { useInquiryNotifications } from '@/hooks/useInquiryNotifications';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -90,6 +92,8 @@ export default function MobileLayout() {
     const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
     const { likedRestaurants, isLoading: isLoadingLiked } = useLikedRestaurants();
+    const { unreadCount: unreadGeneralNotificationCount } = useNotifications();
+    const { unreadInquiryCount } = useInquiryNotifications();
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -205,11 +209,14 @@ export default function MobileLayout() {
         return <SplashScreen />;
     }
 
+    const hasUnreadNotifications = unreadGeneralNotificationCount > 0 || unreadInquiryCount > 0;
+
     const myPageProps = {
         onShowBlacklist: () => setIsBlacklistOpen(true),
         onShowTagManagement: () => setIsTagManagementOpen(true),
         onShowRanking: showRanking, // 3. Pass action to MyPage
         onShowNotifications: showNotifications,
+        unreadInquiryCount: unreadInquiryCount,
     };
 
     return (
@@ -227,7 +234,8 @@ export default function MobileLayout() {
                     {/* 하단 탭 바: 화면 맨 아래에 고정 */}
                     <div className="absolute bottom-0 left-0 right-0 h-20">
                         <BottomTabBar 
-                            onSearchClick={handleCentralSearchClick} 
+                            onSearchClick={handleCentralSearchClick}
+                            hasUnreadNotifications={hasUnreadNotifications}
                         />
                     </div>
                 </>
