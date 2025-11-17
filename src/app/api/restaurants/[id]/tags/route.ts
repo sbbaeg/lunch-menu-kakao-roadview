@@ -8,7 +8,7 @@ import { AppRestaurant } from '@/lib/types'; // Restaurant 타입을 가져옵�
 // 타입을 별도로 정의
 type RouteContext = {
     params: {
-        id: string; // kakaoPlaceId
+        id: string; // googlePlaceId
     };
 };
 
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     try {
-        const kakaoPlaceId = params.id;
+        const googlePlaceId = params.id;
         const { tagId, restaurant } = await request.json() as { tagId: number, restaurant: AppRestaurant };
 
         if (!tagId || !restaurant) {
@@ -28,16 +28,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
         // 1. 레스토랑 정보를 DB에 Upsert (없으면 생성, 있으면 가져오기)
         const dbRestaurant = await prisma.restaurant.upsert({
-            where: { kakaoPlaceId: kakaoPlaceId },
+            where: { googlePlaceId: googlePlaceId },
             update: {},
             create: {
-                kakaoPlaceId: restaurant.id,
+                googlePlaceId: restaurant.id,
                 placeName: restaurant.placeName,
                 address: restaurant.address,
-                latitude: Number(restaurant.y),
-                longitude: Number(restaurant.x),
+                latitude: parseFloat(restaurant.y),
+                longitude: parseFloat(restaurant.x),
                 categoryName: restaurant.categoryName,
-            }
+            },
         });
 
         // 2. DB에 저장된 레스토랑의 실제 ID (Int)를 사용

@@ -41,24 +41,23 @@ export async function GET(
 
         // ✅ 각 맛집에 대해 Google 상세 정보를 포함한 전체 정보를 가져옵니다.
         const enrichedRestaurants = await Promise.all(
-            basicRestaurants.map(restaurant => 
-                fetchFullGoogleDetails({
-                    id: restaurant.kakaoPlaceId,
-                    place_name: restaurant.placeName,
-                    category_name: restaurant.categoryName || '',
-                    road_address_name: restaurant.address || '',
-                    address_name: restaurant.address || '',
-                    x: String(restaurant.longitude),
-                    y: String(restaurant.latitude),
-                    place_url: `https://place.map.kakao.com/${restaurant.kakaoPlaceId}`,
-                    distance: '',
-                })
-            )
+                        basicRestaurants.map(restaurant =>
+                            fetchFullGoogleDetails({
+                                id: restaurant.googlePlaceId,
+                                place_name: restaurant.placeName,
+                                category_name: restaurant.categoryName || '',
+                                road_address_name: restaurant.address || '',
+                                address_name: restaurant.address || '',
+                                x: String(restaurant.longitude),
+                                y: String(restaurant.latitude),
+                                place_url: `https://www.google.com/maps/place/?q=place_id:${restaurant.googlePlaceId}`,
+                                distance: '',
+                            })            )
         );
 
         const finalRestaurants: AppRestaurant[] = enrichedRestaurants.map(place => ({
             id: place.id,
-            kakaoPlaceId: place.id,
+            googlePlaceId: place.id,
             placeName: place.place_name,
             categoryName: place.category_name,
             address: place.road_address_name,

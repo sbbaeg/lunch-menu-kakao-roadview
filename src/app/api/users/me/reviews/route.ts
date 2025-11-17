@@ -23,7 +23,7 @@ export async function GET() {
                     select: {
                         id: true,
                         placeName: true,
-                        kakaoPlaceId: true // ❗️ 상세 페이지 이동에 필수
+                        googlePlaceId: true // ❗️ 상세 페이지 이동에 필수
                     }
                 }
             },

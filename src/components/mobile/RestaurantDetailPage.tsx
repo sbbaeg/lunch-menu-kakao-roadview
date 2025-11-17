@@ -11,7 +11,6 @@ import { VoteType } from '@prisma/client';
 import { RestaurantDetails } from '@/components/RestaurantDetails';
 import { ReviewSection } from '@/components/ReviewSection';
 import { MapPanel } from '@/components/MapPanel';
-import { useKakaoMap } from '@/hooks/useKakaoMap';
 
 interface RestaurantDetailPageProps {
     isFavorite: (id: string) => boolean;

@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { fetchFullGoogleDetails } from '@/lib/googleMaps';
-import { AppRestaurant, KakaoPlaceItem } from '@/lib/types';
+import { AppRestaurant, GooglePlaceItem } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,19 +42,19 @@ export async function GET(request: Request) {
       rankedRestaurants.map(async (r) => {
         try {
           // /api/restaurants/[id] 와 유사한 로직으로 전체 데이터 구성
-          const kakaoPlaceItem: KakaoPlaceItem = {
-            id: r.kakaoPlaceId,
+          const googlePlaceItem: GooglePlaceItem = {
+            id: r.googlePlaceId,
             place_name: r.placeName,
             y: String(r.latitude),
             x: String(r.longitude),
-            place_url: `https://place.map.kakao.com/${r.kakaoPlaceId}`,
+            place_url: `https://www.google.com/maps/place/?q=place_id:${r.googlePlaceId}`,
             category_name: r.categoryName || '',
             road_address_name: r.address || '',
             address_name: r.address || '',
             distance: '',
           };
 
-          const restaurantWithGoogleDetails = await fetchFullGoogleDetails(kakaoPlaceItem);
+          const restaurantWithGoogleDetails = await fetchFullGoogleDetails(googlePlaceItem);
 
           const reviewAggregations = await prisma.review.aggregate({
             where: { restaurantId: r.id },
@@ -63,15 +63,15 @@ export async function GET(request: Request) {
           });
 
           const finalRestaurantData: AppRestaurant = {
-            id: r.kakaoPlaceId,
+            id: r.googlePlaceId,
             dbId: r.id,
-            kakaoPlaceId: r.kakaoPlaceId,
+            googlePlaceId: r.googlePlaceId,
             placeName: r.placeName,
             categoryName: r.categoryName || '',
             address: r.address || '',
             x: String(r.longitude),
             y: String(r.latitude),
-            placeUrl: `https://place.map.kakao.com/${r.kakaoPlaceId}`,
+            placeUrl: `https://www.google.com/maps/place/?q=place_id:${r.googlePlaceId}`,
             distance: '',
             tags: [], // 랭킹 페이지에서는 태그 정보를 일단 제외
             googleDetails: restaurantWithGoogleDetails.googleDetails,
