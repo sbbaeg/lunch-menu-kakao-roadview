@@ -1,8 +1,6 @@
 "use client";
 
 import { useAppStore } from '@/store/useAppStore';
-import { useNotifications } from '@/hooks/useNotifications';
-import { useInquiryNotifications } from '@/hooks/useInquiryNotifications';
 import { Map, Heart, Search, Dices, User } from 'lucide-react';
 
 // 탭 종류를 타입으로 정의
@@ -10,7 +8,8 @@ type Tab = 'map' | 'favorites' | 'roulette' | 'my-page';
 
 // BottomTabBar가 받을 props 타입 정의
 interface BottomTabBarProps {
-  onSearchClick: () => void; // 중앙 검색 버튼 클릭 시 실행될 함수
+  onSearchClick: () => void;
+  hasUnreadNotifications: boolean;
 }
 
 // 일반 탭 아이템을 위한 재사용 컴포넌트
@@ -32,11 +31,9 @@ const TabItem = ({ icon, label, isActive, onClick, hasNotification }: {
   </button>
 );
 
-export default function BottomTabBar({ onSearchClick }: BottomTabBarProps) {
+export default function BottomTabBar({ onSearchClick, hasUnreadNotifications }: BottomTabBarProps) {
   const activeTab = useAppStore((state) => state.activeTab);
   const setActiveTab = useAppStore((state) => state.setActiveTab);
-  const { unreadCount } = useNotifications();
-  const { unreadInquiryCount } = useInquiryNotifications();
 
   return (
     <footer className="relative h-20 w-full border-t bg-background shadow-inner">
@@ -85,7 +82,7 @@ export default function BottomTabBar({ onSearchClick }: BottomTabBarProps) {
             label="마이페이지"
             isActive={activeTab === 'my-page'}
             onClick={() => setActiveTab('my-page')}
-            hasNotification={unreadCount > 0 || unreadInquiryCount > 0}
+            hasNotification={hasUnreadNotifications}
           />
         </div>
       </div>

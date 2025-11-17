@@ -163,7 +163,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
           <p className="text-sm text-muted-foreground mt-1">{new Date(inq.createdAt).toLocaleDateString('ko-KR')}</p>
         </div>
         <div className="flex items-center gap-2">
-          {inq.isResolved && <Badge>답변완료</Badge>}
+          {!inq.isFromAdmin && inq.isResolved && <Badge>답변완료</Badge>}
           <Button
             variant="ghost"
             size="icon"

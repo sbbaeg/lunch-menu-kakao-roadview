@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         data: {
           userId,
           type: NotificationType.GENERAL,
-          message: `관리자로부터 새 메시지: "${title}"`,
+          message: `관리자 메시지: "${title}"`,
           inquiryId: newInquiry.id,
         },
       });
