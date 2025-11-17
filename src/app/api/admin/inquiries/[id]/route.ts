@@ -26,34 +26,36 @@ export async function PUT(
       return NextResponse.json({ error: 'Admin reply text is required.' }, { status: 400 });
     }
 
-    const updatedInquiry = await prisma.inquiry.update({
-      where: { id: inquiryId },
-      data: {
-        adminReply: adminReply,
-        isResolved: true,
-        isReadByUser: false, // This can still be useful for the inquiry list UI
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    const updatedInquiry = await prisma.$transaction(async (tx) => {
+      const inquiry = await tx.inquiry.update({
+        where: { id: inquiryId },
+        data: {
+          adminReply: adminReply,
+          isResolved: true,
+          isReadByUser: false, // This can still be useful for the inquiry list UI
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    // Create a notification for the user
-    await prisma.notification.create({
-      data: {
-        userId: updatedInquiry.userId,
-        type: NotificationType.GENERAL,
-        message: `문의하신 "${updatedInquiry.title}"에 답변이 등록되었습니다.`,
-        inquiry: {
-          connect: { id: updatedInquiry.id }
+      // Create a notification for the user
+      await tx.notification.create({
+        data: {
+          userId: inquiry.userId,
+          type: NotificationType.GENERAL,
+          message: `문의하신 "${inquiry.title}"에 답변이 등록되었습니다.`,
+          inquiryId: inquiry.id,
         }
-      }
+      });
+
+      return inquiry;
     });
 
     return NextResponse.json(updatedInquiry);

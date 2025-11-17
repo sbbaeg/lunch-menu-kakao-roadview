@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Notification } from '@prisma/client';
 
 interface Inquiry {
     id: number;
@@ -22,35 +23,33 @@ interface Inquiry {
     isFromAdmin: boolean;
 }
 
-interface NotificationDetailDialogProps {
+interface NotificationViewerDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    notificationId: number | null;
-    inquiryId: number | null;
+    notification: Notification | null;
     onDelete: (notificationId: number) => void;
+    link?: string | null;
 }
 
-export function NotificationDetailDialog({ isOpen, onOpenChange, notificationId, inquiryId, onDelete }: NotificationDetailDialogProps) {
+export function NotificationViewerDialog({ isOpen, onOpenChange, notification, onDelete, link }: NotificationViewerDialogProps) {
     const [inquiry, setInquiry] = useState<Inquiry | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (isOpen && inquiryId) {
+        if (isOpen && notification?.inquiryId) {
             const fetchInquiryDetails = async () => {
                 setIsLoading(true);
                 setError(null);
                 try {
-                    // Fetch inquiry details
-                    const res = await fetch(`/api/inquiries/${inquiryId}`);
+                    const res = await fetch(`/api/inquiries/${notification.inquiryId}`);
                     if (!res.ok) {
                         throw new Error('메시지 내용을 불러오는 데 실패했습니다.');
                     }
                     const data = await res.json();
                     setInquiry(data);
 
-                    // Mark as read
-                    await fetch(`/api/inquiries/${inquiryId}/read`, { method: 'PATCH' });
+                    await fetch(`/api/inquiries/${notification.inquiryId}/read`, { method: 'PATCH' });
 
                 } catch (e: any) {
                     setError(e.message);
@@ -59,12 +58,17 @@ export function NotificationDetailDialog({ isOpen, onOpenChange, notificationId,
                 }
             };
             fetchInquiryDetails();
+        } else if (isOpen && notification) {
+            // No inquiry to fetch, just display the notification message
+            setInquiry(null);
+            setIsLoading(false);
+            setError(null);
         }
-    }, [isOpen, inquiryId]);
+    }, [isOpen, notification]);
 
     const handleDelete = () => {
-        if (notificationId) {
-            onDelete(notificationId);
+        if (notification) {
+            onDelete(notification.id);
         }
     };
 
@@ -80,6 +84,7 @@ export function NotificationDetailDialog({ isOpen, onOpenChange, notificationId,
         if (error) {
             return <p className="text-red-500 py-4">{error}</p>;
         }
+        // Case 1: It's an inquiry notification
         if (inquiry) {
             return (
                 <div className="max-h-[60vh] overflow-y-auto space-y-4 py-4">
@@ -109,6 +114,14 @@ export function NotificationDetailDialog({ isOpen, onOpenChange, notificationId,
                 </div>
             );
         }
+        // Case 2: It's a simple notification
+        if (notification) {
+             return (
+                <div className="py-4">
+                    <p>{notification.message}</p>
+                </div>
+             )
+        }
         return null;
     };
 
@@ -116,11 +129,12 @@ export function NotificationDetailDialog({ isOpen, onOpenChange, notificationId,
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{inquiry?.title || '메시지 상세'}</DialogTitle>
+                    <DialogTitle>{inquiry?.title || notification?.message || '알림 상세'}</DialogTitle>
                 </DialogHeader>
                 {renderContent()}
                 <DialogFooter>
-                    <Button variant="destructive" onClick={handleDelete} disabled={!notificationId}>알림 삭제</Button>
+                    <Button variant="destructive" onClick={handleDelete} disabled={!notification}>알림 삭제</Button>
+                    {link && <Button variant="outline" asChild><a href={link}>보러 가기</a></Button>}
                     <Button onClick={() => onOpenChange(false)}>확인</Button>
                 </DialogFooter>
             </DialogContent>

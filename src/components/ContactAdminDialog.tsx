@@ -191,25 +191,21 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
             <DialogTitle>문의 내역</DialogTitle>
             <DialogDescription>과거에 문의했던 내역을 확인하거나 새 문의를 작성할 수 있습니다.</DialogDescription>
           </DialogHeader>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="all">전체</TabsTrigger>
-              <TabsTrigger value="unanswered">미응답</TabsTrigger>
-              <TabsTrigger value="answered">답변완료</TabsTrigger>
+          <Tabs defaultValue="inquiries" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="inquiries">문의 내역</TabsTrigger>
+              <TabsTrigger value="messages">받은 메시지</TabsTrigger>
             </TabsList>
             <div className="max-h-[50vh] min-h-[300px] overflow-y-auto space-y-3 pr-2 py-4">
               {isLoading && <p>목록을 불러오는 중...</p>}
               {error && <p className="text-red-500">{error}</p>}
               {!isLoading && (
                 <>
-                  <TabsContent value="all">
-                    {renderInquiryList(inquiries)}
+                  <TabsContent value="inquiries">
+                    {renderInquiryList(inquiries.filter(i => !i.isFromAdmin))}
                   </TabsContent>
-                  <TabsContent value="unanswered">
-                    {renderInquiryList(unansweredInquiries)}
-                  </TabsContent>
-                  <TabsContent value="answered">
-                    {renderInquiryList(answeredInquiries)}
+                  <TabsContent value="messages">
+                    {renderInquiryList(inquiries.filter(i => i.isFromAdmin))}
                   </TabsContent>
                 </>
               )}
