@@ -39,9 +39,11 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: P
       onClick={onClick}
     >
       <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-        <div className="font-semibold flex items-center gap-2 overflow-hidden">
-          <p className="truncate">{notification.message}</p>
-          {!notification.read && <span className="block h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />}
+        <div className="flex items-baseline gap-2 overflow-hidden">
+          <p className="font-semibold truncate">{notification.message}</p>
+          <span className="text-xs text-muted-foreground flex-shrink-0">
+            | {getNotificationTypeLabel(notification.type)}
+          </span>
         </div>
         <div className="flex items-center flex-shrink-0">
           <div className={cn("text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
@@ -92,7 +94,7 @@ export function NotificationPopover() {
         lastNotificationDateRef.current = new Date(latestNotification.createdAt);
       }
     }
-  }, [notifications]);
+  }, [notifications, unreadCount]);
 
   const hasReadNotifications = notifications.some(n => n.read);
 
