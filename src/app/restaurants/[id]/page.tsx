@@ -29,6 +29,7 @@ import { SideMenuSheet } from '@/components/SideMenuSheet';
 import { FavoritesDialog } from '@/components/FavoritesDialog';
 import { BlacklistDialog } from '@/components/BlacklistDialog';
 import { TagManagementDialog } from '@/components/TagManagementDialog';
+import { VoteType } from '@prisma/client';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -46,6 +47,7 @@ export default function RestaurantPage() {
   const { data: session, status } = useSession();
   const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isVoting, setIsVoting] = useState(false);
 
   const totalVotes = (restaurant?.likeCount ?? 0) + (restaurant?.dislikeCount ?? 0); // restaurant가 null일 수 있으므로 ?. 사용
   const likePercentage = totalVotes > 0 
@@ -91,6 +93,69 @@ export default function RestaurantPage() {
     };
     fetchRestaurant();
   }, [id, router]);
+
+  const handleVote = async (voteType: VoteType) => {
+    if (!session || isVoting || !restaurant?.dbId) return;
+    
+    setIsVoting(true);
+    const originalRestaurant = restaurant;
+
+    // Optimistic UI update
+    setRestaurant(prev => {
+        if (!prev) return null;
+        
+        const currentVote = prev.currentUserVote;
+        let likeIncrement = 0;
+        let dislikeIncrement = 0;
+        let nextVote: VoteType | null = null;
+
+        if (currentVote === voteType) { // Cancel vote
+            if (voteType === 'UPVOTE') likeIncrement = -1;
+            else dislikeIncrement = -1;
+            nextVote = null;
+        } else { // New or change vote
+            if (currentVote === 'UPVOTE') likeIncrement = -1;
+            if (currentVote === 'DOWNVOTE') dislikeIncrement = -1;
+            
+            if (voteType === 'UPVOTE') likeIncrement += 1;
+            else dislikeIncrement += 1;
+            nextVote = voteType;
+        }
+
+        return {
+            ...prev,
+            likeCount: (prev.likeCount ?? 0) + likeIncrement,
+            dislikeCount: (prev.dislikeCount ?? 0) + dislikeIncrement,
+            currentUserVote: nextVote,
+        };
+    });
+
+    try {
+      const response = await fetch(`/api/restaurants/${restaurant.dbId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voteType }),
+      });
+
+      if (!response.ok) throw new Error('Vote failed');
+      
+      // Sync with server response
+      const updatedData = await response.json();
+      setRestaurant(prev => prev ? {
+          ...prev,
+          likeCount: updatedData.likeCount,
+          dislikeCount: updatedData.dislikeCount,
+          currentUserVote: updatedData.currentUserVote,
+      } : null);
+
+    } catch (error) {
+      // Revert on failure
+      setRestaurant(originalRestaurant);
+      alert('투표 처리에 실패했습니다.');
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   const handleBlacklistClick = () => {
     if (status === 'authenticated') {
@@ -234,6 +299,9 @@ export default function RestaurantPage() {
                             likeCount={restaurant.likeCount}
                             dislikeCount={restaurant.dislikeCount}
                             likePercentage={likePercentage}
+                            currentUserVote={restaurant.currentUserVote}
+                            onVote={handleVote}
+                            isVoting={isVoting}
                         />
                     </div>
                 </div>
