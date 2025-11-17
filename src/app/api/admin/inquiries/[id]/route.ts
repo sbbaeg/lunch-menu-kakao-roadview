@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { NotificationType } from '@prisma/client';
 
 export async function PUT(
   request: Request,
@@ -30,7 +31,7 @@ export async function PUT(
       data: {
         adminReply: adminReply,
         isResolved: true,
-        isReadByUser: false, // Set to false so the user gets a notification
+        isReadByUser: false, // This can still be useful for the inquiry list UI
       },
       include: {
         user: {
@@ -41,6 +42,18 @@ export async function PUT(
           },
         },
       },
+    });
+
+    // Create a notification for the user
+    await prisma.notification.create({
+      data: {
+        userId: updatedInquiry.userId,
+        type: NotificationType.GENERAL,
+        message: `문의하신 "${updatedInquiry.title}"에 답변이 등록되었습니다.`,
+        inquiry: {
+          connect: { id: updatedInquiry.id }
+        }
+      }
     });
 
     return NextResponse.json(updatedInquiry);

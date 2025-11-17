@@ -10,12 +10,15 @@ import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { toast } from "sonner";
+import { NotificationDetailDialog } from "./NotificationDetailDialog";
+import { Notification } from "@prisma/client";
 
 // Helper component to render each notification
-const NotificationItem = ({ notification, onDelete }: { notification: any, onDelete: (id: number) => void }) => {
+const NotificationItem = ({ notification, onDelete, onClick }: { notification: any, onDelete: (id: number) => void, onClick: () => void }) => {
   let messageContent = notification.message;
   let tagId = null;
   let restaurantId = null;
+  const isGeneralInquiry = notification.type === 'GENERAL' && notification.inquiryId;
 
   if (notification.type === 'TAG_SUBSCRIPTION' || notification.type === 'REVIEW_UPVOTE' || notification.type === 'BEST_REVIEW') {
     try {
@@ -27,7 +30,7 @@ const NotificationItem = ({ notification, onDelete }: { notification: any, onDel
         restaurantId = parsed.restaurantId;
       }
     } catch (e) {
-      // Keep messageContent as is if parsing fails (for backward compatibility)
+      // Keep messageContent as is if parsing fails
     }
   }
 
@@ -36,8 +39,10 @@ const NotificationItem = ({ notification, onDelete }: { notification: any, onDel
       key={notification.id}
       className={cn(
         "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
-        !notification.read && "bg-accent"
+        !notification.read && "bg-accent",
+        isGeneralInquiry && "cursor-pointer hover:bg-muted/50"
       )}
+      onClick={isGeneralInquiry ? onClick : undefined}
     >
       <div className="flex w-full flex-col gap-1">
         <div className="flex items-center">
@@ -48,19 +53,19 @@ const NotificationItem = ({ notification, onDelete }: { notification: any, onDel
           <div className={cn("ml-auto text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
             {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 flex-shrink-0" onClick={() => onDelete(notification.id)}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 flex-shrink-0" onClick={(e) => { e.stopPropagation(); onDelete(notification.id); }}>
             <X className="h-4 w-4" />
           </Button>
         </div>
         {tagId && (
-          <Link href={`/tags/${tagId}`} className="w-full">
+          <Link href={`/tags/${tagId}`} onClick={(e) => e.stopPropagation()} className="w-full">
             <Button variant="outline" size="sm" className="w-full mt-2">
               태그 상세 보기
             </Button>
           </Link>
         )}
         {restaurantId && (
-          <Link href={`/restaurants/${restaurantId}`} className="w-full">
+          <Link href={`/restaurants/${restaurantId}`} onClick={(e) => e.stopPropagation()} className="w-full">
             <Button variant="outline" size="sm" className="w-full mt-2">
               음식점 상세 보기
             </Button>
@@ -76,6 +81,7 @@ export function NotificationPopover() {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [lastNotificationDate, setLastNotificationDate] = useState<Date | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
 
   useEffect(() => {
     if (notifications.length > 0) {
@@ -133,10 +139,7 @@ export function NotificationPopover() {
   const handleOpenChange = (open: boolean) => {
     if (open) {
       fetchNotifications(); // 팝오버를 열 때마다 최신 알림을 가져옵니다.
-      const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
-      if (unreadIds.length > 0) {
-        markAsRead(unreadIds);
-      }
+      // Mark as read is now handled by the detail dialog
     }
   };
 
@@ -166,56 +169,73 @@ export function NotificationPopover() {
     };
   }, [isOpen]);
 
+  const handleDeleteAndCloseDialog = (notificationId: number) => {
+    deleteNotifications([notificationId]);
+    setSelectedNotification(null);
+  }
+
   return (
-    <div className="relative" ref={popoverRef}>
-      <Button variant="ghost" size="icon" className="relative" onClick={togglePopover}>
-        <Bell className="h-6 w-6" />
-        {unreadCount > 0 && (
-          <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-red-500" />
-        )}
-      </Button>
-      {isOpen && (
-        <div className="w-80 absolute right-0 z-50 mt-2 bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-none">
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">알림</h4>
-              <p className="text-sm text-muted-foreground">
-                최근 알림 {notifications.length}개가 표시됩니다.
-              </p>
-            </div>
-            <ScrollArea className="h-[300px]">
-              <div className="grid gap-2">
-                {notifications.length > 0 ? (
-                  notifications.map((notification) => (
-                    <NotificationItem 
-                      key={notification.id} 
-                      notification={notification} 
-                      onDelete={() => deleteNotifications([notification.id])} 
-                    />
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground p-4 text-center">새로운 알림이 없습니다.</p>
-                )}
+    <>
+      <div className="relative" ref={popoverRef}>
+        <Button variant="ghost" size="icon" className="relative" onClick={togglePopover}>
+          <Bell className="h-6 w-6" />
+          {unreadCount > 0 && (
+            <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-red-500" />
+          )}
+        </Button>
+        {isOpen && (
+          <div className="w-80 absolute right-0 z-50 mt-2 bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-none">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">알림</h4>
+                <p className="text-sm text-muted-foreground">
+                  최근 알림 {notifications.length}개가 표시됩니다.
+                </p>
               </div>
-            </ScrollArea>
-            {hasReadNotifications && (
-              <>
-                <Separator />
-                <div className="pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => deleteNotifications()}
-                  >
-                    읽은 알림 모두 삭제
-                  </Button>
+              <ScrollArea className="h-[300px]">
+                <div className="grid gap-2">
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <NotificationItem 
+                        key={notification.id} 
+                        notification={notification} 
+                        onDelete={() => deleteNotifications([notification.id])}
+                        onClick={() => setSelectedNotification(notification)}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground p-4 text-center">새로운 알림이 없습니다.</p>
+                  )}
                 </div>
-              </>
-            )}
+              </ScrollArea>
+              {hasReadNotifications && (
+                <>
+                  <Separator />
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => deleteNotifications()}
+                    >
+                      읽은 알림 모두 삭제
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+      </div>
+      {selectedNotification && (
+        <NotificationDetailDialog
+          isOpen={!!selectedNotification}
+          onOpenChange={() => setSelectedNotification(null)}
+          notificationId={selectedNotification.id}
+          inquiryId={selectedNotification.inquiryId}
+          onDelete={handleDeleteAndCloseDialog}
+        />
       )}
-    </div>
+    </>
   );
 }
