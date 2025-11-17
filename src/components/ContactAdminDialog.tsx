@@ -28,6 +28,7 @@ interface Inquiry {
   isResolved: boolean;
   isReadByUser: boolean;
   createdAt: string;
+  isFromAdmin: boolean;
 }
 
 interface ContactAdminDialogProps {
@@ -151,7 +152,10 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       <div key={inq.id} className="p-3 border rounded-lg hover:bg-accent flex justify-between items-center">
         <div onClick={() => handleViewDetails(inq)} className="flex-grow cursor-pointer">
           <div className="flex items-center gap-2">
-            <p className="font-semibold truncate pr-4">{inq.title}</p>
+            <p className="font-semibold truncate pr-4">
+                {inq.isFromAdmin && <span className="text-primary">[관리자 메시지] </span>}
+                {inq.title}
+            </p>
             {inq.isResolved && !inq.isReadByUser && (
               <span className="block h-2 w-2 rounded-full bg-red-500" />
             )}
@@ -229,17 +233,19 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto space-y-4 py-4">
             <div>
-              <Label className="font-semibold">문의 내용</Label>
+              <Label className="font-semibold">{selectedInquiry.isFromAdmin ? "관리자 메시지" : "문의 내용"}</Label>
               <div className="mt-1 p-3 rounded-md border bg-muted/50 text-sm whitespace-pre-wrap">
                 {selectedInquiry.message}
               </div>
             </div>
-            <div>
-              <Label className="font-semibold">관리자 답변</Label>
-              <div className="mt-1 p-3 rounded-md border bg-primary/10 text-sm whitespace-pre-wrap min-h-[100px]">
-                {selectedInquiry.adminReply || <span className="text-muted-foreground">아직 답변이 없습니다.</span>}
+            {!selectedInquiry.isFromAdmin && (
+              <div>
+                <Label className="font-semibold">관리자 답변</Label>
+                <div className="mt-1 p-3 rounded-md border bg-primary/10 text-sm whitespace-pre-wrap min-h-[100px]">
+                  {selectedInquiry.adminReply || <span className="text-muted-foreground">아직 답변이 없습니다.</span>}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setView('list')}>목록으로</Button>
