@@ -29,6 +29,7 @@ export default function RestaurantDetailPage({
 }: RestaurantDetailPageProps) {
     const { data: session } = useSession();
     const activeRestaurantId = useAppStore(state => state.activeRestaurantId);
+    const userLocation = useAppStore(state => state.userLocation);
     const goBack = useAppStore(state => state.goBack)
 
     const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
@@ -203,7 +204,7 @@ export default function RestaurantDetailPage({
                     <MapPanel
                         restaurants={[restaurant]}
                         selectedRestaurant={restaurant}
-                        userLocation={null}
+                        userLocation={userLocation}
                         onSearchInArea={() => {}}
                         onAddressSearch={() => {}}
                         showSearchBar={false}
