@@ -1,9 +1,9 @@
-// src/app/api/restaurants/[id]/vote/route.ts
+
 import { NextResponse } from 'next/server';
-import { VoteType } from '@prisma/client';
-import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { VoteType } from '@prisma/client';
 
 export async function POST(
   request: Request,
@@ -19,32 +19,52 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
   }
 
-  try {
-    const { voteType }: { voteType: VoteType } = await request.json(); // 'UPVOTE' or 'DOWNVOTE'
-    const userId = session.user.id;
+  const { voteType } = (await request.json()) as { voteType: VoteType };
+  if (!['UPVOTE', 'DOWNVOTE'].includes(voteType)) {
+    return NextResponse.json({ error: 'Invalid vote type' }, { status: 400 });
+  }
 
+  const userId = session.user.id;
+
+  try {
     const existingVote = await prisma.restaurantVote.findUnique({
-      where: { userId_restaurantId: { userId, restaurantId } },
+      where: {
+        userId_restaurantId: {
+          userId,
+          restaurantId,
+        },
+      },
     });
 
     let likeIncrement = 0;
     let dislikeIncrement = 0;
-    
-    // Prisma 트랜잭션으로 두 테이블을 동시에 업데이트
-    const result = await prisma.$transaction(async (tx) => {
-      if (existingVote) {
-        if (existingVote.type === voteType) {
-          // 1. 투표 취소
-          await tx.restaurantVote.delete({
-            where: { userId_restaurantId: { userId, restaurantId } },
-          });
-          if (voteType === 'UPVOTE') likeIncrement = -1;
-          else dislikeIncrement = -1;
 
+    await prisma.$transaction(async (tx) => {
+      if (existingVote) {
+        // If the user is submitting the same vote again, it's a cancellation.
+        if (existingVote.type === voteType) {
+          await tx.restaurantVote.delete({
+            where: { 
+              userId_restaurantId: {
+                userId,
+                restaurantId,
+              }
+            },
+          });
+          if (voteType === 'UPVOTE') {
+            likeIncrement = -1;
+          } else {
+            dislikeIncrement = -1;
+          }
         } else {
-          // 2. 투표 변경 (예: 싫어요 -> 좋아요)
+          // If the user is changing their vote.
           await tx.restaurantVote.update({
-            where: { userId_restaurantId: { userId, restaurantId } },
+            where: {
+              userId_restaurantId: {
+                userId,
+                restaurantId,
+              }
+            },
             data: { type: voteType },
           });
           if (voteType === 'UPVOTE') {
@@ -56,34 +76,57 @@ export async function POST(
           }
         }
       } else {
-        // 3. 신규 투표
+        // If there is no existing vote, create a new one.
         await tx.restaurantVote.create({
-          data: { userId, restaurantId, type: voteType },
+          data: {
+            userId,
+            restaurantId,
+            type: voteType,
+          },
         });
-        if (voteType === 'UPVOTE') likeIncrement = 1;
-        else dislikeIncrement = 1;
+        if (voteType === 'UPVOTE') {
+          likeIncrement = 1;
+        } else {
+          dislikeIncrement = 1;
+        }
       }
 
-      // 4. Restaurant 모델의 카운트 필드를 원자적(atomic)으로 업데이트
-      const updatedRestaurant = await tx.restaurant.update({
+      // Update the aggregate counts on the restaurant
+      await tx.restaurant.update({
         where: { id: restaurantId },
         data: {
           likeCount: { increment: likeIncrement },
           dislikeCount: { increment: dislikeIncrement },
         },
-        select: { likeCount: true, dislikeCount: true } // 최신 카운트 반환
       });
-
-      // 5. 현재 사용자의 투표 상태 반환
-      const newVoteType = (existingVote?.type === voteType) ? null : voteType;
-
-      return { ...updatedRestaurant, currentUserVote: newVoteType };
     });
 
-    return NextResponse.json(result);
+    // After the transaction, fetch the new state to return to the client
+    const updatedRestaurant = await prisma.restaurant.findUnique({
+        where: { id: restaurantId },
+        select: {
+            likeCount: true,
+            dislikeCount: true,
+        }
+    });
+
+    const userVote = await prisma.restaurantVote.findUnique({
+        where: {
+            userId_restaurantId: {
+                userId,
+                restaurantId,
+            },
+        },
+        select: { type: true }
+    });
+
+    return NextResponse.json({ 
+        ...updatedRestaurant,
+        currentUserVote: userVote?.type ?? null
+    });
 
   } catch (error) {
-    console.error('Failed to vote on restaurant:', error);
-    return NextResponse.json({ error: 'Failed to vote' }, { status: 500 });
+    console.error('Error processing vote:', error);
+    return NextResponse.json({ error: 'Failed to process vote' }, { status: 500 });
   }
 }
