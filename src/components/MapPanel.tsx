@@ -70,7 +70,8 @@ export function MapPanel({
         drawUserLocationMarker(userLocation.lat, userLocation.lng);
       }
     }
-  }, [isMapReady, restaurants, userLocation, clearOverlays, displayMarkers, drawUserLocationMarker]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMapReady, restaurants, userLocation]);
 
   useEffect(() => {
     if (isMapReady && selectedRestaurant) {
