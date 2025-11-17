@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       },
     },
     travelMode: 'WALK', // Or 'DRIVE', 'BICYCLE', 'TRANSIT'
-    routingPreference: 'TRAFFIC_AWARE_OPTIMAL', // Optional: 'TRAFFIC_AWARE', 'TRAFFIC_UNAWARE'
+    // routingPreference: 'TRAFFIC_AWARE_OPTIMAL', // 'WALK' 모드에서는 사용할 수 없음
     polylineEncoding: 'ENCODED_POLYLINE', // Request encoded polyline
     computeAlternativeRoutes: false, // Optional
     languageCode: 'ko',
