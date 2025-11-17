@@ -22,6 +22,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from 'sonner';
 import { AdminMessageDialog } from '@/components/ui/AdminMessageDialog';
 import {
     AlertDialog,
@@ -371,11 +372,11 @@ export default function AdminPageClient() {
             if (!res.ok) {
                 throw new Error('메시지 전송에 실패했습니다.');
             }
-            alert('메시지를 성공적으로 보냈습니다.');
+            toast.success('메시지를 성공적으로 보냈습니다.');
             setMessagingUser(null);
         } catch (e: any) {
             setError(e.message);
-            alert(`오류: ${e.message}`);
+            toast.error(`오류: ${e.message}`);
         } finally {
             setIsSendingMessage(false);
         }
