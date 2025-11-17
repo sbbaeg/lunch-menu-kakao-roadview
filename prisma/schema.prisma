@@ -304,7 +304,12 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Link to the source of the notification
+  inquiryId Int?      @unique // Each inquiry should only have one notification
+  inquiry   Inquiry?  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
   @@index([userId])
+  @@index([inquiryId])
 }
 
 
@@ -404,6 +409,8 @@ model Inquiry {
 
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  notification Notification?
 
   @@index([userId])
   @@index([isResolved])

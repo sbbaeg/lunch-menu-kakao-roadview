@@ -18,25 +18,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User ID, title, and message are required' }, { status: 400 });
     }
 
-    // Create the inquiry and the notification in a transaction
-    const [newInquiry, newNotification] = await prisma.$transaction([
-      prisma.inquiry.create({
-        data: {
-          userId,
-          title,
-          message,
-          isFromAdmin: true,
-          isResolved: true, // Admin-initiated messages are considered "resolved" by default
-        },
-      }),
-      prisma.notification.create({
-        data: {
-          userId,
-          type: NotificationType.GENERAL,
-          message: `관리자로부터 새 메시지: "${title}"`,
-        },
-      }),
-    ]);
+    const newInquiry = await prisma.inquiry.create({
+      data: {
+        userId,
+        title,
+        message,
+        isFromAdmin: true,
+        isResolved: true, // Admin-initiated messages are considered "resolved" by default
+      },
+    });
+
+    const newNotification = await prisma.notification.create({
+      data: {
+        userId,
+        type: NotificationType.GENERAL,
+        message: `관리자로부터 새 메시지: "${title}"`,
+        inquiry: {
+          connect: { id: newInquiry.id }
+        }
+      },
+    });
 
     return NextResponse.json({ inquiry: newInquiry, notification: newNotification }, { status: 201 });
 

@@ -71,6 +71,7 @@ interface Inquiry {
     message: string;
     adminReply: string | null;
     isResolved: boolean;
+    isFromAdmin: boolean;
     createdAt: string;
     user: {
         id: string;
@@ -142,7 +143,7 @@ export default function AdminPageClient() {
     const [filteredUsers, setFilteredUsers] = useState<UserForManagement[]>([]);
     const [filteredBannedUsers, setFilteredBannedUsers] = useState<UserForManagement[]>([]);
     const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-    const [inquiryFilter, setInquiryFilter] = useState<'unresolved' | 'resolved'>('unresolved');
+    const [inquiryFilter, setInquiryFilter] = useState<'unresolved' | 'resolved' | 'admin-sent'>('unresolved');
     const [replyingInquiry, setReplyingInquiry] = useState<Inquiry | null>(null);
     const [replyText, setReplyText] = useState('');
     const [messagingUser, setMessagingUser] = useState<UserForManagement | null>(null);
@@ -653,29 +654,42 @@ export default function AdminPageClient() {
                                     <TabsList>
                                         <TabsTrigger value="unresolved">미해결</TabsTrigger>
                                         <TabsTrigger value="resolved">해결됨</TabsTrigger>
+                                        <TabsTrigger value="admin-sent">관리자 발신</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
                             </CardHeader>
                             <CardContent>
                                 <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
-                                    {inquiries.filter(i => inquiryFilter === 'resolved' ? i.isResolved : !i.isResolved).length === 0 ? (
+                                    {inquiries.filter(i => {
+                                        if (inquiryFilter === 'admin-sent') return i.isFromAdmin;
+                                        if (inquiryFilter === 'resolved') return !i.isFromAdmin && i.isResolved;
+                                        return !i.isFromAdmin && !i.isResolved;
+                                    }).length === 0 ? (
                                         <p className="text-sm text-muted-foreground text-center py-8">
-                                            {inquiryFilter === 'resolved' ? '해결된 문의가 없습니다.' : '미해결된 문의가 없습니다.'}
+                                            {inquiryFilter === 'resolved' ? '해결된 문의가 없습니다.' :
+                                             inquiryFilter === 'admin-sent' ? '관리자가 보낸 메시지가 없습니다.' :
+                                             '미해결된 문의가 없습니다.'}
                                         </p>
                                     ) : (
-                                        inquiries.filter(i => inquiryFilter === 'resolved' ? i.isResolved : !i.isResolved).map(inquiry => (
+                                        inquiries.filter(i => {
+                                            if (inquiryFilter === 'admin-sent') return i.isFromAdmin;
+                                            if (inquiryFilter === 'resolved') return !i.isFromAdmin && i.isResolved;
+                                            return !i.isFromAdmin && !i.isResolved;
+                                        }).map(inquiry => (
                                             <div key={inquiry.id} className="p-4 border rounded-lg">
                                                 <div className="flex justify-between items-start gap-4">
                                                     <div className="flex-grow">
                                                         <div className="flex items-center">
                                                             <p className="font-semibold">{inquiry.title}</p>
-                                                            {!inquiry.isResolved && <span className="ml-2 h-2 w-2 rounded-full bg-red-500" />}
+                                                            {!inquiry.isFromAdmin && !inquiry.isResolved && <span className="ml-2 h-2 w-2 rounded-full bg-red-500" />}
                                                         </div>
                                                         <p className="text-xs text-muted-foreground">
-                                                            From: <Link href={`/admin/users/${inquiry.user.id}`} className="hover:underline">{inquiry.user.name} ({inquiry.user.email})</Link>
+                                                            {inquiry.isFromAdmin ? 'To: ' : 'From: '}
+                                                            <Link href={`/admin/users/${inquiry.user.id}`} className="hover:underline">{inquiry.user.name} ({inquiry.user.email})</Link>
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            Received: {new Date(inquiry.createdAt).toLocaleString('ko-KR')}
+                                                            {inquiry.isFromAdmin ? 'Sent: ' : 'Received: '}
+                                                            {new Date(inquiry.createdAt).toLocaleString('ko-KR')}
                                                         </p>
                                                     </div>
                                                     <Button 
@@ -683,7 +697,7 @@ export default function AdminPageClient() {
                                                         variant="default"
                                                         onClick={() => handleOpenReplyDialog(inquiry)}
                                                     >
-                                                        {inquiry.isResolved ? '답변 보기/수정' : '답변하기'}
+                                                        {inquiry.isFromAdmin ? '메시지 보기' : (inquiry.isResolved ? '답변 보기/수정' : '답변하기')}
                                                     </Button>
                                                 </div>
                                                 <p className="mt-4 text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-md">{inquiry.message}</p>
@@ -708,36 +722,48 @@ export default function AdminPageClient() {
                 <Dialog open={!!replyingInquiry} onOpenChange={() => setReplyingInquiry(null)}>
                     <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>문의 답변하기</DialogTitle>
+                            <DialogTitle>{replyingInquiry.isFromAdmin ? "관리자 발신 메시지 상세" : "문의 답변하기"}</DialogTitle>
                             <DialogDescription>
-                                <p className="font-semibold mt-2">문의 제목: {replyingInquiry.title}</p>
+                                <p className="font-semibold mt-2">
+                                    {replyingInquiry.isFromAdmin ? "제목: " : "문의 제목: "}
+                                    {replyingInquiry.title}
+                                </p>
                                 <p className="text-sm text-muted-foreground">
-                                    From: {replyingInquiry.user.name} ({replyingInquiry.user.email})
+                                    {replyingInquiry.isFromAdmin ? 'To: ' : 'From: '} 
+                                    {replyingInquiry.user.name} ({replyingInquiry.user.email})
                                 </p>
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div>
-                                <Label className="font-semibold">사용자 문의 내용</Label>
+                                <Label className="font-semibold">{replyingInquiry.isFromAdmin ? "보낸 메시지 내용" : "사용자 문의 내용"}</Label>
                                 <div className="mt-1 p-3 rounded-md border bg-muted/50 text-sm whitespace-pre-wrap">
                                     {replyingInquiry.message}
                                 </div>
                             </div>
-                            <div>
-                                <Label htmlFor="adminReply" className="font-semibold">답변 작성</Label>
-                                <Textarea
-                                    id="adminReply"
-                                    value={replyText}
-                                    onChange={(e) => setReplyText(e.target.value)}
-                                    rows={8}
-                                    placeholder="여기에 답변을 입력하세요..."
-                                    className="mt-1"
-                                />
-                            </div>
+                            {!replyingInquiry.isFromAdmin && (
+                                <div>
+                                    <Label htmlFor="adminReply" className="font-semibold">답변 작성</Label>
+                                    <Textarea
+                                        id="adminReply"
+                                        value={replyText}
+                                        onChange={(e) => setReplyText(e.target.value)}
+                                        rows={8}
+                                        placeholder="여기에 답변을 입력하세요..."
+                                        className="mt-1"
+                                    />
+                                </div>
+                            )}
                         </div>
                         <DialogFooter>
-                            <Button variant="secondary" onClick={() => setReplyingInquiry(null)}>취소</Button>
-                            <Button onClick={handleReplySubmit} disabled={!replyText.trim()}>답변 등록</Button>
+                            {replyingInquiry.isFromAdmin ? (
+                                <Button onClick={() => setReplyingInquiry(null)}>확인</Button>
+                            ) : (
+                                <>
+                                    <Button variant="secondary" onClick={() => setReplyingInquiry(null)}>취소</Button>
+                                    <Button onClick={handleReplySubmit} disabled={!replyText.trim()}>답변 등록</Button>
+                                </>
+                            )}
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
