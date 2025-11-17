@@ -50,7 +50,7 @@ export async function PUT(
         data: {
           userId: inquiry.userId,
           type: NotificationType.GENERAL,
-          message: `문의 답변: "${inquiry.title}"`,
+          message: inquiry.title,
           inquiryId: inquiry.id,
         }
       });

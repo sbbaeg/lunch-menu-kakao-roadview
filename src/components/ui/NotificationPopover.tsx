@@ -39,11 +39,9 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: P
       onClick={onClick}
     >
       <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-        <div className="flex items-baseline gap-2 overflow-hidden">
-          <p className="font-semibold truncate">{notification.message}</p>
-          <span className="text-xs text-muted-foreground flex-shrink-0">
-            | {getNotificationTypeLabel(notification.type)}
-          </span>
+        <div className="font-semibold flex items-center gap-2 overflow-hidden">
+          <p className="truncate">{notification.message}</p>
+          {!notification.read && <span className="block h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />}
         </div>
         <div className="flex items-center flex-shrink-0">
           <div className={cn("text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
@@ -62,14 +60,9 @@ export function NotificationPopover() {
   const { notifications, unreadCount, fetchNotifications, deleteNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [lastNotificationDate, setLastNotificationDate] = useState<Date | null>(null);
   const [selectedNotification, setSelectedNotification] = useState<PrismaNotification | null>(null);
+  const lastNotificationDateRef = useRef<Date | null>(null);
 
-  useEffect(() => {
-    if (notifications.length > 0) {
-      setLastNotificationDate(new Date(notifications[0].createdAt));
-    }
-  }, [notifications]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -80,18 +73,26 @@ export function NotificationPopover() {
   }, [fetchNotifications]);
 
   useEffect(() => {
-    if (notifications.length > 0 && lastNotificationDate) {
+    if (notifications.length > 0) {
+      // Initialize the ref on first load without showing a toast.
+      if (lastNotificationDateRef.current === null) {
+        lastNotificationDateRef.current = new Date(notifications[0].createdAt);
+        return;
+      }
+  
       const latestNotification = notifications[0];
-      if (new Date(latestNotification.createdAt) > lastNotificationDate) {
+      if (new Date(latestNotification.createdAt) > lastNotificationDateRef.current) {
         toast(latestNotification.message, {
           action: {
             label: "내용 보기",
             onClick: () => setSelectedNotification(latestNotification),
           },
         });
+        // Update the ref. This does not cause a re-render.
+        lastNotificationDateRef.current = new Date(latestNotification.createdAt);
       }
     }
-  }, [notifications, lastNotificationDate]);
+  }, [notifications]);
 
   const hasReadNotifications = notifications.some(n => n.read);
 
@@ -157,7 +158,7 @@ export function NotificationPopover() {
           )}
         </Button>
         {isOpen && (
-          <div className="w-80 absolute right-0 z-50 mt-2 bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-none">
+          <div className="w-96 absolute right-0 z-50 mt-2 bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-none">
             <div className="grid gap-4">
               <div className="space-y-2">
                 <h4 className="font-medium leading-none">알림</h4>
