@@ -73,14 +73,18 @@ export function MapPanel({
         setCenter(Number(selectedRestaurant.y), Number(selectedRestaurant.x));
         displayStreetView({ lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
         setStreetviewVisible(false); // Renamed from setRoadviewVisible
-        if (userLocation) {
-            drawDirections(
-                { lat: userLocation.lat, lng: userLocation.lng },
-                { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) }
-            );
-        }
     }
-}, [selectedRestaurant, userLocation, isMapReady, setCenter, displayStreetView, drawDirections]);
+}, [selectedRestaurant, isMapReady, setCenter, displayStreetView]);
+
+  // Effect for drawing directions
+  useEffect(() => {
+    if (isMapReady && userLocation && selectedRestaurant) {
+      drawDirections(
+        { lat: userLocation.lat, lng: userLocation.lng },
+        { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) }
+      );
+    }
+  }, [isMapReady, userLocation, selectedRestaurant, drawDirections]);
 
   useEffect(() => {
     if (!mapInstance) return;
