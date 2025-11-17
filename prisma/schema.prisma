@@ -396,6 +396,7 @@ model Inquiry {
   title       String   @default("제목 없음")
   message     String   @db.Text
   adminReply  String?  @db.Text
+  isFromAdmin Boolean  @default(false)
   isResolved  Boolean  @default(false)
   isReadByUser Boolean @default(false)
   createdAt   DateTime @default(now())

@@ -22,6 +22,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { AdminMessageDialog } from '@/components/ui/AdminMessageDialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -144,6 +145,8 @@ export default function AdminPageClient() {
     const [inquiryFilter, setInquiryFilter] = useState<'unresolved' | 'resolved'>('unresolved');
     const [replyingInquiry, setReplyingInquiry] = useState<Inquiry | null>(null);
     const [replyText, setReplyText] = useState('');
+    const [messagingUser, setMessagingUser] = useState<UserForManagement | null>(null);
+    const [isSendingMessage, setIsSendingMessage] = useState(false);
 
     const fetchInquiries = useCallback(async () => {
         try {
@@ -352,6 +355,28 @@ export default function AdminPageClient() {
 
         } catch (e: any) {
             setError(e.message);
+        }
+    };
+
+    const handleSendMessage = async (title: string, message: string) => {
+        if (!messagingUser) return;
+        setIsSendingMessage(true);
+        try {
+            const res = await fetch('/api/admin/inquiries/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: messagingUser.id, title, message }),
+            });
+            if (!res.ok) {
+                throw new Error('메시지 전송에 실패했습니다.');
+            }
+            alert('메시지를 성공적으로 보냈습니다.');
+            setMessagingUser(null);
+        } catch (e: any) {
+            setError(e.message);
+            alert(`오류: ${e.message}`);
+        } finally {
+            setIsSendingMessage(false);
         }
     };
 
@@ -581,6 +606,7 @@ export default function AdminPageClient() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {user.isAdmin && <Badge variant="secondary">Admin</Badge>}
+                                                    <Button variant="outline" size="sm" onClick={() => setMessagingUser(user)}>메시지</Button>
                                                     <Button variant="outline" size="sm" onClick={() => router.push(`/admin/users/${user.id}`)}>상세보기</Button>
                                                 </div>
                                             </div>
@@ -715,6 +741,16 @@ export default function AdminPageClient() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+            )}
+
+            {messagingUser && (
+                <AdminMessageDialog
+                    isOpen={!!messagingUser}
+                    onOpenChange={() => setMessagingUser(null)}
+                    onSendMessage={handleSendMessage}
+                    userName={messagingUser.name || '이름 없음'}
+                    isSending={isSendingMessage}
+                />
             )}
 
             {itemToEdit && <AdminEditDialog isOpen={!!itemToEdit} onClose={() => setItemToEdit(null)} itemType={itemToEdit.type} initialText={itemToEdit.text} onSave={handleSaveItem} />}
