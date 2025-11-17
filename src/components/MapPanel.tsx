@@ -45,13 +45,6 @@ export function MapPanel({
     }
   }, [isMapReady, onMapReady]);
 
-  // Draw user location marker
-  useEffect(() => {
-    if (isMapReady && userLocation) {
-      drawUserLocationMarker(userLocation.lat, userLocation.lng);
-    }
-  }, [isMapReady, userLocation, drawUserLocationMarker]);
-
   // ResizeObserver를 사용하여 컨테이너 크기 변경 시 지도 리레이아웃
   useEffect(() => {
     const mapContainer = mapContainerRef.current;
@@ -68,12 +61,16 @@ export function MapPanel({
     };
   }, [isMapReady, mapContainerRef, relayout]);
 
+  // Effect for drawing all markers (restaurants and user location)
   useEffect(() => {
     if (isMapReady) {
       clearOverlays();
       displayMarkers(restaurants);
+      if (userLocation) {
+        drawUserLocationMarker(userLocation.lat, userLocation.lng);
+      }
     }
-  }, [restaurants, isMapReady, clearOverlays, displayMarkers]);
+  }, [isMapReady, restaurants, userLocation, clearOverlays, displayMarkers, drawUserLocationMarker]);
 
   useEffect(() => {
     if (isMapReady && selectedRestaurant) {
