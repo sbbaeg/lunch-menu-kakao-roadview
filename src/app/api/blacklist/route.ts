@@ -24,15 +24,15 @@ export async function GET() {
         
         // 프론트엔드에서 사용하는 Restaurant 타입으로 변환
         const blacklistRestaurants: AppRestaurant[] = blacklistEntries.map(entry => ({
-            id: entry.restaurant.kakaoPlaceId,
-            kakaoPlaceId: entry.restaurant.kakaoPlaceId,
+            id: entry.restaurant.googlePlaceId,
+            googlePlaceId: entry.restaurant.googlePlaceId,
             placeName: entry.restaurant.placeName,
             categoryName: entry.restaurant.categoryName || '',
             address: entry.restaurant.address || '',
             x: String(entry.restaurant.longitude),
             y: String(entry.restaurant.latitude),
-            placeUrl: `https://place.map.kakao.com/${entry.restaurant.kakaoPlaceId}`,
-            distance: '', // 이 컨텍스트에서는 거리 정보가 필요 없음
+            placeUrl: `https://www.google.com/maps/place/?q=place_id:${entry.restaurant.googlePlaceId}`,
+            distance: 'N/A', // 블랙리스트에는 거리 정보가 없음
         }));
         
         return NextResponse.json(blacklistRestaurants);
@@ -57,13 +57,13 @@ export async function POST(request: Request) {
 
         // Restaurant 테이블에 해당 음식점이 없으면 생성
         let restaurant = await prisma.restaurant.findUnique({
-            where: { kakaoPlaceId: place.id },
+            where: { googlePlaceId: place.id },
         });
 
         if (!restaurant) {
             restaurant = await prisma.restaurant.create({
                 data: {
-                    kakaoPlaceId: place.id,
+                    googlePlaceId: place.id,
                     placeName:    place.placeName,
                     address:      place.address,
                     latitude:     parseFloat(place.y),
