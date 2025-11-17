@@ -8,80 +8,45 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
-import Link from "next/link";
 import { toast } from "sonner";
-import { NotificationDetailDialog } from "./NotificationDetailDialog";
+import { NotificationViewerDialog } from "./NotificationViewerDialog";
 import { Notification } from "@prisma/client";
 
 // Helper component to render each notification
-const NotificationItem = ({ notification, onDelete, onClick }: { notification: any, onDelete: (id: number) => void, onClick: () => void }) => {
-  let messageContent = notification.message;
-  let tagId = null;
-  let restaurantId = null;
-  const isGeneralInquiry = notification.type === 'GENERAL' && notification.inquiryId;
-
-  if (notification.type === 'TAG_SUBSCRIPTION' || notification.type === 'REVIEW_UPVOTE' || notification.type === 'BEST_REVIEW') {
-    try {
-      const parsed = JSON.parse(notification.message);
-      messageContent = parsed.text;
-      if (notification.type === 'TAG_SUBSCRIPTION') {
-        tagId = parsed.tagId;
-      } else {
-        restaurantId = parsed.restaurantId;
-      }
-    } catch (e) {
-      // Keep messageContent as is if parsing fails
-    }
-  }
-
+const NotificationItem = ({ notification, onDelete, onClick }: { notification: Notification, onDelete: (id: number) => void, onClick: () => void }) => {
   return (
     <div
       key={notification.id}
       className={cn(
-        "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all",
-        !notification.read && "bg-accent",
-        isGeneralInquiry && "cursor-pointer hover:bg-muted/50"
+        "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all cursor-pointer hover:bg-muted/50",
+        !notification.read && "bg-accent"
       )}
-      onClick={isGeneralInquiry ? onClick : undefined}
+      onClick={onClick}
     >
       <div className="flex w-full flex-col gap-1">
         <div className="flex items-center">
           <div className="font-semibold flex-grow flex items-center gap-2">
-            {messageContent}
+            <p className="truncate">{notification.message}</p>
             {!notification.read && <span className="block h-2 w-2 rounded-full bg-red-500" />}
           </div>
-          <div className={cn("ml-auto text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
+          <div className={cn("ml-auto text-xs pl-2 flex-shrink-0", !notification.read ? "text-foreground" : "text-muted-foreground")}>
             {format(new Date(notification.createdAt), "yyyy-MM-dd HH:mm")}
           </div>
           <Button variant="ghost" size="icon" className="h-6 w-6 ml-1 flex-shrink-0" onClick={(e) => { e.stopPropagation(); onDelete(notification.id); }}>
             <X className="h-4 w-4" />
           </Button>
         </div>
-        {tagId && (
-          <Link href={`/tags/${tagId}`} onClick={(e) => e.stopPropagation()} className="w-full">
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              태그 상세 보기
-            </Button>
-          </Link>
-        )}
-        {restaurantId && (
-          <Link href={`/restaurants/${restaurantId}`} onClick={(e) => e.stopPropagation()} className="w-full">
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              음식점 상세 보기
-            </Button>
-          </Link>
-        )}
       </div>
     </div>
   );
 };
 
 export function NotificationPopover() {
-  const { notifications, unreadCount, markAsRead, fetchNotifications, deleteNotifications } = useNotifications();
+  const { notifications, unreadCount, fetchNotifications, deleteNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [lastNotificationDate, setLastNotificationDate] = useState<Date | null>(null);
-  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
   useEffect(() => {
     if (notifications.length > 0) {
@@ -92,7 +57,7 @@ export function NotificationPopover() {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchNotifications();
-    }, 30000); // 30초마다 알림을 가져옵니다.
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [fetchNotifications]);
@@ -101,33 +66,11 @@ export function NotificationPopover() {
     if (notifications.length > 0 && lastNotificationDate) {
       const latestNotification = notifications[0];
       if (new Date(latestNotification.createdAt) > lastNotificationDate) {
-        let messageContent = latestNotification.message;
-        let tagId = null;
-        let restaurantId = null;
-
-        if (latestNotification.type === 'TAG_SUBSCRIPTION' || latestNotification.type === 'REVIEW_UPVOTE' || latestNotification.type === 'BEST_REVIEW') {
-          try {
-            const parsed = JSON.parse(latestNotification.message);
-            messageContent = parsed.text;
-            if (latestNotification.type === 'TAG_SUBSCRIPTION') {
-              tagId = parsed.tagId;
-            } else {
-              restaurantId = parsed.restaurantId;
-            }
-          } catch (e) { /* Do nothing */ }
-        }
-
-        toast(messageContent, {
-          action: (tagId || restaurantId) ? {
-            label: tagId ? "태그 보러가기" : "음식점 보러가기",
-            onClick: () => {
-              if (tagId) {
-                window.location.href = `/tags/${tagId}`;
-              } else if (restaurantId) {
-                window.location.href = `/restaurants/${restaurantId}`;
-              }
-            },
-          } : undefined,
+        toast(latestNotification.message, {
+          action: {
+            label: "내용 보기",
+            onClick: () => setSelectedNotification(latestNotification),
+          },
         });
       }
     }
@@ -135,11 +78,9 @@ export function NotificationPopover() {
 
   const hasReadNotifications = notifications.some(n => n.read);
 
-
   const handleOpenChange = (open: boolean) => {
     if (open) {
-      fetchNotifications(); // 팝오버를 열 때마다 최신 알림을 가져옵니다.
-      // Mark as read is now handled by the detail dialog
+      fetchNotifications();
     }
   };
 
@@ -157,13 +98,11 @@ export function NotificationPopover() {
         setIsOpen(false);
       }
     }
-
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -172,7 +111,24 @@ export function NotificationPopover() {
   const handleDeleteAndCloseDialog = (notificationId: number) => {
     deleteNotifications([notificationId]);
     setSelectedNotification(null);
-  }
+  };
+
+  const getLinkForNotification = (notification: Notification | null): string | null => {
+    if (!notification) return null;
+    try {
+      // This is for older notifications that had a JSON message
+      const parsed = JSON.parse(notification.message);
+      if (notification.type === 'TAG_SUBSCRIPTION' && parsed.tagId) {
+        return `/tags/${parsed.tagId}`;
+      }
+      if ((notification.type === 'REVIEW_UPVOTE' || notification.type === 'BEST_REVIEW') && parsed.restaurantId) {
+        return `/restaurants/${parsed.restaurantId}`;
+      }
+    } catch (e) {
+      // Not a JSON message, which is expected for new GENERAL notifications
+    }
+    return null;
+  };
 
   return (
     <>
@@ -228,12 +184,12 @@ export function NotificationPopover() {
         )}
       </div>
       {selectedNotification && (
-        <NotificationDetailDialog
+        <NotificationViewerDialog
           isOpen={!!selectedNotification}
           onOpenChange={() => setSelectedNotification(null)}
-          notificationId={selectedNotification.id}
-          inquiryId={selectedNotification.inquiryId}
+          notification={selectedNotification}
           onDelete={handleDeleteAndCloseDialog}
+          link={getLinkForNotification(selectedNotification)}
         />
       )}
     </>
