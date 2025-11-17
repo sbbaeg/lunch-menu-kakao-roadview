@@ -79,6 +79,7 @@ export function MapPanel({
   // Effect for drawing directions
   useEffect(() => {
     if (isMapReady && userLocation && selectedRestaurant) {
+      console.log('[DIAG] Drawing directions from:', userLocation, 'to:', { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) });
       drawDirections(
         { lat: userLocation.lat, lng: userLocation.lng },
         { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) }
