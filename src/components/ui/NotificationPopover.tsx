@@ -39,12 +39,11 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: P
       onClick={onClick}
     >
       <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-        <div className="flex items-center gap-2 overflow-hidden">
+        <div className="flex items-baseline gap-2 overflow-hidden">
           <p className="font-semibold truncate">{notification.message}</p>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
-            <span className="border-l h-3"></span>
-            <span>{getNotificationTypeLabel(notification.type)}</span>
-          </div>
+          <span className="text-xs text-muted-foreground flex-shrink-0">
+            | {getNotificationTypeLabel(notification.type)}
+          </span>
         </div>
         <div className="flex items-center flex-shrink-0">
           <div className={cn("text-xs pl-2", !notification.read ? "text-foreground" : "text-muted-foreground")}>
@@ -116,7 +115,7 @@ export function NotificationPopover() {
         setIsOpen(false);
       }
     }
-    if (isOpen) {
+    if (isOpen && !selectedNotification) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -124,7 +123,7 @@ export function NotificationPopover() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, selectedNotification]);
 
   const handleDeleteAndCloseDialog = (notificationId: number) => {
     deleteNotifications([notificationId]);
