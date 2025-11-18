@@ -23,6 +23,7 @@ interface AppState {
   isMapReady: boolean;
   resultPanelState: 'collapsed' | 'default' | 'expanded';
   directions: any | null;
+  isLoadingDirections: boolean;
 
   // Actions
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
@@ -49,6 +50,7 @@ interface AppState {
   clearMapAndResults: () => void;
   getNearbyRestaurants: (center: { lat: number; lng: number }, query?: string) => Promise<AppRestaurant[]>;
   getDirections: (origin: string, destination: string, travelMode: string) => Promise<void>;
+  clearDirections: () => void;
   recommendProcess: (isRoulette: boolean, center?: { lat: number; lng: number }) => Promise<{ success: boolean; message?: string; isRoulette?: boolean, restaurants?: AppRestaurant[] }>;
   handleSearchInArea: (center: { lat: number; lng: number }) => void;
   handleAddressSearch: (keyword: string, center: { lat: number; lng: number }) => void;
@@ -67,6 +69,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeTagId: null,
   activeRestaurantId: null,
   directions: null,
+  isLoadingDirections: false,
   
   filters: {
     categories: [],
@@ -210,7 +213,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   getDirections: async (origin, destination, travelMode) => {
-    set({ loading: true, directions: null });
+    set({ isLoadingDirections: true, directions: null });
     try {
         const response = await fetch('/api/directions', {
             method: 'POST',
@@ -221,12 +224,14 @@ export const useAppStore = create<AppState>((set, get) => ({
             throw new Error('Failed to fetch directions');
         }
         const data = await response.json();
-        set({ directions: data, loading: false });
+        set({ directions: data, isLoadingDirections: false });
     } catch (error) {
         console.error("Error fetching directions:", error);
-        set({ loading: false, directions: null });
+        set({ isLoadingDirections: false, directions: null });
     }
   },
+
+  clearDirections: () => set({ directions: null }),
 
   recommendProcess: async (isRoulette, center) => {
     get().resetResultPanelState(); // 패널 상태 리셋
