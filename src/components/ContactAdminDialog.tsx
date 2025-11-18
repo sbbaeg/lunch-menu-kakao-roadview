@@ -17,8 +17,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useInquiryNotifications } from "@/hooks/useInquiryNotifications";
+import { Checkbox } from "@/components/ui/checkbox";
+
 
 interface Inquiry {
   id: number;
@@ -42,6 +44,9 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedInquiries, setSelectedInquiries] = useState<number[]>([]);
+  const [activeTab, setActiveTab] = useState<'inquiries' | 'messages'>('inquiries');
+
 
   const { markInquiriesAsRead } = useInquiryNotifications();
 
@@ -54,6 +59,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       fetchInquiries();
       markInquiriesAsRead();
       setView('list');
+      setSelectedInquiries([]);
     }
   }, [isOpen, markInquiriesAsRead]);
 
@@ -88,18 +94,49 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
     setView('detail');
   };
 
-  const handleDelete = async (inquiryId: number) => {
-    if (!confirm('이 문의를 정말로 삭제하시겠습니까?')) {
+  const handleInquirySelect = (inquiryId: number) => {
+    setSelectedInquiries(prev =>
+      prev.includes(inquiryId)
+        ? prev.filter(id => id !== inquiryId)
+        : [...prev, inquiryId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const currentTabInquiries = inquiries.filter(inq =>
+      activeTab === 'inquiries' ? !inq.isFromAdmin : inq.isFromAdmin
+    );
+    const allIds = currentTabInquiries.map(inq => inq.id);
+
+    // If all are already selected, deselect all. Otherwise, select all.
+    if (selectedInquiries.length === allIds.length) {
+      setSelectedInquiries([]);
+    } else {
+      setSelectedInquiries(allIds);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedInquiries.length === 0) {
+      alert('삭제할 항목을 선택해주세요.');
+      return;
+    }
+    if (!confirm(`선택된 ${selectedInquiries.length}개의 항목을 정말로 삭제하시겠습니까?`)) {
       return;
     }
     try {
-      const response = await fetch(`/api/inquiries/${inquiryId}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/inquiries/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedInquiries }),
       });
+
       if (!response.ok) {
-        throw new Error('문의 삭제에 실패했습니다.');
+        const errorData = await response.json();
+        throw new Error(errorData.error || '선택된 항목 삭제에 실패했습니다.');
       }
-      setInquiries(prevInquiries => prevInquiries.filter(inq => inq.id !== inquiryId));
+      setInquiries(prevInquiries => prevInquiries.filter(inq => !selectedInquiries.includes(inq.id)));
+      setSelectedInquiries([]);
     } catch (error: any) {
       alert(error.message);
     }
@@ -162,19 +199,13 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
           </div>
           <p className="text-sm text-muted-foreground mt-1">{new Date(inq.createdAt).toLocaleDateString('ko-KR')}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 ml-2">
           {!inq.isFromAdmin && inq.isResolved && <Badge>답변완료</Badge>}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(inq.id);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <Checkbox
+            checked={selectedInquiries.includes(inq.id)}
+            onCheckedChange={() => handleInquirySelect(inq.id)}
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       </div>
     ));
@@ -182,16 +213,13 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
 
   const renderContent = () => {
     if (view === 'list') {
-      const unansweredInquiries = inquiries.filter(inq => !inq.isResolved);
-      const answeredInquiries = inquiries.filter(inq => inq.isResolved);
-
       return (
         <>
           <DialogHeader>
             <DialogTitle>문의 내역</DialogTitle>
             <DialogDescription>과거에 문의했던 내역을 확인하거나 새 문의를 작성할 수 있습니다.</DialogDescription>
           </DialogHeader>
-          <Tabs defaultValue="inquiries" className="w-full">
+          <Tabs defaultValue="inquiries" className="w-full" onValueChange={(value) => setActiveTab(value as any)}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="inquiries">문의 내역</TabsTrigger>
               <TabsTrigger value="messages">받은 메시지</TabsTrigger>
@@ -211,8 +239,14 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
               )}
             </div>
           </Tabs>
-          <DialogFooter>
+          <DialogFooter className="sm:justify-between">
             <Button onClick={() => setView('create')}>새 문의 작성</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleSelectAll}>모두 선택</Button>
+              <Button variant="destructive" onClick={handleBulkDelete} disabled={selectedInquiries.length === 0}>
+                선택 삭제
+              </Button>
+            </div>
           </DialogFooter>
         </>
       );
