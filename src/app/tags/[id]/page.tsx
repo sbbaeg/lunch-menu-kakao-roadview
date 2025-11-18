@@ -27,10 +27,10 @@ import { FavoritesDialog } from '@/components/FavoritesDialog';
 import { BlacklistDialog } from '@/components/BlacklistDialog';
 import { TagManagementDialog } from '@/components/TagManagementDialog';
 import { TaggingDialog } from '@/components/TaggingDialog';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 
-// 페이지에서 사용할 데이터의 타입을 정의합니다.
+// 페이지에서 사용할 데이터의 타입을 정의합니다。
 interface TagProfileData {
     id: number;
     name: string;
@@ -51,7 +51,6 @@ export default function TagProfilePage() {
     const [tagData, setTagData] = useState<TagProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedItemId, setSelectedItemId] = useState<string>("");
-    const { toast } = useToast();
 
     // Hooks for side menu functionality
     const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();

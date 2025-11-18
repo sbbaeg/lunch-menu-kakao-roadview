@@ -31,7 +31,7 @@ import { BlacklistDialog } from '@/components/BlacklistDialog';
 import { TagManagementDialog } from '@/components/TagManagementDialog';
 import { VoteType } from '@prisma/client';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 export default function RestaurantPage() {
   const params = useParams();
@@ -40,7 +40,6 @@ export default function RestaurantPage() {
   const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
-  const { toast } = useToast();
 
   const totalVotes = (restaurant?.likeCount ?? 0) + (restaurant?.dislikeCount ?? 0); // restaurant가 null일 수 있으므로 ?. 사용
   const likePercentage = totalVotes > 0 

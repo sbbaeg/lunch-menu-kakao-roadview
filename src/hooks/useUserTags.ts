@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Tag } from '@/lib/types';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 export function useUserTags() {
     const { status } = useSession();
     const [userTags, setUserTags] = useState<Tag[]>([]);
-    const { toast } = useToast();
 
     const [isMounted, setIsMounted] = useState(false);
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 import { fetchDirections } from '@/lib/googleMaps';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 // Define Google Maps types (simplified for now, will refine as needed)
 // This will be replaced by actual Google Maps types if a library is used,
@@ -30,7 +30,6 @@ export function useGoogleMap() {
     const isMapReady = useAppStore((state) => state.isMapReady);
     const [streetViewImageDate, setStreetViewImageDate] = useState('');
     const [userLocationMarker, setUserLocationMarker] = useState<google.maps.Marker | null>(null);
-    const { toast } = useToast();
 
     // Map Initialization
     useEffect(() => {

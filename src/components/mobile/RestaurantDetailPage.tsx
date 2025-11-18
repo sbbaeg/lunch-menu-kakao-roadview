@@ -11,7 +11,7 @@ import { VoteType } from '@prisma/client';
 import { RestaurantDetails } from '@/components/RestaurantDetails';
 import { ReviewSection } from '@/components/ReviewSection';
 import { MapPanel } from '@/components/MapPanel';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 interface RestaurantDetailPageProps {
     isFavorite: (id: string) => boolean;
@@ -32,7 +32,6 @@ export default function RestaurantDetailPage({
     const activeRestaurantId = useAppStore(state => state.activeRestaurantId);
     const userLocation = useAppStore(state => state.userLocation);
     const goBack = useAppStore(state => state.goBack)
-    const { toast } = useToast();
 
     const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
     const [loading, setLoading] = useState(true);
