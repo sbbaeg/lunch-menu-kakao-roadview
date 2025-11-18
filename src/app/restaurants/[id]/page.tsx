@@ -1,11 +1,10 @@
 // src/app/restaurants/[id]/page.tsx
 "use client";
 
-import { MyReviewsDialog } from "@/components/MyReviewsDialog";
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { AppRestaurant, Tag } from '@/lib/types';
+import { AppRestaurant } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,47 +18,30 @@ import {
 import { MapPanel } from '@/components/MapPanel';
 import { RestaurantInfoPanel } from '@/components/RestaurantInfoPanel';
 import { ReviewSection } from '@/components/ReviewSection';
-import { TaggingDialog } from '@/components/TaggingDialog';
-import { useFavorites } from '@/hooks/useFavorites';
-import { useBlacklist } from '@/hooks/useBlacklist';
-import { useUserTags } from '@/hooks/useUserTags';
-
-// Imports for Side Menu and Dialogs
-import { SideMenuSheet } from '@/components/SideMenuSheet';
-import { FavoritesDialog } from '@/components/FavoritesDialog';
-import { BlacklistDialog } from '@/components/BlacklistDialog';
-import { TagManagementDialog } from '@/components/TagManagementDialog';
+import { AppHeader } from '@/components/AppHeader'; // Import AppHeader
 import { VoteType } from '@prisma/client';
-import { useSubscriptions } from '@/hooks/useSubscriptions';
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
+import { useAppStore } from '@/store/useAppStore';
+import { useFavorites } from '@/hooks/useFavorites'; // Missing import
+import { useBlacklist } from '@/hooks/useBlacklist'; // Missing import
 
 export default function RestaurantPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
+  const [mapAccordionValue, setMapAccordionValue] = useState<string>('map');
 
-  const totalVotes = (restaurant?.likeCount ?? 0) + (restaurant?.dislikeCount ?? 0); // restaurant가 null일 수 있으므로 ?. 사용
+  const { setTaggingRestaurant } = useAppStore();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isBlacklisted, toggleBlacklist } = useBlacklist();
+
+  const totalVotes = (restaurant?.likeCount ?? 0) + (restaurant?.dislikeCount ?? 0);
   const likePercentage = totalVotes > 0 
     ? Math.round(((restaurant?.likeCount ?? 0) / totalVotes) * 100) 
     : null;
-
-  // Hooks for data
-  const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
-  const { blacklist, isBlacklisted, toggleBlacklist } = useBlacklist();
-  const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
-  const { subscribedTagIds } = useSubscriptions();
-
-  // State for dialogs
-  const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
-  const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
-  const [isMyReviewsOpen, setIsMyReviewsOpen] = useState(false);
-  const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
-  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState<string>("");
-  const [mapAccordionValue, setMapAccordionValue] = useState<string>('map'); // 'map' or ''
 
   const id = params.id as string;
 
@@ -75,7 +57,6 @@ export default function RestaurantPage() {
         }
         const data = await response.json();
         setRestaurant(data);
-        setSelectedItemId(data.id);
       } catch (error) {
         console.error('Error fetching restaurant:', error);
         router.push('/');
@@ -92,23 +73,20 @@ export default function RestaurantPage() {
     setIsVoting(true);
     const originalRestaurant = restaurant;
 
-    // Optimistic UI update
     setRestaurant(prev => {
         if (!prev) return null;
-        
         const currentVote = prev.currentUserVote;
         let likeIncrement = 0;
         let dislikeIncrement = 0;
         let nextVote: VoteType | null = null;
 
-        if (currentVote === voteType) { // Cancel vote
+        if (currentVote === voteType) {
             if (voteType === 'UPVOTE') likeIncrement = -1;
             else dislikeIncrement = -1;
             nextVote = null;
-        } else { // New or change vote
+        } else {
             if (currentVote === 'UPVOTE') likeIncrement = -1;
             if (currentVote === 'DOWNVOTE') dislikeIncrement = -1;
-            
             if (voteType === 'UPVOTE') likeIncrement += 1;
             else dislikeIncrement += 1;
             nextVote = voteType;
@@ -131,7 +109,6 @@ export default function RestaurantPage() {
 
       if (!response.ok) throw new Error('Vote failed');
       
-      // Sync with server response
       const updatedData = await response.json();
       setRestaurant(prev => prev ? {
           ...prev,
@@ -141,76 +118,10 @@ export default function RestaurantPage() {
       } : null);
 
     } catch (error) {
-      // Revert on failure
       setRestaurant(originalRestaurant);
       toast.error('투표 처리에 실패했습니다.');
     } finally {
       setIsVoting(false);
-    }
-  };
-
-  const handleBlacklistClick = () => {
-    if (status === 'authenticated') {
-        setIsBlacklistOpen(true);
-    } else {
-        toast.error("로그인이 필요한 기능입니다.");
-    }
-  };
-
-  // Tag handlers
-  const handleTagsChange = (updatedRestaurant: AppRestaurant) => {
-    setRestaurant(updatedRestaurant);
-    updateFavoriteInList(updatedRestaurant);
-  };
-
-  const handleCreateAndLinkTag = async (name: string) => {
-    if (!name.trim() || !taggingRestaurant) return;
-    const newTag = await createTag(name);
-    if (newTag) {
-      const linkResponse = await fetch(`/api/restaurants/${taggingRestaurant.id}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tagId: newTag.id, restaurant: taggingRestaurant }),
-      });
-      if (linkResponse.ok) {
-        const updatedRestaurant = {
-          ...taggingRestaurant,
-          tags: [...(taggingRestaurant.tags || []), newTag],
-        };
-        handleTagsChange(updatedRestaurant);
-        setTaggingRestaurant(updatedRestaurant);
-      } else {
-        toast.error("태그 연결에 실패했습니다.");
-      }
-    }
-  };
-
-  const handleToggleTagLink = async (tag: Tag) => {
-    if (!session?.user || !taggingRestaurant) return;
-    const originalRestaurant = taggingRestaurant;
-    const isCurrentlyTagged = taggingRestaurant.tags?.some(t => t.id === tag.id);
-    const newTags = isCurrentlyTagged
-      ? taggingRestaurant.tags?.filter(t => t.id !== tag.id)
-      : [...(taggingRestaurant.tags || []), tag];
-    const updatedRestaurant = { ...originalRestaurant, tags: newTags };
-    handleTagsChange(updatedRestaurant);
-    setTaggingRestaurant(updatedRestaurant);
-
-    try {
-      const response = await fetch(`/api/restaurants/${originalRestaurant.id}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tagId: tag.id, restaurant: originalRestaurant }),
-      });
-      if (!response.ok) {
-        handleTagsChange(originalRestaurant);
-        setTaggingRestaurant(originalRestaurant);
-        toast.error("태그 변경에 실패했습니다.");
-      }
-    } catch (error) {
-        handleTagsChange(originalRestaurant);
-        setTaggingRestaurant(originalRestaurant);
-        toast.error("태그 변경 중 네트워크 오류가 발생했습니다.");
     }
   };
 
@@ -229,14 +140,7 @@ export default function RestaurantPage() {
 
   return (
     <main className="w-full min-h-screen p-4 md:p-8 relative bg-card">
-        <div className="absolute top-2 right-2 z-50">
-            <SideMenuSheet
-                onShowFavorites={() => setIsFavoritesListOpen(true)}
-                onShowBlacklist={handleBlacklistClick}
-                onShowTagManagement={() => setIsTagManagementOpen(true)}
-                onShowMyReviews={() => setIsMyReviewsOpen(true)}
-            />
-        </div>
+        <AppHeader />
         <div className="w-full max-w-7xl mx-auto">
             <div className="px-6 pt-6">
                 <Button variant="ghost" onClick={() => router.back()} className="mb-4 w-fit p-0 h-auto">
@@ -251,7 +155,7 @@ export default function RestaurantPage() {
                     <div className="w-full md:w-1/2 flex flex-col gap-8">
                         <Accordion type="single" collapsible value={mapAccordionValue} onValueChange={(value) => setMapAccordionValue(value || '')}>
                             <AccordionItem value="map">
-                                <AccordionTrigger className="text-lg font-semibold border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2 rounded-md w-full justify-between">
+                                <AccordionTrigger className="text-lg font-semibold border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2 rounded-md w-full justify-between hover:no-underline">
                                     {mapAccordionValue === 'map' ? '지도 숨기기' : '지도 보기'}
                                 </AccordionTrigger>
                                 <AccordionContent>
@@ -301,51 +205,6 @@ export default function RestaurantPage() {
                 </div>
             </div>
         </div>
-
-        <TagManagementDialog
-            isOpen={isTagManagementOpen}
-            onOpenChange={setIsTagManagementOpen}
-            userTags={userTags}
-            onCreateTag={createTag}
-            onDeleteTag={deleteTag}
-            onToggleTagPublic={toggleTagPublic}
-        />
-
-        <FavoritesDialog
-            isOpen={isFavoritesListOpen}
-            onOpenChange={setIsFavoritesListOpen}
-            favorites={favorites}
-            session={session}
-            subscribedTagIds={subscribedTagIds}
-            selectedItemId={selectedItemId}
-            setSelectedItemId={setSelectedItemId}
-            isFavorite={isFavorite}
-            isBlacklisted={isBlacklisted}
-            onToggleFavorite={toggleFavorite}
-            onToggleBlacklist={toggleBlacklist}
-            onTagManagement={setTaggingRestaurant}
-        />
-
-        <BlacklistDialog
-            isOpen={isBlacklistOpen}
-            onOpenChange={setIsBlacklistOpen}
-            blacklist={blacklist}
-            onToggleBlacklist={toggleBlacklist}
-        />
-
-        <TaggingDialog
-            restaurant={taggingRestaurant}
-            onOpenChange={() => setTaggingRestaurant(null)}
-            userTags={userTags}
-            onToggleTagLink={handleToggleTagLink}
-            onCreateAndLinkTag={handleCreateAndLinkTag}
-            isBanned={session?.user?.isBanned ?? false}
-        />
-
-        <MyReviewsDialog
-            isOpen={isMyReviewsOpen}
-            onOpenChange={setIsMyReviewsOpen}
-        />
     </main>
   );
 }
