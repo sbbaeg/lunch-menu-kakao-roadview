@@ -27,15 +27,7 @@ import { FavoritesDialog } from '@/components/FavoritesDialog';
 import { BlacklistDialog } from '@/components/BlacklistDialog';
 import { TagManagementDialog } from '@/components/TagManagementDialog';
 import { TaggingDialog } from '@/components/TaggingDialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 
 // 페이지에서 사용할 데이터의 타입을 정의합니다.
@@ -59,6 +51,7 @@ export default function TagProfilePage() {
     const [tagData, setTagData] = useState<TagProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedItemId, setSelectedItemId] = useState<string>("");
+    const { toast } = useToast();
 
     // Hooks for side menu functionality
     const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
@@ -71,7 +64,6 @@ export default function TagProfilePage() {
     const [isMyReviewsOpen, setIsMyReviewsOpen] = useState(false);
     const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
     const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
-    const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
     const [taggingRestaurant, setTaggingRestaurant] = useState<AppRestaurant | null>(null);
 
     const tagId = params.id;
@@ -102,7 +94,10 @@ export default function TagProfilePage() {
         if (status === 'authenticated') {
             setIsBlacklistOpen(true);
         } else {
-            setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
+            toast({
+                variant: "destructive",
+                description: "로그인이 필요한 기능입니다.",
+            });
         }
     };
 
@@ -116,19 +111,32 @@ export default function TagProfilePage() {
             const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
             if (!response.ok) {
                 setTagData(originalData); // 실패 시 롤백
+                toast({
+                    variant: "destructive",
+                    description: "구독 처리에 실패했습니다.",
+                });
             }
         } catch (error) {
             setTagData(originalData); // 실패 시 롤백
+            toast({
+                variant: "destructive",
+                description: "구독 처리 중 오류가 발생했습니다.",
+            });
         }
     };
 
     const handleShare = async () => {
         try {
             await navigator.clipboard.writeText(window.location.href);
-            alert('링크가 클립보드에 복사되었습니다!');
+            toast({
+                description: '링크가 클립보드에 복사되었습니다!',
+            });
         } catch (err) {
             console.error('클립보드 복사 실패:', err);
-            alert('링크 복사에 실패했습니다.');
+            toast({
+                variant: "destructive",
+                description: '링크 복사에 실패했습니다.',
+            });
         }
     };
 
@@ -162,7 +170,10 @@ export default function TagProfilePage() {
                 handleTagsChange(updatedRestaurant);
                 setTaggingRestaurant(updatedRestaurant);
             } else {
-                setAlertInfo({ title: "오류", message: "태그 연결에 실패했습니다." });
+                toast({
+                    variant: "destructive",
+                    description: "태그 연결에 실패했습니다.",
+                });
             }
         }
     };
@@ -187,12 +198,18 @@ export default function TagProfilePage() {
             if (!response.ok) {
                 handleTagsChange(originalRestaurant);
                 setTaggingRestaurant(originalRestaurant);
-                setAlertInfo({ title: "오류", message: "태그 변경에 실패했습니다." });
+                toast({
+                    variant: "destructive",
+                    description: "태그 변경에 실패했습니다.",
+                });
             }
         } catch (error) {
             handleTagsChange(originalRestaurant);
             setTaggingRestaurant(originalRestaurant);
-            setAlertInfo({ title: "오류", message: "태그 변경 중 네트워크 오류가 발생했습니다." });
+            toast({
+                variant: "destructive",
+                description: "태그 변경 중 네트워크 오류가 발생했습니다.",
+            });
         }
     };
 
@@ -317,20 +334,6 @@ export default function TagProfilePage() {
                 isOpen={isMyReviewsOpen}
                 onOpenChange={setIsMyReviewsOpen}
             />
-
-            <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
-                <AlertDialogContent className="max-w-lg">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
-                    </AlertDialogHeader>
-                    <AlertDialogDescription>
-                        {alertInfo?.message}
-                    </AlertDialogDescription>
-                    <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </main>
     );
 }

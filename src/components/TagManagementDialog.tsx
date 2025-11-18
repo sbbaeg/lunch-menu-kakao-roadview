@@ -17,6 +17,7 @@ import { useSession } from "next-auth/react";
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import { useAppStore } from "@/store/useAppStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SubscribedTag {
     id: number;
@@ -46,6 +47,7 @@ export function TagManagementDialog({
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [subscribedTags, setSubscribedTags] = useState<SubscribedTag[]>([]);
   const showTagDetail = useAppStore((state) => state.showTagDetail);
+  const { toast } = useToast();
 
   const myTagsScrollRef = useRef<HTMLDivElement>(null);
   const subscribedTagsScrollRef = useRef<HTMLDivElement>(null);
@@ -78,13 +80,17 @@ export function TagManagementDialog({
           }
         } catch (error) {
           console.error("구독 태그 로딩 실패:", error);
+          toast({
+            variant: "destructive",
+            description: "구독 태그 로딩 실패",
+          });
         }
       }
     };
     if (isOpen) {
       fetchSubscribedTags();
     }
-  }, [isOpen, status]);
+  }, [isOpen, status, toast]);
 
   const handleCreateTag = async () => {
     if (!newTagName.trim() || isCreatingTag) return;
@@ -105,11 +111,21 @@ export function TagManagementDialog({
         const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
         if (!response.ok) {
             setSubscribedTags(originalSubscriptions);
-            alert("구독 취소에 실패했습니다.");
+            toast({
+                variant: "destructive",
+                description: "구독 취소에 실패했습니다.",
+            });
+        } else {
+            toast({
+                description: "구독이 취소되었습니다.",
+            });
         }
     } catch (error) {
         setSubscribedTags(originalSubscriptions);
-        alert("구독 취소 중 오류가 발생했습니다.");
+        toast({
+            variant: "destructive",
+            description: "구독 취소 중 오류가 발생했습니다.",
+        });
     }
   };
 

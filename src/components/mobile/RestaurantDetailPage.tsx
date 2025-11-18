@@ -11,6 +11,7 @@ import { VoteType } from '@prisma/client';
 import { RestaurantDetails } from '@/components/RestaurantDetails';
 import { ReviewSection } from '@/components/ReviewSection';
 import { MapPanel } from '@/components/MapPanel';
+import { useToast } from "@/components/ui/use-toast";
 
 interface RestaurantDetailPageProps {
     isFavorite: (id: string) => boolean;
@@ -31,6 +32,7 @@ export default function RestaurantDetailPage({
     const activeRestaurantId = useAppStore(state => state.activeRestaurantId);
     const userLocation = useAppStore(state => state.userLocation);
     const goBack = useAppStore(state => state.goBack)
+    const { toast } = useToast();
 
     const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
     const [loading, setLoading] = useState(true);
@@ -91,7 +93,10 @@ export default function RestaurantDetailPage({
             setLocalLikeCount(originalState.likes);
             setLocalDislikeCount(originalState.dislikes);
             setCurrentUserVote(originalState.vote);
-            alert('투표 처리에 실패했습니다.');
+            toast({
+                variant: "destructive",
+                description: '투표 처리에 실패했습니다.',
+            });
         } finally {
             setIsVoting(false);
         }
@@ -123,7 +128,10 @@ export default function RestaurantDetailPage({
         if (session && restaurant) {
             onTagManagement(restaurant);
         } else if (!session) {
-            alert('로그인이 필요한 기능입니다.');
+            toast({
+                variant: "destructive",
+                description: '로그인이 필요한 기능입니다.',
+            });
         }
     };
 
@@ -131,7 +139,10 @@ export default function RestaurantDetailPage({
         if (session && restaurant) {
             onToggleFavorite(restaurant);
         } else if (!session) {
-            alert('로그인이 필요한 기능입니다.');
+            toast({
+                variant: "destructive",
+                description: '로그인이 필요한 기능입니다.',
+            });
         }
     };
 
@@ -139,7 +150,10 @@ export default function RestaurantDetailPage({
         if (session && restaurant) {
             onToggleBlacklist(restaurant);
         } else if (!session) {
-            alert('로그인이 필요한 기능입니다.');
+            toast({
+                variant: "destructive",
+                description: '로그인이 필요한 기능입니다.',
+            });
         }
     };
 
@@ -278,7 +292,7 @@ export default function RestaurantDetailPage({
                                             variant="outline"
                                             size="sm"
                                             onClick={() => handleVote('UPVOTE')}
-                                            disabled={!session || isVoting}
+                                            disabled={!session}
                                             className={`gap-1 ${currentUserVote === 'UPVOTE' ? 'bg-primary/10 border-primary text-primary' : ''}`}
                                         >
                                             <ThumbsUp className="h-4 w-4" />
@@ -287,7 +301,7 @@ export default function RestaurantDetailPage({
                                             variant="outline"
                                             size="sm"
                                             onClick={() => handleVote('DOWNVOTE')}
-                                            disabled={!session || isVoting}
+                                            disabled={!session}
                                             className={`gap-1 ${currentUserVote === 'DOWNVOTE' ? 'bg-destructive/10 border-destructive text-destructive' : ''}`}
                                         >
                                             <ThumbsDown className="h-4 w-4" />

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { AppRestaurant } from '@/lib/types';
+import { useToast } from "@/components/ui/use-toast";
 
 export function useFavorites() {
     const { status } = useSession();
     const [favorites, setFavorites] = useState<AppRestaurant[]>([]);
+    const { toast } = useToast();
 
     const [isMounted, setIsMounted] = useState(false);
 
@@ -61,11 +63,17 @@ export function useFavorites() {
                 });
                 if (!response.ok) {
                     setFavorites(originalFavorites); // 실패 시 롤백
-                    alert("즐겨찾기 처리에 실패했습니다.");
+                    toast({
+                        variant: "destructive",
+                        description: "즐겨찾기 처리에 실패했습니다.",
+                    });
                 }
             } catch (error) {
                 setFavorites(originalFavorites); // 실패 시 롤백
-                alert("즐겨찾기 처리에 실패했습니다.");
+                toast({
+                    variant: "destructive",
+                    description: "즐겨찾기 처리에 실패했습니다.",
+                });
             }
         } else {
             localStorage.setItem('favoriteRestaurants', JSON.stringify(newFavorites));

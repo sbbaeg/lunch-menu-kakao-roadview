@@ -9,6 +9,7 @@ import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import { useAppStore } from "@/store/useAppStore";
+import { useToast } from "@/components/ui/use-toast";
 
 interface RestaurantDetailsProps {
   restaurant: AppRestaurant;
@@ -31,6 +32,7 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
   const [isNavigating, setIsNavigating] = useState(false); //
   const { isStandalone } = usePwaDisplayMode(); //
   const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail); //
+  const { toast } = useToast();
 
   const handleViewDetails = async () => {
     setIsNavigating(true); //
@@ -50,7 +52,10 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
       }
     } catch (error) {
       console.error("Failed to navigate to details page:", error); //
-      alert("상세 페이지로 이동하는 데 실패했습니다."); //
+      toast({
+        variant: "destructive",
+        description: "상세 페이지로 이동하는 데 실패했습니다.",
+      });
       setIsNavigating(false); //
     }
   };

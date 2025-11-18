@@ -30,16 +30,8 @@ import { FavoritesDialog } from '@/components/FavoritesDialog';
 import { BlacklistDialog } from '@/components/BlacklistDialog';
 import { TagManagementDialog } from '@/components/TagManagementDialog';
 import { VoteType } from '@prisma/client';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useToast } from "@/components/ui/use-toast";
 
 export default function RestaurantPage() {
   const params = useParams();
@@ -48,6 +40,7 @@ export default function RestaurantPage() {
   const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
+  const { toast } = useToast();
 
   const totalVotes = (restaurant?.likeCount ?? 0) + (restaurant?.dislikeCount ?? 0); // restaurant가 null일 수 있으므로 ?. 사용
   const likePercentage = totalVotes > 0 
@@ -66,7 +59,6 @@ export default function RestaurantPage() {
   const [isMyReviewsOpen, setIsMyReviewsOpen] = useState(false);
   const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
-  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
 
   const id = params.id as string;
@@ -151,7 +143,10 @@ export default function RestaurantPage() {
     } catch (error) {
       // Revert on failure
       setRestaurant(originalRestaurant);
-      alert('투표 처리에 실패했습니다.');
+      toast({
+        variant: "destructive",
+        description: '투표 처리에 실패했습니다.',
+      });
     } finally {
       setIsVoting(false);
     }
@@ -161,7 +156,10 @@ export default function RestaurantPage() {
     if (status === 'authenticated') {
         setIsBlacklistOpen(true);
     } else {
-        setAlertInfo({ title: "오류", message: "로그인이 필요한 기능입니다." });
+        toast({
+            variant: "destructive",
+            description: "로그인이 필요한 기능입니다.",
+        });
     }
   };
 
@@ -188,7 +186,10 @@ export default function RestaurantPage() {
         handleTagsChange(updatedRestaurant);
         setTaggingRestaurant(updatedRestaurant);
       } else {
-        alert("태그 연결에 실패했습니다.");
+        toast({
+            variant: "destructive",
+            description: "태그 연결에 실패했습니다.",
+        });
       }
     }
   };
@@ -213,12 +214,18 @@ export default function RestaurantPage() {
       if (!response.ok) {
         handleTagsChange(originalRestaurant);
         setTaggingRestaurant(originalRestaurant);
-        alert("태그 변경에 실패했습니다.");
+        toast({
+            variant: "destructive",
+            description: "태그 변경에 실패했습니다.",
+        });
       }
     } catch (error) {
         handleTagsChange(originalRestaurant);
         setTaggingRestaurant(originalRestaurant);
-        alert("태그 변경 중 네트워크 오류가 발생했습니다.");
+        toast({
+            variant: "destructive",
+            description: "태그 변경 중 네트워크 오류가 발생했습니다.",
+        });
     }
   };
 
@@ -352,20 +359,6 @@ export default function RestaurantPage() {
             isOpen={isMyReviewsOpen}
             onOpenChange={setIsMyReviewsOpen}
         />
-
-        <AlertDialog open={!!alertInfo} onOpenChange={() => setAlertInfo(null)}>
-            <AlertDialogContent className="max-w-lg">
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{alertInfo?.title}</AlertDialogTitle>
-                </AlertDialogHeader>
-                <AlertDialogDescription>
-                    {alertInfo?.message}
-                </AlertDialogDescription>
-                <AlertDialogFooter>
-                    <AlertDialogAction onClick={() => setAlertInfo(null)}>확인</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
     </main>
   );
 }

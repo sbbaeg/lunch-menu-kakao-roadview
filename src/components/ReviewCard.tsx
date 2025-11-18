@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useToast } from "@/components/ui/use-toast";
 
 interface ReviewCardProps {
   review: AppReview;
@@ -30,6 +31,7 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
   const { data: session } = useSession();
   const isAuthor = session?.user?.id === review.userId;
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const { toast } = useToast();
 
   // Optimistic UI updates for votes
   const [localUpvotes, setLocalUpvotes] = useState(review.upvotes);
@@ -65,7 +67,10 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
       setLocalUpvotes(originalState.upvotes);
       setLocalDownvotes(originalState.downvotes);
       setLocalUserVote(originalState.vote);
-      alert('투표 처리에 실패했습니다.');
+      toast({
+        variant: "destructive",
+        description: '투표 처리에 실패했습니다.',
+      });
     }
     setIsVoting(false);
   };
@@ -84,12 +89,17 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
           throw new Error('Failed to report');
         }
         
-        alert('신고가 접수되었습니다. 관리자 검토 후 조치될 예정입니다.');
+        toast({
+            description: '신고가 접수되었습니다. 관리자 검토 후 조치될 예정입니다.',
+        });
         // (신고 버튼을 숨기거나 비활성화 처리도 가능)
       
       } catch (error) {
         console.error("Failed to report review:", error);
-        alert('신고 처리에 실패했습니다.');
+        toast({
+            variant: "destructive",
+            description: '신고 처리에 실패했습니다.',
+        });
       } finally {
         setIsReporting(false);
       }
