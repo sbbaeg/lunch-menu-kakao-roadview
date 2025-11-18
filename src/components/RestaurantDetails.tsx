@@ -9,8 +9,8 @@ import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import { useAppStore } from "@/store/useAppStore";
-import { toast } from "@/components/ui/toast";
-import { Button } from "@/components/ui/button"; // Button 컴포넌트 임포트
+import { toast } from "sonner"; // Corrected import
+import { Button } from "@/components/ui/button";
 
 interface RestaurantDetailsProps {
   restaurant: AppRestaurant;
@@ -33,7 +33,6 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const { isStandalone } = usePwaDisplayMode();
   const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
-  const userLocation = useAppStore((state) => state.userLocation); // 사용자 위치 가져오기
 
   const handleViewDetails = async () => {
     setIsNavigating(true);
@@ -53,28 +52,48 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
       }
     } catch (error) {
       console.error("Failed to navigate to details page:", error);
-      toast.error("상세 페이지로 이동하는 데 실패했습니다.");
+      toast.error("상세 페이지로 이동하는 데 실패했습니다."); // Corrected toast call
       setIsNavigating(false);
     }
   };
 
   const handleKakaoDirections = () => {
-    if (!userLocation || !restaurant.y || !restaurant.x) {
-      toast.error("현재 위치 또는 식당 정보가 없어 길찾기를 시작할 수 없습니다.");
+    if (!restaurant.y || !restaurant.x) {
+      toast.error("식당 좌표 정보가 없어 길찾기를 시작할 수 없습니다."); // Corrected toast call
       return;
     }
 
-    const originLat = userLocation.lat;
-    const originLng = userLocation.lng;
     const destinationLat = restaurant.y;
     const destinationLng = restaurant.x;
-    const destinationName = restaurant.placeName;
+    const destinationName = encodeURIComponent(restaurant.placeName);
 
-    // 카카오맵 길찾기 URL 스킴 (자동차 기준)
-    // sp: 출발지, ep: 목적지, by: 이동수단 (CAR, PUBLICTRANSIT, FOOT, BICYCLE)
-    const kakaoMapUrl = `kakaomap://route?sp=${originLat},${originLng}&ep=${destinationLat},${destinationLng}&by=CAR&name=${encodeURIComponent(destinationName)}`;
+    // 카카오맵 앱 URL 스킴
+    const appUrl = `kakaomap://route?ep=${destinationLat},${destinationLng}&by=CAR`;
+    
+    // 카카오맵 웹 길찾기 URL (Fallback)
+    const webUrl = `https://map.kakao.com/?eName=${destinationName}&sName=내 위치`;
 
-    window.open(kakaoMapUrl, '_blank');
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // 앱 실행을 시도하고, 2초 후에도 페이지가 활성 상태이면 웹으로 리디렉션
+      const openApp = () => {
+        const check = new Date().getTime();
+        setTimeout(() => {
+          const now = new Date().getTime();
+          // 사용자가 앱으로 전환되었다면 페이지는 비활성화 상태가 됨
+          // 2.5초 이상 지연되었다면 앱이 열렸다고 간주
+          if (now - check < 2500 && !document.hidden) {
+            window.location.href = webUrl;
+          }
+        }, 2000);
+        window.location.href = appUrl;
+      };
+      openApp();
+    } else {
+      // 데스크톱 환경에서는 바로 웹 URL 열기
+      window.open(webUrl, '_blank');
+    }
   };
 
   return (

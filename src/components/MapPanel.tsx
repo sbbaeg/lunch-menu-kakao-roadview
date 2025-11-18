@@ -35,8 +35,7 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, drawStraightLine, clearDirections, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
-  const directions = useAppStore((state) => state.directions);
+  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawStraightLine, clearDirections, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
@@ -99,13 +98,6 @@ export function MapPanel({
         setStreetviewVisible(false); // Renamed from setRoadviewVisible
     }
 }, [selectedRestaurant, isMapReady, setCenter, displayStreetView]);
-
-  // Effect for drawing directions
-  useEffect(() => {
-    if (isMapReady && directions) {
-      drawDirections(directions);
-    }
-  }, [isMapReady, directions, drawDirections]);
 
   useEffect(() => {
     if (!mapInstance) return;
