@@ -235,6 +235,7 @@ export async function GET(request: Request) {
             if (finalResults.length >= size) break;
 
             const enriched = await fetchFullGoogleDetails(candidate);
+            console.log('[DIAG] Enriched candidate:', JSON.stringify(enriched, null, 2));
             
             const ratingMatch = (enriched.googleDetails?.rating || 0) >= minRating;
             if (!ratingMatch) {
