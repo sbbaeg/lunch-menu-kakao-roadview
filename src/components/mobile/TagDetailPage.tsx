@@ -89,10 +89,7 @@ export default function TagDetailPage() {
             });
         } catch (err: any) {
             console.error(err.message);
-            toast({
-                variant: "destructive",
-                description: err.message,
-            });
+            toast.error(err.message);
         }
     };
 
@@ -106,9 +103,7 @@ export default function TagDetailPage() {
             });
         } else {
             navigator.clipboard.writeText(url);
-            toast({
-                description: '링크가 클립보드에 복사되었습니다.',
-            });
+            toast('링크가 클립보드에 복사되었습니다.');
         }
     };
 

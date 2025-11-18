@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +11,7 @@ import { Users, Utensils, Star, Search, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { toast } from "@/components/ui/toast";
+import Link from 'next/link';
 
 interface RankedTag {
   id: number;
@@ -28,7 +31,7 @@ function TagRankingItem({ tag, isSubscribed, onToggleSubscribe, onTagClick, isAu
 }) {
   return (
     <li className="flex items-center justify-between p-3 rounded-md hover:bg-muted">
-      <div className="flex-grow cursor-pointer" onClick={() => onTagClick(tag.id)}>
+      <Link href={`/tags/${tag.id}`} className="flex-grow cursor-pointer" onClick={() => onTagClick(tag.id)}>
         <div className="flex flex-col">
           <p className="text-lg font-semibold hover:underline">{tag.name}</p>
           <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1">
@@ -98,10 +101,7 @@ export default function TagExplorePage() {
 
   const handleToggleSubscription = async (tagId: number) => {
     if (status !== 'authenticated') {
-      toast({
-        variant: "destructive",
-        description: '로그인이 필요한 기능입니다.',
-      });
+      toast.error('로그인이 필요한 기능입니다.');
       return;
     }
     await toggleSubscription(tagId);

@@ -66,10 +66,7 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
       setLocalUpvotes(originalState.upvotes);
       setLocalDownvotes(originalState.downvotes);
       setLocalUserVote(originalState.vote);
-      toast({
-        variant: "destructive",
-        description: '투표 처리에 실패했습니다.',
-      });
+      toast.error('투표 처리에 실패했습니다.');
     }
     setIsVoting(false);
   };
@@ -88,17 +85,12 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
           throw new Error('Failed to report');
         }
         
-        toast({
-            description: '신고가 접수되었습니다. 관리자 검토 후 조치될 예정입니다.',
-        });
+        toast('신고가 접수되었습니다. 관리자 검토 후 조치될 예정입니다.');
         // (신고 버튼을 숨기거나 비활성화 처리도 가능)
       
       } catch (error) {
         console.error("Failed to report review:", error);
-        toast({
-            variant: "destructive",
-            description: '신고 처리에 실패했습니다.',
-        });
+        toast.error('신고 처리에 실패했습니다.');
       } finally {
         setIsReporting(false);
       }

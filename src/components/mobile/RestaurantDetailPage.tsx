@@ -92,10 +92,7 @@ export default function RestaurantDetailPage({
             setLocalLikeCount(originalState.likes);
             setLocalDislikeCount(originalState.dislikes);
             setCurrentUserVote(originalState.vote);
-            toast({
-                variant: "destructive",
-                description: '투표 처리에 실패했습니다.',
-            });
+            toast.error('투표 처리에 실패했습니다.');
         } finally {
             setIsVoting(false);
         }
@@ -127,10 +124,7 @@ export default function RestaurantDetailPage({
         if (session && restaurant) {
             onTagManagement(restaurant);
         } else if (!session) {
-            toast({
-                variant: "destructive",
-                description: '로그인이 필요한 기능입니다.',
-            });
+            toast.error('로그인이 필요한 기능입니다.');
         }
     };
 
@@ -138,21 +132,15 @@ export default function RestaurantDetailPage({
         if (session && restaurant) {
             onToggleFavorite(restaurant);
         } else if (!session) {
-            toast({
-                variant: "destructive",
-                description: '로그인이 필요한 기능입니다.',
-            });
+            toast.error('로그인이 필요한 기능입니다.');
         }
     };
 
     const handleBlacklistClick = () => {
-        if (session && restaurant) {
+        if (session && restaurant) { // Add null check for restaurant
             onToggleBlacklist(restaurant);
-        } else if (!session) {
-            toast({
-                variant: "destructive",
-                description: '로그인이 필요한 기능입니다.',
-            });
+        } else {
+            toast.error("로그인이 필요한 기능입니다.");
         }
     };
 

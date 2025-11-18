@@ -62,16 +62,10 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
         if (response.ok) {
           fetchReviews(); // Re-fetch to update the list
         } else {
-          toast({
-            variant: "destructive",
-            description: '리뷰 삭제에 실패했습니다.',
-          });
+          toast.error('리뷰 삭제에 실패했습니다.');
         }
       } catch (error) {
-        toast({
-          variant: "destructive",
-          description: '리뷰 삭제 중 오류가 발생했습니다.',
-        });
+        toast.error('리뷰 삭제 중 오류가 발생했습니다.');
       }
     }
   };

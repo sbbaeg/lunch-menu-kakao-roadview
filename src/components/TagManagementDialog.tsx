@@ -79,22 +79,24 @@ export function TagManagementDialog({
           }
         } catch (error) {
           console.error("구독 태그 로딩 실패:", error);
-          toast({
-            variant: "destructive",
-            description: "구독 태그 로딩 실패",
-          });
+          toast.error("구독 태그 로딩 실패");
         }
       }
     };
     if (isOpen) {
       fetchSubscribedTags();
     }
-  }, [isOpen, status, toast]);
+  }, [isOpen, status]);
 
   const handleCreateTag = async () => {
     if (!newTagName.trim() || isCreatingTag) return;
     setIsCreatingTag(true);
-    await onCreateTag(newTagName);
+    const newTag = await onCreateTag(newTagName);
+    if (newTag) {
+      toast(`'${newTag.name}' 태그가 생성되었습니다.`);
+    } else {
+      toast.error("태그 생성에 실패했습니다.");
+    }
     setNewTagName("");
     setIsCreatingTag(false);
   };
@@ -110,21 +112,13 @@ export function TagManagementDialog({
         const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
         if (!response.ok) {
             setSubscribedTags(originalSubscriptions);
-            toast({
-                variant: "destructive",
-                description: "구독 취소에 실패했습니다.",
-            });
+            toast.error("구독 취소에 실패했습니다.");
         } else {
-            toast({
-                description: "구독이 취소되었습니다.",
-            });
+            toast("구독이 취소되었습니다.");
         }
     } catch (error) {
         setSubscribedTags(originalSubscriptions);
-        toast({
-            variant: "destructive",
-            description: "구독 취소 중 오류가 발생했습니다.",
-        });
+        toast.error("구독 취소 중 오류가 발생했습니다.");
     }
   };
 

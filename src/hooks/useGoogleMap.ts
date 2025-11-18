@@ -146,15 +146,12 @@ export function useGoogleMap() {
                 streetviewPanorama.current?.setPosition(data.location.latLng);
                 setStreetViewImageDate(data.imageDate || '');
             } else {
-                toast({
-                    variant: "destructive",
-                    description: "해당 위치에 스트리트뷰 정보가 없습니다.",
-                });
+                toast.error("해당 위치에 스트리트뷰 정보가 없습니다.");
                 console.error("Street View data not found for this location:", status);
                 setStreetViewImageDate('');
             }
         });
-    }, [toast]);
+    }, []);
 
     const clearOverlays = useCallback(() => {
         markers.current.forEach((marker) => marker.setMap(null));
