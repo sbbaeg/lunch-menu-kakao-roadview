@@ -52,6 +52,11 @@ export async function GET(
 
     // If not in our DB, fetch from Google and create it
     if (!restaurantFromDb) {
+      // [DIAGNOSTIC] Temporarily disabled to test search fix.
+      // This will cause errors for restaurants not in the DB.
+      return NextResponse.json({ error: 'Restaurant not found in our DB. Creation is temporarily disabled.' }, { status: 404 });
+
+      /*
       const initialGoogleData: GooglePlaceItem = {
         id: googlePlaceId,
         place_name: '',
@@ -104,6 +109,7 @@ export async function GET(
         }
       });
       restaurantFromDb = newRestaurant;
+      */
     }
 
     const reviewAggregations = await prisma.review.aggregate({
