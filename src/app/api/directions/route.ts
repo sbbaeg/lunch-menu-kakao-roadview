@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  const { origin, destination } = await request.json(); // Expecting JSON body for POST
+  const { origin, destination, travelMode = 'WALK' } = await request.json();
 
   if (!origin || !destination) {
     return NextResponse.json({ error: 'Origin and destination are required' }, { status: 400 });
@@ -15,36 +15,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'API key is not configured' }, { status: 500 });
   }
 
-  // Convert "lat,lng" strings to { latitude, longitude } objects
   const [originLat, originLng] = origin.split(',').map(Number);
   const [destinationLat, destinationLng] = destination.split(',').map(Number);
 
-  const requestBody = {
-    origin: {
-      location: {
-        latLng: {
-          latitude: originLat,
-          longitude: originLng,
-        },
-      },
-    },
-    destination: {
-      location: {
-        latLng: {
-          latitude: destinationLat,
-          longitude: destinationLng,
-        },
-      },
-    },
-    travelMode: 'WALK', // Or 'DRIVE', 'BICYCLE', 'TRANSIT'
-    // routingPreference: 'TRAFFIC_AWARE_OPTIMAL', // 'WALK' 모드에서는 사용할 수 없음
-    polylineEncoding: 'ENCODED_POLYLINE', // Request encoded polyline
-    computeAlternativeRoutes: false, // Optional
+  const requestBody: any = {
+    origin: { location: { latLng: { latitude: originLat, longitude: originLng } } },
+    destination: { location: { latLng: { latitude: destinationLat, longitude: destinationLng } } },
+    travelMode: travelMode,
+    polylineEncoding: 'ENCODED_POLYLINE',
+    computeAlternativeRoutes: false,
     languageCode: 'ko',
     units: 'METRIC',
   };
 
-  console.log('[DIAG] Google Routes API Request Body:', JSON.stringify(requestBody, null, 2));
+  if (travelMode === 'TRANSIT') {
+    requestBody.computeAlternativeRoutes = true;
+    requestBody.transitPreferences = {
+      allowedTravelModes: ["BUS", "RAIL", "SUBWAY", "TRAIN", "TRAM", "LIGHT_RAIL"],
+      routingPreference: "LESS_WALKING"
+    };
+  }
+
+  const fieldMask = travelMode === 'TRANSIT'
+    ? 'routes.legs,routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline'
+    : 'routes.polyline.encodedPolyline,routes.duration,routes.distanceMeters';
 
   try {
     const routesResponse = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
@@ -52,7 +46,7 @@ export async function POST(request: Request) {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': GOOGLE_API_KEY,
-        'X-Goog-FieldMask': 'routes.polyline.encodedPolyline,routes.duration,routes.distanceMeters',
+        'X-Goog-FieldMask': fieldMask,
       },
       body: JSON.stringify(requestBody),
     });
@@ -66,20 +60,25 @@ export async function POST(request: Request) {
       } catch (e) {
         // Not a JSON response
       }
-      return NextResponse.json({ path_encoded: '', error: errorJson.error?.message || 'Failed to get routes' }, { status: routesResponse.status });
+      return NextResponse.json({ error: errorJson.error?.message || 'Failed to get routes' }, { status: routesResponse.status });
     }
 
-    // If we are here, response is OK.
     const data = await routesResponse.json();
 
     if (data.routes && data.routes.length > 0) {
-      const encodedPolyline = data.routes[0].polyline.encodedPolyline;
-      const duration = data.routes[0].duration;
-      const distanceMeters = data.routes[0].distanceMeters;
-      return NextResponse.json({ path_encoded: encodedPolyline, duration, distanceMeters });
+      if (travelMode === 'TRANSIT') {
+        // For transit, return the full route object which includes legs and steps
+        return NextResponse.json({ route: data.routes[0] });
+      } else {
+        // For other modes, return the simplified object
+        const encodedPolyline = data.routes[0].polyline.encodedPolyline;
+        const duration = data.routes[0].duration;
+        const distanceMeters = data.routes[0].distanceMeters;
+        return NextResponse.json({ path_encoded: encodedPolyline, duration, distanceMeters });
+      }
     } else {
       console.error('Google Routes API: OK response but no routes found', data);
-      return NextResponse.json({ path_encoded: '', error: 'No routes found' }, { status: 404 });
+      return NextResponse.json({ error: 'No routes found' }, { status: 404 });
     }
 
   } catch (error) {
