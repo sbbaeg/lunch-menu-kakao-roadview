@@ -39,10 +39,7 @@ export function useBlacklist() {
 
     const toggleBlacklist = async (place: AppRestaurant) => {
         if (status !== 'authenticated') {
-            toast({
-                variant: "destructive",
-                description: "로그인이 필요한 기능입니다.",
-            });
+            toast.error("로그인이 필요한 기능입니다.");
             return;
         }
 
@@ -62,17 +59,11 @@ export function useBlacklist() {
 
             if (!response.ok) {
                 setBlacklist(originalBlacklist);
-                toast({
-                    variant: "destructive",
-                    description: "블랙리스트 처리에 실패했습니다.",
-                });
+                toast.error("블랙리스트 처리에 실패했습니다.");
             }
         } catch (error) {
             setBlacklist(originalBlacklist);
-            toast({
-                variant: "destructive",
-                description: "블랙리스트 처리에 실패했습니다.",
-            });
+            toast.error("블랙리스트 처리에 실패했습니다.");
         }
     };
 

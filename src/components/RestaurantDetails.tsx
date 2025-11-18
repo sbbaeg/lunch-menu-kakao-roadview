@@ -51,10 +51,7 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
       }
     } catch (error) {
       console.error("Failed to navigate to details page:", error); //
-      toast({
-        variant: "destructive",
-        description: "상세 페이지로 이동하는 데 실패했습니다.",
-      });
+      toast.error("상세 페이지로 이동하는 데 실패했습니다.");
       setIsNavigating(false); //
     }
   };

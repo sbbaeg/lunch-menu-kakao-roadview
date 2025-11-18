@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -9,7 +11,7 @@ import Link from 'next/link';
 import { Users, Utensils, Star, Search, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 interface RankedTag {
   id: number;
@@ -55,7 +57,6 @@ export default function TagExplorePage() {
   const [sort, setSort] = useState('popular');
   const [isLoading, setIsLoading] = useState(true);
   const { subscribedTagIds, toggleSubscription } = useSubscriptions();
-  const { toast } = useToast();
 
   // 검색 기능 관련 상태
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,10 +105,7 @@ export default function TagExplorePage() {
 
   const handleToggleSubscription = async (tagId: number) => {
     if (status !== 'authenticated') {
-      toast({
-        variant: "destructive",
-        description: '로그인이 필요한 기능입니다.',
-      });
+      toast.error('로그인이 필요한 기능입니다.');
       return;
     }
     await toggleSubscription(tagId);

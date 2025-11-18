@@ -142,10 +142,7 @@ export default function RestaurantPage() {
     } catch (error) {
       // Revert on failure
       setRestaurant(originalRestaurant);
-      toast({
-        variant: "destructive",
-        description: '투표 처리에 실패했습니다.',
-      });
+      toast.error('투표 처리에 실패했습니다.');
     } finally {
       setIsVoting(false);
     }
@@ -155,10 +152,7 @@ export default function RestaurantPage() {
     if (status === 'authenticated') {
         setIsBlacklistOpen(true);
     } else {
-        toast({
-            variant: "destructive",
-            description: "로그인이 필요한 기능입니다.",
-        });
+        toast.error("로그인이 필요한 기능입니다.");
     }
   };
 
@@ -185,10 +179,7 @@ export default function RestaurantPage() {
         handleTagsChange(updatedRestaurant);
         setTaggingRestaurant(updatedRestaurant);
       } else {
-        toast({
-            variant: "destructive",
-            description: "태그 연결에 실패했습니다.",
-        });
+        toast.error("태그 연결에 실패했습니다.");
       }
     }
   };
@@ -213,18 +204,12 @@ export default function RestaurantPage() {
       if (!response.ok) {
         handleTagsChange(originalRestaurant);
         setTaggingRestaurant(originalRestaurant);
-        toast({
-            variant: "destructive",
-            description: "태그 변경에 실패했습니다.",
-        });
+        toast.error("태그 변경에 실패했습니다.");
       }
     } catch (error) {
         handleTagsChange(originalRestaurant);
         setTaggingRestaurant(originalRestaurant);
-        toast({
-            variant: "destructive",
-            description: "태그 변경 중 네트워크 오류가 발생했습니다.",
-        });
+        toast.error("태그 변경 중 네트워크 오류가 발생했습니다.");
     }
   };
 

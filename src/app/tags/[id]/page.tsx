@@ -93,10 +93,7 @@ export default function TagProfilePage() {
         if (status === 'authenticated') {
             setIsBlacklistOpen(true);
         } else {
-            toast({
-                variant: "destructive",
-                description: "로그인이 필요한 기능입니다.",
-            });
+            toast.error("로그인이 필요한 기능입니다.");
         }
     };
 
@@ -110,32 +107,21 @@ export default function TagProfilePage() {
             const response = await fetch(`/api/tags/${tagId}/subscribe`, { method: 'POST' });
             if (!response.ok) {
                 setTagData(originalData); // 실패 시 롤백
-                toast({
-                    variant: "destructive",
-                    description: "구독 처리에 실패했습니다.",
-                });
+                toast.error("구독 처리에 실패했습니다.");
             }
         } catch (error) {
             setTagData(originalData); // 실패 시 롤백
-            toast({
-                variant: "destructive",
-                description: "구독 처리 중 오류가 발생했습니다.",
-            });
+            toast.error("구독 처리 중 오류가 발생했습니다.");
         }
     };
 
     const handleShare = async () => {
         try {
             await navigator.clipboard.writeText(window.location.href);
-            toast({
-                description: '링크가 클립보드에 복사되었습니다!',
-            });
+            toast('링크가 클립보드에 복사되었습니다!');
         } catch (err) {
             console.error('클립보드 복사 실패:', err);
-            toast({
-                variant: "destructive",
-                description: '링크 복사에 실패했습니다.',
-            });
+            toast.error('링크 복사에 실패했습니다.');
         }
     };
 
@@ -169,10 +155,7 @@ export default function TagProfilePage() {
                 handleTagsChange(updatedRestaurant);
                 setTaggingRestaurant(updatedRestaurant);
             } else {
-                toast({
-                    variant: "destructive",
-                    description: "태그 연결에 실패했습니다.",
-                });
+                toast.error("태그 연결에 실패했습니다.");
             }
         }
     };
@@ -197,18 +180,12 @@ export default function TagProfilePage() {
             if (!response.ok) {
                 handleTagsChange(originalRestaurant);
                 setTaggingRestaurant(originalRestaurant);
-                toast({
-                    variant: "destructive",
-                    description: "태그 변경에 실패했습니다.",
-                });
+                toast.error("태그 변경에 실패했습니다.");
             }
         } catch (error) {
             handleTagsChange(originalRestaurant);
             setTaggingRestaurant(originalRestaurant);
-            toast({
-                variant: "destructive",
-                description: "태그 변경 중 네트워크 오류가 발생했습니다.",
-            });
+            toast.error("태그 변경 중 네트워크 오류가 발생했습니다.");
         }
     };
 

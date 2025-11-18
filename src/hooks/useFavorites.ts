@@ -62,17 +62,11 @@ export function useFavorites() {
                 });
                 if (!response.ok) {
                     setFavorites(originalFavorites); // 실패 시 롤백
-                    toast({
-                        variant: "destructive",
-                        description: "즐겨찾기 처리에 실패했습니다.",
-                    });
+                    toast.error("즐겨찾기 처리에 실패했습니다.");
                 }
             } catch (error) {
                 setFavorites(originalFavorites); // 실패 시 롤백
-                toast({
-                    variant: "destructive",
-                    description: "즐겨찾기 처리에 실패했습니다.",
-                });
+                toast.error("즐겨찾기 처리에 실패했습니다.");
             }
         } else {
             localStorage.setItem('favoriteRestaurants', JSON.stringify(newFavorites));

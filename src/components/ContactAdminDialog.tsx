@@ -83,10 +83,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       const data: Inquiry[] = await response.json();
       setInquiries(data);
     } catch (err: any) {
-      toast({
-        variant: "destructive",
-        description: err.message,
-      });
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -121,10 +118,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
 
   const handleBulkDelete = async () => {
     if (selectedInquiries.length === 0) {
-      toast({
-        variant: "destructive",
-        description: '삭제할 항목을 선택해주세요.',
-      });
+      toast.error('삭제할 항목을 선택해주세요.');
       return;
     }
     if (!confirm(`선택된 ${selectedInquiries.length}개의 항목을 정말로 삭제하시겠습니까?`)) {
@@ -143,23 +137,15 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       }
       setInquiries(prevInquiries => prevInquiries.filter(inq => !selectedInquiries.includes(inq.id)));
       setSelectedInquiries([]);
-      toast({
-        description: `${selectedInquiries.length}개의 문의가 성공적으로 삭제되었습니다.`,
-      });
+      toast.success(`${selectedInquiries.length}개의 문의가 성공적으로 삭제되었습니다.`);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        description: error.message,
-      });
+      toast.error(error.message);
     }
   };
 
   const handleSubmit = async () => {
     if (title.trim().length === 0 || message.trim().length === 0) {
-      toast({
-        variant: "destructive",
-        description: '제목과 문의 내용을 모두 입력해주세요.',
-      });
+      toast.error('제목과 문의 내용을 모두 입력해주세요.');
       return;
     }
     setIsSubmitting(true);
@@ -183,18 +169,13 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
         throw new Error(`문의 접수 중 오류가 발생했습니다.${detailMessage}`);
       }
 
-      toast({
-        description: '문의가 성공적으로 접수되었습니다.',
-      });
+      toast.success('문의가 성공적으로 접수되었습니다.');
       setTitle('');
       setMessage('');
       setView('list');
       fetchInquiries();
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        description: error.message,
-      });
+      toast.error(error.message);
     }
     finally {
       setIsSubmitting(false);
