@@ -59,57 +59,28 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: P
 };
 
 export function NotificationPopover() {
-  const { notifications, unreadCount, fetchNotifications, deleteNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [selectedNotification, setSelectedNotification] = useState<PrismaNotification | null>(null);
-  const lastNotificationDateRef = useRef<Date | null>(null);
 
+  const handleNewNotification = (notification: PrismaNotification) => {
+    toast(notification.message, {
+      action: {
+        label: "내용 보기",
+        onClick: () => setSelectedNotification(notification),
+      },
+    });
+  };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchNotifications();
-    }, 30000);
+  const { notifications, unreadCount, deleteNotifications } = useNotifications({
+    onNewNotification: handleNewNotification,
+  });
 
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
-
-  useEffect(() => {
-    if (notifications.length > 0) {
-      // Initialize the ref on first load without showing a toast.
-      if (lastNotificationDateRef.current === null) {
-        lastNotificationDateRef.current = new Date(notifications[0].createdAt);
-        return;
-      }
-  
-      const latestNotification = notifications[0];
-      if (new Date(latestNotification.createdAt) > lastNotificationDateRef.current) {
-        toast(latestNotification.message, {
-          action: {
-            label: "내용 보기",
-            onClick: () => setSelectedNotification(latestNotification),
-          },
-        });
-        // Update the ref. This does not cause a re-render.
-        lastNotificationDateRef.current = new Date(latestNotification.createdAt);
-      }
-    }
-  }, [notifications, unreadCount]);
 
   const hasReadNotifications = notifications.some(n => n.read);
 
-  const handleOpenChange = (open: boolean) => {
-    if (open) {
-      fetchNotifications();
-    }
-  };
-
   const togglePopover = () => {
-    const newIsOpen = !isOpen;
-    setIsOpen(newIsOpen);
-    if (newIsOpen) {
-      handleOpenChange(true);
-    }
+    setIsOpen(!isOpen);
   };
 
   useEffect(() => {

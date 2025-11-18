@@ -47,6 +47,8 @@ import RankingPage from '@/app/ranking/page'; // 1. Import RankingPage
 import NotificationsPage from './NotificationsPage'; // 알림 페이지 임포트
 import { AppRestaurant, Tag } from '@/lib/types';
 import { useSession } from "next-auth/react";
+import { toast } from 'sonner';
+import { Notification as PrismaNotification } from '@prisma/client';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useInquiryNotifications } from '@/hooks/useInquiryNotifications';
 import {
@@ -92,7 +94,19 @@ export default function MobileLayout() {
     const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
     const { likedRestaurants, isLoading: isLoadingLiked } = useLikedRestaurants();
-    const { unreadCount: unreadGeneralNotificationCount } = useNotifications();
+    
+    const handleNewMobileNotification = (notification: PrismaNotification) => {
+        toast(notification.message, {
+            action: {
+                label: "내용 보기",
+                onClick: () => showNotifications(),
+            },
+        });
+    };
+
+    const { unreadCount: unreadGeneralNotificationCount } = useNotifications({
+        onNewNotification: handleNewMobileNotification,
+    });
     const { unreadInquiryCount } = useInquiryNotifications();
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
