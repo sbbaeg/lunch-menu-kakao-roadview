@@ -12,7 +12,6 @@ import Link from "next/link";
 import { useAppStore } from '@/store/useAppStore';
 import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 import { RestaurantDetails } from "./RestaurantDetails";
-import { DirectionsPanel } from "./DirectionsPanel";
 import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare, Accessibility } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
@@ -33,8 +32,6 @@ interface RestaurantCardProps {
   onToggleBlacklist?: (restaurant: AppRestaurant) => void;
   onTagManagement?: (restaurant: AppRestaurant) => void;
   onNavigate?: () => void;
-  onShowDirections?: (restaurant: AppRestaurant) => void;
-  showDirections?: boolean;
 }
 
 export function RestaurantCard({
@@ -42,8 +39,6 @@ export function RestaurantCard({
   session,
   subscribedTagIds,
   onNavigate, // onNavigate prop 추가
-  onShowDirections,
-  showDirections = false,
   ...detailProps
 }: RestaurantCardProps) {
   const details = restaurant.googleDetails;
@@ -63,11 +58,6 @@ export function RestaurantCard({
       e.preventDefault();
       showTagDetail(tagId);
     }
-  };
-
-  const handleDirectionsClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onShowDirections?.(restaurant);
   };
 
   const totalVotes = (restaurant.likeCount ?? 0) + (restaurant.dislikeCount ?? 0);
@@ -91,21 +81,19 @@ export function RestaurantCard({
             <CardContent className="px-4 pb-3 pt-0 text-xs flex flex-col items-start gap-2">
               <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
                 <span>{restaurant.categoryName?.split(">").pop()?.trim()}</span>
-                <Button variant="outline" size="sm" onClick={handleDirectionsClick}>길찾기</Button>
+                {likePercentage !== null && (
+                  <div className="flex items-center gap-1" title="좋아요 비율">
+                    {likePercentage >= 50 ? (
+                      <ThumbsUp className="h-4 w-4 text-sky-500" />
+                    ) : (
+                      <ThumbsDown className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className={`font-medium ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`}>{likePercentage}%</span>
+                  </div>
+                )}
               </div>
               <div className="w-full flex justify-between items-center text-gray-600 dark:text-gray-400">
-                <div className="flex items-center gap-1" title="좋아요 비율">
-                  {likePercentage !== null ? (
-                    <>
-                      {likePercentage >= 50 ? (
-                        <ThumbsUp className="h-4 w-4 text-sky-500" />
-                      ) : (
-                        <ThumbsDown className="h-4 w-4 text-red-500" />
-                      )}
-                      <span className={`font-medium ${likePercentage >= 50 ? 'text-sky-500' : 'text-red-500'}`}>{likePercentage}%</span>
-                    </>
-                  ) : <div />}
-                </div>
+                <div/>
                 <div className="flex items-center gap-2">
                   {/* App Rating */}
                   {restaurant.appReview && restaurant.appReview.reviewCount > 0 && (
@@ -225,16 +213,12 @@ export function RestaurantCard({
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          {showDirections ? (
-            <DirectionsPanel restaurant={restaurant} />
-          ) : (
-            <RestaurantDetails 
-              restaurant={restaurant} 
-              session={session} 
-              onNavigate={onNavigate} 
-              {...detailProps} // isFavorite, onToggleFavorite 등 전달
-            />
-          )}
+          <RestaurantDetails 
+            restaurant={restaurant} 
+            session={session} 
+            onNavigate={onNavigate} 
+            {...detailProps} // isFavorite, onToggleFavorite 등 전달
+          />
         </AccordionContent>
       </Card>
     </AccordionItem>

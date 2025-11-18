@@ -10,6 +10,7 @@ import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button"; // Button 컴포넌트 임포트
 
 interface RestaurantDetailsProps {
   restaurant: AppRestaurant;
@@ -28,32 +29,52 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
     restaurant,
   } = props;
 
-  const router = useRouter(); //
-  const [isNavigating, setIsNavigating] = useState(false); //
-  const { isStandalone } = usePwaDisplayMode(); //
-  const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail); //
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
+  const { isStandalone } = usePwaDisplayMode();
+  const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
+  const userLocation = useAppStore((state) => state.userLocation); // 사용자 위치 가져오기
 
   const handleViewDetails = async () => {
-    setIsNavigating(true); //
+    setIsNavigating(true);
     try {
-      await fetch('/api/restaurants', { //
+      await fetch('/api/restaurants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(restaurant),
       });
 
-      if (props.onNavigate) props.onNavigate(); //
+      if (props.onNavigate) props.onNavigate();
 
-      if (isStandalone) { //
-        showRestaurantDetail(restaurant.id); //
+      if (isStandalone) {
+        showRestaurantDetail(restaurant.id);
       } else {
-        router.push(`/restaurants/${restaurant.id}`); //
+        router.push(`/restaurants/${restaurant.id}`);
       }
     } catch (error) {
-      console.error("Failed to navigate to details page:", error); //
+      console.error("Failed to navigate to details page:", error);
       toast.error("상세 페이지로 이동하는 데 실패했습니다.");
-      setIsNavigating(false); //
+      setIsNavigating(false);
     }
+  };
+
+  const handleKakaoDirections = () => {
+    if (!userLocation || !restaurant.y || !restaurant.x) {
+      toast.error("현재 위치 또는 식당 정보가 없어 길찾기를 시작할 수 없습니다.");
+      return;
+    }
+
+    const originLat = userLocation.lat;
+    const originLng = userLocation.lng;
+    const destinationLat = restaurant.y;
+    const destinationLng = restaurant.x;
+    const destinationName = restaurant.placeName;
+
+    // 카카오맵 길찾기 URL 스킴 (자동차 기준)
+    // sp: 출발지, ep: 목적지, by: 이동수단 (CAR, PUBLICTRANSIT, FOOT, BICYCLE)
+    const kakaoMapUrl = `kakaomap://route?sp=${originLat},${originLng}&ep=${destinationLat},${destinationLng}&by=CAR&name=${encodeURIComponent(destinationName)}`;
+
+    window.open(kakaoMapUrl, '_blank');
   };
 
   return (
@@ -73,6 +94,15 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
           props.onToggleBlacklist &&
           props.onTagManagement && <RestaurantActionButtons {...props} />}
       </div>
+
+      {/* 카카오맵 길찾기 버튼 추가 */}
+      <Button 
+        variant="outline" 
+        className="w-full mt-2" 
+        onClick={handleKakaoDirections}
+      >
+        카카오맵으로 길찾기
+      </Button>
 
       <RestaurantPreviewContent
         restaurant={restaurant}

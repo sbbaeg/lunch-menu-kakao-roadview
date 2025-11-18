@@ -154,7 +154,6 @@ export default function Home() {
 
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    const [directionsTargetId, setDirectionsTargetId] = useState<string | null>(null);
 
 
     const [isFavoritesListOpen, setIsFavoritesListOpen] = useState(false);
@@ -308,20 +307,6 @@ export default function Home() {
         updateRestaurantInStore(updatedRestaurant); // 1. 스토어의 목록 업데이트
         updateFavoriteInList(updatedRestaurant);    // 2. useFavorites의 목록 업데이트
     };
-
-    const handleShowDirections = (restaurant: AppRestaurant) => {
-        if (selectedItemId !== restaurant.id) {
-            setSelectedItemId(restaurant.id);
-        }
-        setDirectionsTargetId(restaurant.id);
-    };
-
-    const handleSetSelectedItemId = (id: string) => {
-        setSelectedItemId(id);
-        if (id !== directionsTargetId) {
-            setDirectionsTargetId(null);
-        }
-    };
     
     const hasUnreadNotifications = unreadCount > 0 || unreadInquiryCount > 0;
 
@@ -402,7 +387,7 @@ export default function Home() {
                         blacklistExcludedCount={blacklistExcludedCount} 
                         displayedSortOrder={displayedSortOrder} 
                         selectedItemId={selectedItemId} 
-                        setSelectedItemId={handleSetSelectedItemId} 
+                        setSelectedItemId={setSelectedItemId} 
                         session={session}
                         subscribedTagIds={subscribedTagIds}
                         isFavorite={isFavorite}
@@ -411,8 +396,6 @@ export default function Home() {
                         onToggleBlacklist={toggleBlacklist}
                         onTagManagement={setTaggingRestaurant}
                         onOpenFilter={() => setIsFilterOpen(true)}
-                        onShowDirections={handleShowDirections}
-                        directionsTargetId={directionsTargetId}
                     />
                 </div>
             </div>
