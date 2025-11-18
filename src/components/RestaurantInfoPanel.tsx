@@ -9,7 +9,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { StarRating } from "./ui/StarRating";
-import { ThumbsUp, ThumbsDown, Car, Footprints, Bus, Map } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Car, Footprints, Bus, Map, Globe } from 'lucide-react';
 import { VoteType } from '@prisma/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppStore } from '@/store/useAppStore';
@@ -236,12 +236,12 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
         }
       </div>
 
-      <div className="flex gap-2 pt-4">
+      <div className="flex gap-2 pt-4 border-t">
         <a href={restaurant.placeUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-          <Button size="sm" className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-bold flex items-center justify-center">
+          <Button size="sm" className="w-full font-bold flex items-center justify-center">
             <span className="flex items-center justify-center">
-                <Image src="/kakaomap_icon.png" alt="카카오맵 로고" width={16} height={16} className="mr-2" />
-                카카오맵
+                <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
+                Google 지도
             </span>
           </Button>
         </a>
@@ -249,8 +249,8 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
           <a href={details.url} target="_blank" rel="noopener noreferrer" className="flex-1">
             <Button variant="outline" size="sm" className="w-full font-bold flex items-center justify-center">
                 <span className="flex items-center justify-center">
-                    <Image src="/googlemap_icon.png" alt="구글맵 로고" width={16} height={16} className="mr-2" />
-                    구글맵
+                    <Globe className="h-4 w-4 mr-2" />
+                    공식 홈페이지
                 </span>
             </Button>
           </a>
