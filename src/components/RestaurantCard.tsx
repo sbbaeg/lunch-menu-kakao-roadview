@@ -12,7 +12,8 @@ import Link from "next/link";
 import { useAppStore } from '@/store/useAppStore';
 import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 import { RestaurantDetails } from "./RestaurantDetails";
-import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare, Accessibility } from 'lucide-react';
+import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare, Accessibility, Map } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 import {
     Tooltip,
@@ -43,6 +44,7 @@ export function RestaurantCard({
   const details = restaurant.googleDetails;
   const { isStandalone } = usePwaDisplayMode();
   const showTagDetail = useAppStore((state) => state.showTagDetail);
+  const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -56,6 +58,11 @@ export function RestaurantCard({
       e.preventDefault();
       showTagDetail(tagId);
     }
+  };
+
+  const handleDirectionsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    showRestaurantDetail(restaurant.id);
   };
 
   const totalVotes = (restaurant.likeCount ?? 0) + (restaurant.dislikeCount ?? 0);
@@ -207,7 +214,14 @@ export function RestaurantCard({
                   </Tooltip>
                 )}
               </div>
-
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 w-full flex items-center gap-2"
+                onClick={handleDirectionsClick}
+              >
+                <Map className="h-4 w-4" /> 길 안내
+              </Button>
             </CardContent>
           </div>
         </AccordionTrigger>

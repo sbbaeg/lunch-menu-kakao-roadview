@@ -23,7 +23,7 @@ export function useGoogleMap() {
     const mapInstance = useRef<google.maps.Map | null>(null);
     const [isMapInitialized, setIsMapInitialized] = useState(false);
     const markers = useRef<google.maps.Marker[]>([]);
-    const polylineInstance = useRef<google.maps.Polyline | null>(null);
+    const directionsPolyline = useRef<google.maps.Polyline | null>(null);
     const streetviewContainer = useRef<HTMLDivElement | null>(null);
     const streetviewPanorama = useRef<google.maps.StreetViewPanorama | null>(null);
     const streetviewService = useRef<google.maps.StreetViewService | null>(null);
@@ -105,25 +105,47 @@ export function useGoogleMap() {
         mapInstance.current.setZoom(zoom);
     }, []);
 
-    const drawPolyline = useCallback((encodedPath: string) => {
+    const drawDirections = useCallback((directionsResult: any) => {
         if (!mapInstance.current || !window.google?.maps?.geometry?.encoding) return;
-        if (polylineInstance.current) polylineInstance.current.setMap(null);
+        if (directionsPolyline.current) {
+            directionsPolyline.current.setMap(null);
+        }
+
+        const encodedPath = directionsResult.route?.polyline?.encodedPolyline || directionsResult.path_encoded;
+
+        if (!encodedPath) {
+            console.error("No encoded polyline found in directions result");
+            return;
+        }
 
         const decodedPath = window.google.maps.geometry.encoding.decodePath(encodedPath);
-        polylineInstance.current = new window.google.maps.Polyline({
+        
+        directionsPolyline.current = new window.google.maps.Polyline({
             path: decodedPath,
             strokeColor: "#007BFF",
             strokeWeight: 6,
             strokeOpacity: 0.8,
             map: mapInstance.current,
         });
+
+        if (directionsResult.route?.legs) {
+            const bounds = new window.google.maps.LatLngBounds();
+            directionsResult.route.legs.forEach((leg: any) => {
+                leg.steps.forEach((step: any) => {
+                    bounds.extend(new window.google.maps.LatLng(step.startLocation.latLng.latitude, step.startLocation.latLng.longitude));
+                    bounds.extend(new window.google.maps.LatLng(step.endLocation.latLng.latitude, step.endLocation.latLng.longitude));
+                });
+            });
+            mapInstance.current.fitBounds(bounds, 100); // 100px padding
+        }
+
     }, []);
 
     const drawFallbackLine = useCallback((origin: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
         if (!mapInstance.current) return;
-        if (polylineInstance.current) polylineInstance.current.setMap(null);
+        if (directionsPolyline.current) directionsPolyline.current.setMap(null);
 
-        polylineInstance.current = new window.google.maps.Polyline({
+        directionsPolyline.current = new window.google.maps.Polyline({
             path: [origin, destination],
             strokeColor: "#FF0000", // 빨간색으로 표시하여 실제 경로가 아님을 나타냄
             strokeWeight: 3,
@@ -156,9 +178,9 @@ export function useGoogleMap() {
     const clearOverlays = useCallback(() => {
         markers.current.forEach((marker) => marker.setMap(null));
         markers.current = [];
-        if (polylineInstance.current) {
-            polylineInstance.current.setMap(null);
-            polylineInstance.current = null;
+        if (directionsPolyline.current) {
+            directionsPolyline.current.setMap(null);
+            directionsPolyline.current = null;
         }
         if (userLocationMarker) {
             userLocationMarker.setMap(null);
@@ -184,7 +206,7 @@ export function useGoogleMap() {
         displayMarkers,
         setCenter,
         setZoom, // Renamed from setLevel
-        drawPolyline,
+        drawDirections,
         drawFallbackLine,
         drawUserLocationMarker,
         clearOverlays,

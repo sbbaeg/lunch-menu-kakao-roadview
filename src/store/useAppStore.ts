@@ -22,6 +22,7 @@ interface AppState {
   loading: boolean;
   isMapReady: boolean;
   resultPanelState: 'collapsed' | 'default' | 'expanded';
+  directions: any | null;
 
   // Actions
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
@@ -47,6 +48,7 @@ interface AppState {
   
   clearMapAndResults: () => void;
   getNearbyRestaurants: (center: { lat: number; lng: number }, query?: string) => Promise<AppRestaurant[]>;
+  getDirections: (origin: string, destination: string, travelMode: string) => Promise<void>;
   recommendProcess: (isRoulette: boolean, center?: { lat: number; lng: number }) => Promise<{ success: boolean; message?: string; isRoulette?: boolean, restaurants?: AppRestaurant[] }>;
   handleSearchInArea: (center: { lat: number; lng: number }) => void;
   handleAddressSearch: (keyword: string, center: { lat: number; lng: number }) => void;
@@ -64,6 +66,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   previousView: 'tabs',
   activeTagId: null,
   activeRestaurantId: null,
+  directions: null,
   
   filters: {
     categories: [],
@@ -204,6 +207,25 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set({ blacklistExcludedCount: data.blacklistExcludedCount || 0 });
     return formattedRestaurants;
+  },
+
+  getDirections: async (origin, destination, travelMode) => {
+    set({ loading: true, directions: null });
+    try {
+        const response = await fetch('/api/directions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ origin, destination, travelMode }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch directions');
+        }
+        const data = await response.json();
+        set({ directions: data, loading: false });
+    } catch (error) {
+        console.error("Error fetching directions:", error);
+        set({ loading: false, directions: null });
+    }
   },
 
   recommendProcess: async (isRoulette, center) => {

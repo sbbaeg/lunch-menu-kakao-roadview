@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { fetchDirections } from '@/lib/googleMaps';
 
+import { useAppStore } from '@/store/useAppStore';
+
 interface MapPanelProps {
   restaurants: AppRestaurant[];
   selectedRestaurant: AppRestaurant | null;
@@ -32,7 +34,8 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawPolyline, drawFallbackLine, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
+  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, drawFallbackLine, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
+  const directions = useAppStore((state) => state.directions);
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
@@ -84,23 +87,10 @@ export function MapPanel({
 
   // Effect for drawing directions
   useEffect(() => {
-    const getAndDrawDirections = async () => {
-      if (isMapReady && userLocation && selectedRestaurant) {
-        const origin = { lat: userLocation.lat, lng: userLocation.lng };
-        const destination = { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) };
-        
-        console.log('[DIAG] Fetching directions from:', origin, 'to:', destination);
-        const encodedPath = await fetchDirections(origin, destination);
-
-        if (encodedPath) {
-          drawPolyline(encodedPath);
-        } else {
-          drawFallbackLine(origin, destination);
-        }
-      }
-    };
-    getAndDrawDirections();
-  }, [isMapReady, userLocation, selectedRestaurant, drawPolyline, drawFallbackLine]);
+    if (isMapReady && directions) {
+      drawDirections(directions);
+    }
+  }, [isMapReady, directions, drawDirections]);
 
   useEffect(() => {
     if (!mapInstance) return;
