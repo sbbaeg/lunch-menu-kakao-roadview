@@ -380,7 +380,7 @@ export default function AdminPageClient() {
             toast.success('메시지를 성공적으로 보냈습니다.');
             setMessagingUser(null);
         } catch (e: any) {
-            setError(e.message);
+            toast.error(`오류: ${e.message}`);
             toast.error(`오류: ${e.message}`);
         } finally {
             setIsSendingMessage(false);
