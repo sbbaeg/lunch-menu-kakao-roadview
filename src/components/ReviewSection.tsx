@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { VoteType } from '@prisma/client';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 interface ReviewSectionProps {
   restaurantId: number; // DB auto-increment ID
@@ -24,7 +24,6 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<SortOrder>('latest');
   const [editingReview, setEditingReview] = useState<AppReview | null>(null);
-  const { toast } = useToast();
 
   const fetchReviews = async () => {
     try {

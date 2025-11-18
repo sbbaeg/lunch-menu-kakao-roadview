@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 interface ReviewCardProps {
   review: AppReview;
@@ -31,7 +31,6 @@ export function ReviewCard({ review, isBestReview = false, onVote, onDelete, onE
   const { data: session } = useSession();
   const isAuthor = session?.user?.id === review.userId;
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const { toast } = useToast();
 
   // Optimistic UI updates for votes
   const [localUpvotes, setLocalUpvotes] = useState(review.upvotes);

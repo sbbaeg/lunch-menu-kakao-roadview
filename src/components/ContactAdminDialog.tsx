@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from 'lucide-react';
 import { useInquiryNotifications } from "@/hooks/useInquiryNotifications";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 
 interface Inquiry {
@@ -48,7 +48,6 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
   const [selectedInquiries, setSelectedInquiries] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<'inquiries' | 'messages'>('inquiries');
 
-  const { toast } = useToast();
   const { markInquiriesAsRead } = useInquiryNotifications();
 
   const [title, setTitle] = useState('');

@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { AppRestaurant } from '@/lib/types';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 export function useFavorites() {
     const { status } = useSession();
     const [favorites, setFavorites] = useState<AppRestaurant[]>([]);
-    const { toast } = useToast();
 
     const [isMounted, setIsMounted] = useState(false);
 

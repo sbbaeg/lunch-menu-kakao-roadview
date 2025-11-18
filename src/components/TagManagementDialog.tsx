@@ -17,7 +17,7 @@ import { useSession } from "next-auth/react";
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import { useAppStore } from "@/store/useAppStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 interface SubscribedTag {
     id: number;
@@ -47,7 +47,6 @@ export function TagManagementDialog({
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [subscribedTags, setSubscribedTags] = useState<SubscribedTag[]>([]);
   const showTagDetail = useAppStore((state) => state.showTagDetail);
-  const { toast } = useToast();
 
   const myTagsScrollRef = useRef<HTMLDivElement>(null);
   const subscribedTagsScrollRef = useRef<HTMLDivElement>(null);

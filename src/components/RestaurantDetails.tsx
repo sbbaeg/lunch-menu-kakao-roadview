@@ -9,7 +9,7 @@ import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import { useAppStore } from "@/store/useAppStore";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 interface RestaurantDetailsProps {
   restaurant: AppRestaurant;
@@ -32,7 +32,6 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
   const [isNavigating, setIsNavigating] = useState(false); //
   const { isStandalone } = usePwaDisplayMode(); //
   const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail); //
-  const { toast } = useToast();
 
   const handleViewDetails = async () => {
     setIsNavigating(true); //

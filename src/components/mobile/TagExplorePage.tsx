@@ -8,7 +8,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { Users, Utensils, Star, Search, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 interface RankedTag {
   id: number;
@@ -52,7 +52,6 @@ export default function TagExplorePage() {
   const { status } = useSession();
   const goBack = useAppStore((state) => state.goBack);
   const showTagDetail = useAppStore((state) => state.showTagDetail);
-  const { toast } = useToast();
 
   const [rankedTags, setRankedTags] = useState<RankedTag[]>([]);
   const [sort, setSort] = useState('popular');

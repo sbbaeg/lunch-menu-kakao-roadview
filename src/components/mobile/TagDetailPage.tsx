@@ -13,7 +13,7 @@ import { ArrowLeft } from 'lucide-react';
 import { MapPanel } from '@/components/MapPanel';
 import { TagReviewSection } from '@/components/TagReviewSection';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/toast";
 
 type TagDetailData = Tag & {
     restaurants: AppRestaurant[];
@@ -30,7 +30,6 @@ export default function TagDetailPage() {
     const { data: session } = useSession();
     const activeTagId = useAppStore(state => state.activeTagId);
     const goBack = useAppStore(state => state.goBack);
-    const { toast } = useToast();
 
     const [tagData, setTagData] = useState<TagDetailData | null>(null);
     const [loading, setLoading] = useState(true);
