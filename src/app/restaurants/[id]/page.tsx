@@ -59,6 +59,7 @@ export default function RestaurantPage() {
   const [isBlacklistOpen, setIsBlacklistOpen] = useState(false);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
+  const [mapAccordionValue, setMapAccordionValue] = useState<string>('map'); // 'map' or ''
 
   const id = params.id as string;
 
@@ -248,9 +249,11 @@ export default function RestaurantPage() {
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Left Column */}
                     <div className="w-full md:w-1/2 flex flex-col gap-8">
-                        <Accordion type="single" collapsible defaultValue="map">
+                        <Accordion type="single" collapsible value={mapAccordionValue} onValueChange={(value) => setMapAccordionValue(value || '')}>
                             <AccordionItem value="map">
-                                <AccordionTrigger className="text-lg font-semibold">지도 보기</AccordionTrigger>
+                                <AccordionTrigger className="text-lg font-semibold border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2 rounded-md w-full justify-between">
+                                    {mapAccordionValue === 'map' ? '지도 숨기기' : '지도 보기'}
+                                </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="aspect-video w-full">
                                         <MapPanel 
