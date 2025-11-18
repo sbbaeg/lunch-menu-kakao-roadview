@@ -59,19 +59,19 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
 
   const handleKakaoDirections = () => {
     if (!restaurant.y || !restaurant.x) {
-      toast.error("식당 좌표 정보가 없어 길찾기를 시작할 수 없습니다."); // Corrected toast call
+      toast.error("식당 좌표 정보가 없어 길찾기를 시작할 수 없습니다.");
       return;
     }
 
     const destinationLat = restaurant.y;
     const destinationLng = restaurant.x;
-    const destinationName = encodeURIComponent(restaurant.placeName);
+    const destinationName = restaurant.placeName; // No need to encode for this URL format
 
-    // 카카오맵 앱 URL 스킴
+    // 카카오맵 앱 URL 스킴 (길찾기 바로 실행)
     const appUrl = `kakaomap://route?ep=${destinationLat},${destinationLng}&by=CAR`;
     
-    // 카카오맵 웹 길찾기 URL (Fallback)
-    const webUrl = `https://map.kakao.com/?eName=${destinationName}&sName=내 위치`;
+    // 카카오맵 웹 URL (정확한 장소 위치 표시)
+    const webUrl = `https://map.kakao.com/link/map/${destinationName},${destinationLat},${destinationLng}`;
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
