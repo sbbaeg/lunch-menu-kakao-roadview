@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Tag } from '@/lib/types';
+import { useToast } from "@/components/ui/use-toast";
 
 export function useUserTags() {
     const { status } = useSession();
     const [userTags, setUserTags] = useState<Tag[]>([]);
+    const { toast } = useToast();
 
     const [isMounted, setIsMounted] = useState(false);
 
@@ -48,11 +50,17 @@ export function useUserTags() {
                 return newTag; // ✅ 성공 시 생성된 태그 객체를 반환합니다.
             } else {
                 const data = await response.json();
-                alert(data.error || "태그 생성에 실패했습니다.");
+                toast({
+                    variant: "destructive",
+                    description: data.error || "태그 생성에 실패했습니다.",
+                });
                 return null; // ✅ 실패 시 null을 반환합니다.
             }
         } catch (error) {
-            alert("태그 생성 중 오류가 발생했습니다.");
+            toast({
+                variant: "destructive",
+                description: "태그 생성 중 오류가 발생했습니다.",
+            });
             return null; // ✅ 실패 시 null을 반환합니다.
         }
     };
@@ -64,11 +72,17 @@ export function useUserTags() {
             const response = await fetch(`/api/tags/${tagId}`, { method: 'DELETE' });
             if (!response.ok) {
                 setUserTags(originalTags);
-                alert("태그 삭제에 실패했습니다.");
+                toast({
+                    variant: "destructive",
+                    description: "태그 삭제에 실패했습니다.",
+                });
             }
         } catch (error) {
             setUserTags(originalTags);
-            alert("태그 삭제 중 오류가 발생했습니다.");
+            toast({
+                variant: "destructive",
+                description: "태그 삭제 중 오류가 발생했습니다.",
+            });
         }
     };
 
@@ -83,11 +97,17 @@ export function useUserTags() {
             const response = await fetch(`/api/tags/${tagId}/toggle-public`, { method: 'PATCH' });
             if (!response.ok) {
                 setUserTags(originalTags);
-                alert("상태 변경에 실패했습니다.");
+                toast({
+                    variant: "destructive",
+                    description: "상태 변경에 실패했습니다.",
+                });
             }
         } catch (error) {
             setUserTags(originalTags);
-            alert("상태 변경 중 오류가 발생했습니다.");
+            toast({
+                variant: "destructive",
+                description: "상태 변경 중 오류가 발생했습니다.",
+            });
         }
     };
 

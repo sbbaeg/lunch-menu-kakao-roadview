@@ -49,7 +49,7 @@ export function TagReviewForm({ tagId, existingReview, onReviewSubmit, onCancelE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === 0) {
-      alert('별점을 선택해주세요.');
+      toast.error('별점을 선택해주세요.');
       return;
     }
     setIsSubmitting(true);
@@ -84,7 +84,7 @@ export function TagReviewForm({ tagId, existingReview, onReviewSubmit, onCancelE
       }
     } catch (error) {
       console.error(error);
-      alert('리뷰를 등록하는 데 실패했습니다.');
+      toast.error('리뷰를 등록하는 데 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }

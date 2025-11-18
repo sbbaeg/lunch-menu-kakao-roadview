@@ -439,12 +439,12 @@ export default function AdminPageClient() {
             if (!res.ok) {
                 throw new Error(data.error || '통계 생성에 실패했습니다.');
             }
-            alert(data.message || '통계가 성공적으로 생성되었습니다.');
+            toast.success(data.message || '통계가 성공적으로 생성되었습니다.');
             // Refresh stats after creation
             const statsRes = await fetch('/api/admin/stats');
             setStats(await statsRes.json());
         } catch (e: any) {
-            alert(`오류: ${e.message}`);
+            toast.error(`오류: ${e.message}`);
         }
     };
 

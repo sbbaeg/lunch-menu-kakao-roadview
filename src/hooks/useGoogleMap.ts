@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 import { fetchDirections } from '@/lib/googleMaps';
+import { useToast } from "@/components/ui/use-toast";
 
 // Define Google Maps types (simplified for now, will refine as needed)
 // This will be replaced by actual Google Maps types if a library is used,
@@ -29,6 +30,7 @@ export function useGoogleMap() {
     const isMapReady = useAppStore((state) => state.isMapReady);
     const [streetViewImageDate, setStreetViewImageDate] = useState('');
     const [userLocationMarker, setUserLocationMarker] = useState<google.maps.Marker | null>(null);
+    const { toast } = useToast();
 
     // Map Initialization
     useEffect(() => {
@@ -145,12 +147,15 @@ export function useGoogleMap() {
                 streetviewPanorama.current?.setPosition(data.location.latLng);
                 setStreetViewImageDate(data.imageDate || '');
             } else {
-                alert("해당 위치에 스트리트뷰 정보가 없습니다.");
+                toast({
+                    variant: "destructive",
+                    description: "해당 위치에 스트리트뷰 정보가 없습니다.",
+                });
                 console.error("Street View data not found for this location:", status);
                 setStreetViewImageDate('');
             }
         });
-    }, []);
+    }, [toast]);
 
     const clearOverlays = useCallback(() => {
         markers.current.forEach((marker) => marker.setMap(null));

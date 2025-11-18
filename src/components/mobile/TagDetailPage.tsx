@@ -13,6 +13,7 @@ import { ArrowLeft } from 'lucide-react';
 import { MapPanel } from '@/components/MapPanel';
 import { TagReviewSection } from '@/components/TagReviewSection';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from "@/components/ui/use-toast";
 
 type TagDetailData = Tag & {
     restaurants: AppRestaurant[];
@@ -29,6 +30,7 @@ export default function TagDetailPage() {
     const { data: session } = useSession();
     const activeTagId = useAppStore(state => state.activeTagId);
     const goBack = useAppStore(state => state.goBack);
+    const { toast } = useToast();
 
     const [tagData, setTagData] = useState<TagDetailData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -88,6 +90,10 @@ export default function TagDetailPage() {
             });
         } catch (err: any) {
             console.error(err.message);
+            toast({
+                variant: "destructive",
+                description: err.message,
+            });
         }
     };
 
@@ -101,7 +107,9 @@ export default function TagDetailPage() {
             });
         } else {
             navigator.clipboard.writeText(url);
-            alert('링크가 클립보드에 복사되었습니다.');
+            toast({
+                description: '링크가 클립보드에 복사되었습니다.',
+            });
         }
     };
 

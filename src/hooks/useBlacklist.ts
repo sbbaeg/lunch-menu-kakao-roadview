@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { AppRestaurant } from '@/lib/types';
+import { useToast } from "@/components/ui/use-toast";
 
 export function useBlacklist() {
     const { status } = useSession();
     const [blacklist, setBlacklist] = useState<AppRestaurant[]>([]);
+    const { toast } = useToast();
 
     const [isMounted, setIsMounted] = useState(false);
 
@@ -38,7 +40,10 @@ export function useBlacklist() {
 
     const toggleBlacklist = async (place: AppRestaurant) => {
         if (status !== 'authenticated') {
-            alert("로그인이 필요한 기능입니다.");
+            toast({
+                variant: "destructive",
+                description: "로그인이 필요한 기능입니다.",
+            });
             return;
         }
 
@@ -58,11 +63,17 @@ export function useBlacklist() {
 
             if (!response.ok) {
                 setBlacklist(originalBlacklist);
-                alert("블랙리스트 처리에 실패했습니다.");
+                toast({
+                    variant: "destructive",
+                    description: "블랙리스트 처리에 실패했습니다.",
+                });
             }
         } catch (error) {
             setBlacklist(originalBlacklist);
-            alert("블랙리스트 처리에 실패했습니다.");
+            toast({
+                variant: "destructive",
+                description: "블랙리스트 처리에 실패했습니다.",
+            });
         }
     };
 

@@ -154,7 +154,7 @@ export function MapPanel({
           }
         } else {
           console.error('PlacesService findPlaceFromQuery failed with status:', status);
-          alert(`검색 결과가 없습니다. (오류: ${status})`);
+          toast.error(`검색 결과가 없습니다. (오류: ${status})`);
         }
       });
     } else {

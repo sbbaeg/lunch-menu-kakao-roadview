@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { VoteType } from '@prisma/client';
+import { useToast } from "@/components/ui/use-toast";
 
 interface ReviewSectionProps {
   restaurantId: number; // DB auto-increment ID
@@ -23,6 +24,7 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<SortOrder>('latest');
   const [editingReview, setEditingReview] = useState<AppReview | null>(null);
+  const { toast } = useToast();
 
   const fetchReviews = async () => {
     try {
@@ -61,10 +63,16 @@ export function ReviewSection({ restaurantId }: ReviewSectionProps) {
         if (response.ok) {
           fetchReviews(); // Re-fetch to update the list
         } else {
-          alert('리뷰 삭제에 실패했습니다.');
+          toast({
+            variant: "destructive",
+            description: '리뷰 삭제에 실패했습니다.',
+          });
         }
       } catch (error) {
-        alert('리뷰 삭제 중 오류가 발생했습니다.');
+        toast({
+          variant: "destructive",
+          description: '리뷰 삭제 중 오류가 발생했습니다.',
+        });
       }
     }
   };
