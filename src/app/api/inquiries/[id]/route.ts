@@ -40,3 +40,49 @@ export async function GET(
     return NextResponse.json({ error: 'Failed to fetch inquiry.' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  const inquiryId = parseInt(params.id, 10);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (isNaN(inquiryId)) {
+    return NextResponse.json({ error: 'Invalid inquiry ID' }, { status: 400 });
+  }
+
+  try {
+    const inquiry = await prisma.inquiry.findUnique({
+      where: { id: inquiryId },
+      select: { userId: true, isFromAdmin: true },
+    });
+
+    if (!inquiry) {
+      return NextResponse.json({ error: 'Inquiry not found' }, { status: 404 });
+    }
+
+    // Only admin or the owner of the inquiry can delete it
+    if (!session.user.isAdmin && inquiry.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    // If the inquiry is from an admin, only an admin can delete it
+    if (inquiry.isFromAdmin && !session.user.isAdmin) {
+      return NextResponse.json({ error: 'Access denied: Only admins can delete admin inquiries' }, { status: 403 });
+    }
+
+    await prisma.inquiry.delete({
+      where: { id: inquiryId },
+    });
+
+    return NextResponse.json({ message: 'Inquiry deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error(`Failed to delete inquiry ${inquiryId}:`, error);
+    return NextResponse.json({ error: 'Failed to delete inquiry.' }, { status: 500 });
+  }
+}
