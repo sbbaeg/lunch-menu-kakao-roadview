@@ -53,7 +53,7 @@ interface NewGooglePlace {
 
 // --- Migration of fetchFullGoogleDetails ---
 
-export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<GooglePlaceItem> {
+export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<GooglePlaceItem & { types?: any }> {
   try {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
     if (!GOOGLE_API_KEY) throw new Error("Google API Key is not configured");
@@ -70,7 +70,7 @@ export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<Go
     const fieldMask = [
       'id', 'displayName', 'rating', 'regularOpeningHours', 'internationalPhoneNumber',
       'websiteUri', 'reviews', 'photos', 'dineIn', 'takeout',
-      'allowsDogs', 'parkingOptions', 'userRatingCount', 'adrFormatAddress',
+      'allowsDogs', 'parkingOptions', 'userRatingCount', 'adrFormatAddress', 'types',
       'accessibilityOptions.wheelchairAccessibleParking', 
       'accessibilityOptions.wheelchairAccessibleEntrance', 
       'accessibilityOptions.wheelchairAccessibleRestroom', 
@@ -127,6 +127,7 @@ export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<Go
       place_name: detailsData.displayName?.text || place.place_name,
       road_address_name: detailsData.adrFormatAddress ? detailsData.adrFormatAddress.replace(/<[^>]*>?/gm, '') : place.road_address_name,
       googleDetails,
+      types: detailsData.types,
     };
 
   } catch (error) {
