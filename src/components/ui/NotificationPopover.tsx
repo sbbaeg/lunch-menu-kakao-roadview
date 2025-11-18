@@ -1,15 +1,10 @@
-"use client";
-
 import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNotifications } from "@/hooks/useNotifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useState, useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
-import { NotificationViewerDialog } from "./NotificationViewerDialog";
 import { Notification as PrismaNotification } from "@prisma/client";
 
 // Helper component to render each notification
@@ -58,24 +53,21 @@ const NotificationItem = ({ notification, onDelete, onClick }: { notification: P
   );
 };
 
-export function NotificationPopover() {
+interface NotificationPopoverProps {
+  notifications: PrismaNotification[];
+  unreadCount: number;
+  deleteNotifications: (ids?: number[]) => Promise<any>;
+  onNotificationClick: (notification: PrismaNotification) => void;
+}
+
+export function NotificationPopover({
+  notifications,
+  unreadCount,
+  deleteNotifications,
+  onNotificationClick,
+}: NotificationPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [selectedNotification, setSelectedNotification] = useState<PrismaNotification | null>(null);
-
-  const handleNewNotification = (notification: PrismaNotification) => {
-    toast(notification.message, {
-      action: {
-        label: "내용 보기",
-        onClick: () => setSelectedNotification(notification),
-      },
-    });
-  };
-
-  const { notifications, unreadCount, deleteNotifications } = useNotifications({
-    onNewNotification: handleNewNotification,
-  });
-
 
   const hasReadNotifications = notifications.some(n => n.read);
 
@@ -89,7 +81,7 @@ export function NotificationPopover() {
         setIsOpen(false);
       }
     }
-    if (isOpen && !selectedNotification) {
+    if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -97,92 +89,59 @@ export function NotificationPopover() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, selectedNotification]);
-
-  const handleDeleteAndCloseDialog = (notificationId: number) => {
-    deleteNotifications([notificationId]);
-    setSelectedNotification(null);
-  };
-
-  const getLinkForNotification = (notification: PrismaNotification | null): string | null => {
-    if (!notification) return null;
-    try {
-      // This is for older notifications that had a JSON message
-      const parsed = JSON.parse(notification.message);
-      if (notification.type === 'TAG_SUBSCRIPTION' && parsed.tagId) {
-        return `/tags/${parsed.tagId}`;
-      }
-      if ((notification.type === 'REVIEW_UPVOTE' || notification.type === 'BEST_REVIEW') && parsed.restaurantId) {
-        return `/restaurants/${parsed.restaurantId}`;
-      }
-    } catch (e) {
-      // Not a JSON message, which is expected for new GENERAL notifications
-    }
-    return null;
-  };
+  }, [isOpen]);
 
   return (
-    <>
-      <div className="relative" ref={popoverRef}>
-        <Button variant="ghost" size="icon" className="relative" onClick={togglePopover}>
-          <Bell className="h-6 w-6" />
-          {unreadCount > 0 && (
-            <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-red-500" />
-          )}
-        </Button>
-        {isOpen && (
-          <div className="w-96 absolute right-0 z-50 mt-2 bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-none">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium leading-none">알림</h4>
-                <p className="text-sm text-muted-foreground">
-                  최근 알림 {notifications.length}개가 표시됩니다.
-                </p>
-              </div>
-              <ScrollArea className="h-[300px]">
-                <div className="grid gap-2">
-                  {notifications.length > 0 ? (
-                    notifications.map((notification) => (
-                      <NotificationItem 
-                        key={notification.id} 
-                        notification={notification} 
-                        onDelete={() => deleteNotifications([notification.id])}
-                        onClick={() => setSelectedNotification(notification)}
-                      />
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground p-4 text-center">새로운 알림이 없습니다.</p>
-                  )}
-                </div>
-              </ScrollArea>
-              {hasReadNotifications && (
-                <>
-                  <Separator />
-                  <div className="pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => deleteNotifications()}
-                    >
-                      읽은 알림 모두 삭제
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+    <div className="relative" ref={popoverRef}>
+      <Button variant="ghost" size="icon" className="relative" onClick={togglePopover}>
+        <Bell className="h-6 w-6" />
+        {unreadCount > 0 && (
+          <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-red-500" />
         )}
-      </div>
-      {selectedNotification && (
-        <NotificationViewerDialog
-          isOpen={!!selectedNotification}
-          onOpenChange={() => setSelectedNotification(null)}
-          notification={selectedNotification}
-          onDelete={handleDeleteAndCloseDialog}
-          link={getLinkForNotification(selectedNotification)}
-        />
+      </Button>
+      {isOpen && (
+        <div className="w-96 absolute right-0 z-50 mt-2 bg-popover text-popover-foreground rounded-md border p-4 shadow-md outline-none">
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">알림</h4>
+              <p className="text-sm text-muted-foreground">
+                최근 알림 {notifications.length}개가 표시됩니다.
+              </p>
+            </div>
+            <ScrollArea className="h-[300px]">
+              <div className="grid gap-2">
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <NotificationItem 
+                      key={notification.id} 
+                      notification={notification} 
+                      onDelete={() => deleteNotifications([notification.id])}
+                      onClick={() => onNotificationClick(notification)}
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground p-4 text-center">새로운 알림이 없습니다.</p>
+                )}
+              </div>
+            </ScrollArea>
+            {hasReadNotifications && (
+              <>
+                <Separator />
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => deleteNotifications()}
+                  >
+                    읽은 알림 모두 삭제
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
-    </>
+    </div>
   );
 }

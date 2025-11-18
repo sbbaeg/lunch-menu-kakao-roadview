@@ -13,6 +13,9 @@ import { SideMenuSheet } from "@/components/SideMenuSheet"; //사이드햄버거
 import { MyReviewsDialog } from "@/components/MyReviewsDialog";
 import { LikedRestaurantsDialog } from "@/components/LikedRestaurantsDialog"; // 1. 컴포넌트 임포트
 import { NotificationPopover } from "@/components/ui/NotificationPopover";
+import { NotificationViewerDialog } from "@/components/ui/NotificationViewerDialog";
+import { toast } from "sonner";
+import { Notification as PrismaNotification } from '@prisma/client';
 
 //논리구조 리펙토링
 import { useFavorites } from "@/hooks/useFavorites";
@@ -129,7 +132,21 @@ export default function Home() {
     const { userTags, createTag, deleteTag, toggleTagPublic } = useUserTags();
     const { subscribedTagIds } = useSubscriptions();
     const { likedRestaurants, isLoading: isLoadingLiked } = useLikedRestaurants();
-    const { unreadCount: unreadGeneralNotificationCount } = useNotifications();
+    
+    const [selectedNotification, setSelectedNotification] = useState<PrismaNotification | null>(null);
+
+    const handleNewNotification = (notification: PrismaNotification) => {
+        toast(notification.message, {
+            action: {
+                label: "내용 보기",
+                onClick: () => setSelectedNotification(notification),
+            },
+        });
+    };
+
+    const { notifications, unreadCount, deleteNotifications } = useNotifications({
+        onNewNotification: handleNewNotification,
+    });
     const { unreadInquiryCount } = useInquiryNotifications();
 
 
@@ -291,12 +308,37 @@ export default function Home() {
         updateFavoriteInList(updatedRestaurant);    // 2. useFavorites의 목록 업데이트
     };
     
-    const hasUnreadNotifications = unreadGeneralNotificationCount > 0 || unreadInquiryCount > 0;
+    const hasUnreadNotifications = unreadCount > 0 || unreadInquiryCount > 0;
+
+    const handleDeleteAndCloseDialog = (notificationId: number) => {
+        deleteNotifications([notificationId]);
+        setSelectedNotification(null);
+    };
+
+    const getLinkForNotification = (notification: PrismaNotification | null): string | null => {
+        if (!notification) return null;
+        try {
+            const parsed = JSON.parse(notification.message);
+            if (notification.type === 'TAG_SUBSCRIPTION' && parsed.tagId) {
+                return `/tags/${parsed.tagId}`;
+            }
+            if ((notification.type === 'REVIEW_UPVOTE' || notification.type === 'BEST_REVIEW') && parsed.restaurantId) {
+                return `/restaurants/${parsed.restaurantId}`;
+            }
+        } catch (e) {
+        }
+        return null;
+    };
 
     return (
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
             <div className="absolute top-2 right-2 z-50 flex items-center">
-                <NotificationPopover />
+                <NotificationPopover 
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    deleteNotifications={deleteNotifications}
+                    onNotificationClick={(n) => setSelectedNotification(n)}
+                />
                 <div className="relative">
                     <SideMenuSheet
                         onShowFavorites={() => setIsFavoritesListOpen(true)}
@@ -449,6 +491,16 @@ export default function Home() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {selectedNotification && (
+                <NotificationViewerDialog
+                    isOpen={!!selectedNotification}
+                    onOpenChange={() => setSelectedNotification(null)}
+                    notification={selectedNotification}
+                    onDelete={handleDeleteAndCloseDialog}
+                    link={getLinkForNotification(selectedNotification)}
+                />
+            )}
         </main>
     );
 }
