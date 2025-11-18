@@ -9,140 +9,143 @@ interface AppState {
   rouletteItems: AppRestaurant[];
   userLocation: { lat: number; lng: number } | null;
   activeTab: 'map' | 'favorites' | 'roulette' | 'my-page';
-  activeView: 'tabs' | 'tagDetail' | 'restaurantDetail' | 'tagExplore' | 'myReviews' | 'ranking' | 'notifications' | 'favorites' | 'likedRestaurants';
-  previousView: AppState['activeView'];
-  activeTagId: number | null;
-  activeRestaurantId: string | null;
-
-  // Filter State
-  filters: Omit<FilterState, 'categories' | 'allowsDogsOnly' | 'hasParkingOnly'> & { categories: string[]; allowsDogsOnly: boolean; hasParkingOnly: boolean; };
-
-  displayedSortOrder: 'accuracy' | 'distance' | 'rating';
-  blacklistExcludedCount: number;
-  loading: boolean;
-  isMapReady: boolean;
-  resultPanelState: 'collapsed' | 'default' | 'expanded';
-
-  // Actions
-  setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
-  resetResultPanelState: () => void;
-  setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
+    activeView: 'tabs' | 'tagDetail' | 'restaurantDetail' | 'tagExplore' | 'myReviews' | 'ranking' | 'notifications' | 'favorites' | 'likedRestaurants';
+    previousView: AppState['activeView'];
+    activeTagId: number | null;
+    activeRestaurantId: string | null;
+    taggingRestaurant: AppRestaurant | null;
   
-  goBack: () => void;
-  showTagDetail: (tagId: number) => void;
-  showRestaurantDetail: (restaurantId: string) => void;
-  showTagExplore: () => void;
-  showMyReviews: () => void;
-  showRanking: () => void;
-  showNotifications: () => void;
-  showFavoritesPage: () => void;
-  showLikedRestaurantsPage: () => void;
+    // Filter State
+    filters: Omit<FilterState, 'categories' | 'allowsDogsOnly' | 'hasParkingOnly'> & { categories: string[]; allowsDogsOnly: boolean; hasParkingOnly: boolean; };
+    
+    displayedSortOrder: 'accuracy' | 'distance' | 'rating';
+    blacklistExcludedCount: number;
+    loading: boolean;
+    isMapReady: boolean;
+    resultPanelState: 'collapsed' | 'default' | 'expanded';
   
-  setSelectedItemId: (id: string) => void;
-  setRestaurantList: (restaurants: AppRestaurant[]) => void;
-  setUserLocation: (location: { lat: number; lng: number } | null) => void;
-  setFilters: (newFilters: Partial<AppState['filters']>) => void;
-  setLoading: (loading: boolean) => void;
-  setIsMapReady: (isMapReady: boolean) => void;
+    // Actions
+    setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
+    resetResultPanelState: () => void;
+    setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
+    
+    goBack: () => void;
+    showTagDetail: (tagId: number) => void;
+    showRestaurantDetail: (restaurantId: string) => void;
+    showTagExplore: () => void;
+    showMyReviews: () => void;
+    showRanking: () => void;
+    showNotifications: () => void;
+    showFavoritesPage: () => void;
+    showLikedRestaurantsPage: () => void;
+    
+    setSelectedItemId: (id: string) => void;
+    setRestaurantList: (restaurants: AppRestaurant[]) => void;
+    setUserLocation: (location: { lat: number; lng: number } | null) => void;
+    setFilters: (newFilters: Partial<AppState['filters']>) => void;
+    setLoading: (loading: boolean) => void;
+    setIsMapReady: (isMapReady: boolean) => void;
+    setTaggingRestaurant: (restaurant: AppRestaurant | null) => void;
+    
+    clearMapAndResults: () => void;
+    getNearbyRestaurants: (center: { lat: number; lng: number }, query?: string) => Promise<AppRestaurant[]>;
+    recommendProcess: (isRoulette: boolean, center?: { lat: number; lng: number }) => Promise<{ success: boolean; message?: string; isRoulette?: boolean, restaurants?: AppRestaurant[] }>;
+    handleSearchInArea: (center: { lat: number; lng: number }) => void;
+    handleAddressSearch: (keyword: string, center: { lat: number; lng: number }) => void;
+    handleRouletteResult: (winner: AppRestaurant) => void;
+    handleTagsChange: (updatedRestaurant: AppRestaurant) => void;
+  }
   
-  clearMapAndResults: () => void;
-  getNearbyRestaurants: (center: { lat: number; lng: number }, query?: string) => Promise<AppRestaurant[]>;
-  recommendProcess: (isRoulette: boolean, center?: { lat: number; lng: number }) => Promise<{ success: boolean; message?: string; isRoulette?: boolean, restaurants?: AppRestaurant[] }>;
-  handleSearchInArea: (center: { lat: number; lng: number }) => void;
-  handleAddressSearch: (keyword: string, center: { lat: number; lng: number }) => void;
-  handleRouletteResult: (winner: AppRestaurant) => void;
-  handleTagsChange: (updatedRestaurant: AppRestaurant) => void;
-}
-
-export const useAppStore = create<AppState>((set, get) => ({
-  selectedItemId: '',
-  restaurantList: [],
-  rouletteItems: [],
-  userLocation: null,
-  activeTab: 'map',
-  activeView: 'tabs',
-  previousView: 'tabs',
-  activeTagId: null,
-  activeRestaurantId: null,
+  export const useAppStore = create<AppState>((set, get) => ({
+    selectedItemId: '',
+    restaurantList: [],
+    rouletteItems: [],
+    userLocation: null,
+    activeTab: 'map',
+    activeView: 'tabs',
+    previousView: 'tabs',
+    activeTagId: null,
+    activeRestaurantId: null,
+    taggingRestaurant: null,
+    
+    filters: {
+      categories: [],
+      distance: '800',
+      sortOrder: 'accuracy',
+      resultCount: 5,
+      minRating: 4.0,
+      searchInFavoritesOnly: false,
+      openNowOnly: false,
+      includeUnknownHours: true,
+      tags: [],
+      allowsDogsOnly: false,
+      hasParkingOnly: false,
+      wheelchairAccessibleEntrance: false,
+      wheelchairAccessibleRestroom: false,
+      wheelchairAccessibleSeating: false,
+      wheelchairAccessibleParking: false,
+    },
   
-  filters: {
-    categories: [],
-    distance: '800',
-    sortOrder: 'accuracy',
-    resultCount: 5,
-    minRating: 4.0,
-    searchInFavoritesOnly: false,
-    openNowOnly: false,
-    includeUnknownHours: true,
-    tags: [],
-    allowsDogsOnly: false,
-    hasParkingOnly: false,
-    wheelchairAccessibleEntrance: false,
-    wheelchairAccessibleRestroom: false,
-    wheelchairAccessibleSeating: false,
-    wheelchairAccessibleParking: false,
-  },
-
-  displayedSortOrder: 'accuracy',
-  blacklistExcludedCount: 0,
-  loading: false,
-  isMapReady: false,
-  resultPanelState: 'default',
-
-  setResultPanelState: (state) => set({ resultPanelState: state }),
-  resetResultPanelState: () => set({ resultPanelState: 'default' }),
-  setActiveTab: (tab) => set({ activeTab: tab }),
-
-  showTagDetail: (tagId) => set(state => ({ 
-    activeView: 'tagDetail', 
-    previousView: state.activeView, 
-    activeTagId: tagId 
-  })),
+    displayedSortOrder: 'accuracy',
+    blacklistExcludedCount: 0,
+    loading: false,
+    isMapReady: false,
+    resultPanelState: 'default',
   
-  showRestaurantDetail: (restaurantId) => set(state => ({
-    activeView: 'restaurantDetail',
-    previousView: state.activeView,
-    activeRestaurantId: restaurantId
-  })),
-
-  showTagExplore: () => set({ activeView: 'tagExplore', previousView: 'tabs' }),
-
-  showMyReviews: () => set({ activeView: 'myReviews', previousView: 'tabs' }),
-
-  showRanking: () => set({ activeView: 'ranking', previousView: 'tabs' }),
-
-  showNotifications: () => set({ activeView: 'notifications', previousView: 'tabs' }),
-
-  showFavoritesPage: () => set({ activeView: 'favorites', previousView: 'tabs' }),
-
-  showLikedRestaurantsPage: () => set({ activeView: 'likedRestaurants', previousView: 'tabs' }),
-
-  goBack: () => set(state => {
-    const isReturningFromDetail = state.activeView !== 'tabs';
-    return {
-      activeView: state.previousView, 
-      previousView: 'tabs', 
-      activeTagId: (isReturningFromDetail && state.activeView === 'tagDetail') ? null : state.activeTagId,
-      activeRestaurantId: (isReturningFromDetail && state.activeView === 'restaurantDetail') ? null : state.activeRestaurantId,
-    };
-  }),
-
-  hideTagDetail: () => get().goBack(),
-  hideRestaurantDetail: () => get().goBack(),
-  hideTagExplore: () => get().goBack(),
-  hideMyReviews: () => get().goBack(),
-
-  setSelectedItemId: (id) => set({ selectedItemId: id }),
-  setRestaurantList: (restaurants) => set({ restaurantList: restaurants }),
-  setUserLocation: (location) => set({ userLocation: location }),
-  setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
-  setLoading: (loading) => set({ loading }),
-  setIsMapReady: (isMapReady) => set({ isMapReady }),
-
-  clearMapAndResults: () => {
-    set({ selectedItemId: '', restaurantList: [] });
-  },
-
+    setResultPanelState: (state) => set({ resultPanelState: state }),
+    resetResultPanelState: () => set({ resultPanelState: 'default' }),
+    setActiveTab: (tab) => set({ activeTab: tab }),
+  
+    showTagDetail: (tagId) => set(state => ({ 
+      activeView: 'tagDetail', 
+      previousView: state.activeView, 
+      activeTagId: tagId 
+    })),
+    
+    showRestaurantDetail: (restaurantId) => set(state => ({
+      activeView: 'restaurantDetail',
+      previousView: state.activeView,
+      activeRestaurantId: restaurantId
+    })),
+  
+    showTagExplore: () => set({ activeView: 'tagExplore', previousView: 'tabs' }),
+  
+    showMyReviews: () => set({ activeView: 'myReviews', previousView: 'tabs' }),
+  
+    showRanking: () => set({ activeView: 'ranking', previousView: 'tabs' }),
+  
+    showNotifications: () => set({ activeView: 'notifications', previousView: 'tabs' }),
+  
+    showFavoritesPage: () => set({ activeView: 'favorites', previousView: 'tabs' }),
+  
+    showLikedRestaurantsPage: () => set({ activeView: 'likedRestaurants', previousView: 'tabs' }),
+  
+    goBack: () => set(state => {
+      const isReturningFromDetail = state.activeView !== 'tabs';
+      return {
+        activeView: state.previousView, 
+        previousView: 'tabs', 
+        activeTagId: (isReturningFromDetail && state.activeView === 'tagDetail') ? null : state.activeTagId,
+        activeRestaurantId: (isReturningFromDetail && state.activeView === 'restaurantDetail') ? null : state.activeRestaurantId,
+      };
+    }),
+  
+    hideTagDetail: () => get().goBack(),
+    hideRestaurantDetail: () => get().goBack(),
+    hideTagExplore: () => get().goBack(),
+    hideMyReviews: () => get().goBack(),
+  
+    setSelectedItemId: (id) => set({ selectedItemId: id }),
+    setRestaurantList: (restaurants) => set({ restaurantList: restaurants }),
+    setUserLocation: (location) => set({ userLocation: location }),
+    setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
+    setLoading: (loading) => set({ loading }),
+    setIsMapReady: (isMapReady) => set({ isMapReady }),
+    setTaggingRestaurant: (restaurant) => set({ taggingRestaurant: restaurant }),
+  
+    clearMapAndResults: () => {
+      set({ selectedItemId: '', restaurantList: [] });
+    },
   getNearbyRestaurants: async (center, queryOverride) => {
     const { filters } = get();
     const query = queryOverride || (filters.categories.length > 0 ? filters.categories.join(',') : '음식점');
