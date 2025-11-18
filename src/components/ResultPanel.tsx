@@ -26,8 +26,6 @@ interface ResultPanelProps {
   onToggleFavorite: (restaurant: AppRestaurant) => void;
   onToggleBlacklist: (restaurant: AppRestaurant) => void;
   onTagManagement: (restaurant: AppRestaurant) => void;
-  onShowDirections?: (restaurant: AppRestaurant) => void;
-  directionsTargetId?: string | null;
 }
 
 const getSortTitle = (sort: "accuracy" | "distance" | "rating"): string => {
@@ -47,8 +45,6 @@ export function ResultPanel({
   selectedItemId,
   setSelectedItemId,
   onOpenFilter,
-  onShowDirections,
-  directionsTargetId,
   ...cardProps // session, onToggleFavorite 등 RestaurantCard에 필요한 나머지 props
 }: ResultPanelProps) {
 
@@ -197,8 +193,6 @@ export function ResultPanel({
               <RestaurantCard
                 key={place.id}
                 restaurant={place}
-                onShowDirections={onShowDirections}
-                showDirections={place.id === directionsTargetId}
                 {...cardProps}
               />
             ))}
