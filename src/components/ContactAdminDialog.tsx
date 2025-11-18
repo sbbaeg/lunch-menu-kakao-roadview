@@ -239,11 +239,11 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
               )}
             </div>
           </Tabs>
-          <DialogFooter className="sm:justify-between">
-            <Button onClick={() => setView('create')}>새 문의 작성</Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleSelectAll}>모두 선택</Button>
-              <Button variant="destructive" onClick={handleBulkDelete} disabled={selectedInquiries.length === 0}>
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
+            <Button onClick={() => setView('create')} className="w-full sm:w-auto">새 문의 작성</Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button variant="outline" onClick={handleSelectAll} className="flex-grow">모두 선택</Button>
+              <Button variant="destructive" onClick={handleBulkDelete} disabled={selectedInquiries.length === 0} className="flex-grow">
                 선택 삭제
               </Button>
             </div>
