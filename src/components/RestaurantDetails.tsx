@@ -4,14 +4,14 @@
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Car, Footprints, Bus } from "lucide-react";
+import { Car, Footprints, Bus, Loader2 } from "lucide-react";
 
 type TravelMode = 'CAR' | 'FOOT' | 'PUBLICTRANSIT';
 
@@ -35,6 +35,7 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const [showTravelModes, setShowTravelModes] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const { isStandalone } = usePwaDisplayMode();
   const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
 
@@ -61,40 +62,57 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
     }
   };
 
-  const handleKakaoDirections = (mode: TravelMode) => {
+  const handleKakaoDirections = async (mode: TravelMode) => {
     if (!restaurant.y || !restaurant.x) {
       toast.error("식당 좌표 정보가 없어 길찾기를 시작할 수 없습니다.");
       return;
     }
-
-    // Corrected coordinate assignment
-    const destinationLat = restaurant.x; // x is Latitude
-    const destinationLng = restaurant.y; // y is Longitude
-    const destinationName = restaurant.placeName;
-
-    // 카카오맵 앱 URL 스킴 (ep=위도,경도)
-    const appUrl = `kakaomap://route?ep=${destinationLat},${destinationLng}&by=${mode}`;
     
-    // 카카오맵 웹 URL (eY=위도, eX=경도)
-    const webTarget = mode === 'PUBLICTRANSIT' ? 'traffic' : (mode === 'FOOT' ? 'walk' : 'car');
-    const webUrl = `https://map.kakao.com/?eName=${encodeURIComponent(destinationName)}&eX=${destinationLng}&eY=${destinationLat}&target=${webTarget}`;
-    
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    setIsConverting(true);
+    try {
+      // 1. Call backend to convert coordinates
+      const transcoordResponse = await fetch('/api/transcoord', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: restaurant.x, lng: restaurant.y }),
+      });
 
-    if (isMobile) {
-      const openApp = () => {
-        const check = new Date().getTime();
-        setTimeout(() => {
-          const now = new Date().getTime();
-          if (now - check < 2500 && !document.hidden) {
-            window.location.href = webUrl;
-          }
-        }, 2000);
-        window.location.href = appUrl;
-      };
-      openApp();
-    } else {
-      window.open(webUrl, '_blank');
+      if (!transcoordResponse.ok) {
+        throw new Error('Coordinate conversion failed');
+      }
+      
+      const converted = await transcoordResponse.json();
+      const { lat: convertedLat, lng: convertedLng } = converted;
+
+      // 2. Use converted coordinates to build Kakao Map URLs
+      const destinationName = restaurant.placeName;
+      const appUrl = `kakaomap://route?ep=${convertedLat},${convertedLng}&by=${mode}`;
+      const webTarget = mode === 'PUBLICTRANSIT' ? 'traffic' : (mode === 'FOOT' ? 'walk' : 'car');
+      const webUrl = `https://map.kakao.com/?eName=${encodeURIComponent(destinationName)}&eX=${convertedLng}&eY=${convertedLat}&target=${webTarget}`;
+      
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        const openApp = () => {
+          const check = new Date().getTime();
+          setTimeout(() => {
+            const now = new Date().getTime();
+            if (now - check < 2500 && !document.hidden) {
+              window.location.href = webUrl;
+            }
+          }, 2000);
+          window.location.href = appUrl;
+        };
+        openApp();
+      } else {
+        window.open(webUrl, '_blank');
+      }
+
+    } catch (error) {
+      console.error("Failed to get directions:", error);
+      toast.error("길찾기 정보를 가져오는 데 실패했습니다.");
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -120,18 +138,26 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
           variant="outline" 
           className="w-full mt-2" 
           onClick={() => setShowTravelModes(!showTravelModes)}
+          disabled={isConverting}
         >
-          카카오맵으로 길찾기
+          {isConverting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              좌표 변환 중...
+            </>
+          ) : (
+            "카카오맵으로 길찾기"
+          )}
         </Button>
-        {showTravelModes && (
+        {showTravelModes && !isConverting && (
           <div className="grid grid-cols-3 gap-2 mt-2">
-            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('CAR')}>
+            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('CAR')} disabled={isConverting}>
               <Car className="h-4 w-4 mr-2" /> 자동차
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('FOOT')}>
+            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('FOOT')} disabled={isConverting}>
               <Footprints className="h-4 w-4 mr-2" /> 도보
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('PUBLICTRANSIT')}>
+            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('PUBLICTRANSIT')} disabled={isConverting}>
               <Bus className="h-4 w-4 mr-2" /> 대중교통
             </Button>
           </div>
