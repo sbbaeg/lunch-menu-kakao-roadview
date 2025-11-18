@@ -136,7 +136,6 @@ export default function AdminPageClient() {
     const [activeChart, setActiveChart] = useState<ActiveChart>('users');
     const [chartPeriod, setChartPeriod] = useState('daily');
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [users, setUsers] = useState<UserForManagement[]>([]);
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [bannedUsers, setBannedUsers] = useState<UserForManagement[]>([]);
@@ -194,7 +193,7 @@ export default function AdminPageClient() {
                 await fetchInquiries();
 
             } catch (e: any) {
-                setError(e.message);
+                toast.error(e.message);
             } finally {
                 setIsLoading(false);
             }
@@ -245,7 +244,8 @@ export default function AdminPageClient() {
             const addedWord = await res.json();
             setWords([addedWord, ...words]);
             setNewWord('');
-        } catch (e: any) { setError(e.message); }
+            toast.success('단어가 추가되었습니다.');
+        } catch (e: any) { toast.error('단어 추가에 실패했습니다.'); }
     };
 
     const handleDeleteWord = async (id: number) => {
@@ -257,7 +257,8 @@ export default function AdminPageClient() {
             });
             if (!res.ok) throw new Error('단어 삭제에 실패했습니다.');
             setWords(words.filter(w => w.id !== id));
-        } catch (e: any) { setError(e.message); }
+            toast.success('단어가 삭제되었습니다.');
+        } catch (e: any) { toast.error('단어 삭제에 실패했습니다.'); }
     };
 
     const handleEditItem = (type: 'tag' | 'review', id: number, currentText: string) => {
@@ -286,7 +287,8 @@ export default function AdminPageClient() {
                 setReviewsToModerate(reviews => reviews.filter(r => r.id !== id));
             }
             setItemToEdit(null);
-        } catch (e: any) { setError(e.message); }
+            toast.success('항목이 성공적으로 저장되었습니다.');
+        } catch (e: any) { toast.error(e.message); }
     };
 
     const handleDeleteItem = (type: 'tag' | 'review', id: number) => {
@@ -306,11 +308,13 @@ export default function AdminPageClient() {
             }
             if (type === 'tag') {
                 setTagsToModerate(tags => tags.filter(t => t.id !== id));
+                toast.success('태그가 성공적으로 삭제되었습니다.');
             } else {
                 setReviewsToModerate(reviews => reviews.filter(r => r.id !== id));
+                toast.success('리뷰가 성공적으로 삭제되었습니다.');
             }
             setItemToDelete(null);
-        } catch (e: any) { setError(e.message); }
+        } catch (e: any) { toast.error(e.message); }
     };
 
     const handleUnbanUser = async (userId: string) => {
@@ -326,8 +330,9 @@ export default function AdminPageClient() {
                 setBannedUsers(bannedUsers.filter(u => u.id !== userId));
                 setUsers([unbannedUser, ...users]);
             }
+            toast.success('사용자 차단이 해제되었습니다.');
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         }
     };
 
@@ -354,9 +359,9 @@ export default function AdminPageClient() {
             setInquiries(inquiries.map(i => i.id === updatedInquiry.id ? updatedInquiry : i));
             setReplyingInquiry(null);
             setReplyText('');
-
+            toast.success('답변이 성공적으로 등록되었습니다.');
         } catch (e: any) {
-            setError(e.message);
+            toast.error(e.message);
         }
     };
 
