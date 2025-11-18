@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { fetchDirections } from '@/lib/googleMaps';
+import { Map, Camera } from 'lucide-react';
 
 import { useAppStore } from '@/store/useAppStore';
 
@@ -201,8 +202,8 @@ export function MapPanel({
         <div ref={streetviewContainerRef} className={`w-full h-full absolute top-0 left-0 transition-opacity duration-300 ${isStreetviewVisible ? "opacity-100 visible" : "opacity-0 invisible"}`} />
 
         {!hideControls && selectedRestaurant && (
-            <Button onClick={handleStreetViewToggle} variant="secondary" className="absolute top-3 right-14 z-10 shadow-lg">
-                {isStreetviewVisible ? "지도 보기" : "스트리트뷰 보기"}
+            <Button onClick={handleStreetViewToggle} variant="secondary" className="absolute top-3 right-14 z-10 shadow-lg flex items-center gap-2">
+                {isStreetviewVisible ? <><Map className="h-4 w-4" /> 지도</> : <><Camera className="h-4 w-4" /> 스트리트뷰</>}
             </Button>
         )}
         {isStreetviewVisible && streetViewImageDate && (
