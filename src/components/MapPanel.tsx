@@ -34,7 +34,7 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, drawFallbackLine, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
+  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawDirections, drawStraightLine, clearDirections, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
   const directions = useAppStore((state) => state.directions);
   
   const [searchAddress, setSearchAddress] = useState("");
@@ -76,6 +76,20 @@ export function MapPanel({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMapReady, restaurants, userLocation]);
+
+  // Effect for drawing straight line or clearing it
+  useEffect(() => {
+    if (!isMapReady) return;
+
+    if (selectedRestaurant && userLocation) {
+      drawStraightLine(
+        { lat: userLocation.lat, lng: userLocation.lng },
+        { lat: Number(selectedRestaurant.y), lng: Number(selectedRestaurant.x) }
+      );
+    } else {
+      clearDirections();
+    }
+  }, [isMapReady, selectedRestaurant, userLocation, drawStraightLine, clearDirections]);
 
   useEffect(() => {
     if (isMapReady && selectedRestaurant) {

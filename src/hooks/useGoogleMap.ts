@@ -141,17 +141,28 @@ export function useGoogleMap() {
 
     }, []);
 
-    const drawFallbackLine = useCallback((origin: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
+    const drawStraightLine = useCallback((origin: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
         if (!mapInstance.current) return;
         if (directionsPolyline.current) directionsPolyline.current.setMap(null);
 
+        const lineSymbol = {
+            path: 'M 0,-1 0,1',
+            strokeOpacity: 1,
+            scale: 4,
+        };
+
         directionsPolyline.current = new window.google.maps.Polyline({
             path: [origin, destination],
-            strokeColor: "#FF0000", // 빨간색으로 표시하여 실제 경로가 아님을 나타냄
-            strokeWeight: 3,
-            strokeOpacity: 0.6,
+            strokeColor: "#007BFF",
+            strokeOpacity: 0,
+            strokeWeight: 2,
+            icons: [{
+                icon: lineSymbol,
+                offset: '0',
+                repeat: '20px'
+            }],
             map: mapInstance.current,
-            geodesic: true, // 구의 대원(Great Circle)을 따라 그립니다.
+            geodesic: true,
         });
     }, []);
 
@@ -173,6 +184,13 @@ export function useGoogleMap() {
                 setStreetViewImageDate('');
             }
         });
+    }, []);
+
+    const clearDirections = useCallback(() => {
+        if (directionsPolyline.current) {
+            directionsPolyline.current.setMap(null);
+            directionsPolyline.current = null;
+        }
     }, []);
 
     const clearOverlays = useCallback(() => {
@@ -207,8 +225,9 @@ export function useGoogleMap() {
         setCenter,
         setZoom, // Renamed from setLevel
         drawDirections,
-        drawFallbackLine,
+        drawStraightLine,
         drawUserLocationMarker,
+        clearDirections,
         clearOverlays,
         displayStreetView, // Renamed from displayRoadview
         relayout,
