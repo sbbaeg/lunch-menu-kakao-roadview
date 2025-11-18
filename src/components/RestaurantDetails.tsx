@@ -67,14 +67,15 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
       return;
     }
 
-    const destinationLat = restaurant.y;
-    const destinationLng = restaurant.x;
+    // Corrected coordinate assignment
+    const destinationLat = restaurant.x; // x is Latitude
+    const destinationLng = restaurant.y; // y is Longitude
     const destinationName = restaurant.placeName;
 
-    // 카카오맵 앱 URL 스킴
+    // 카카오맵 앱 URL 스킴 (ep=위도,경도)
     const appUrl = `kakaomap://route?ep=${destinationLat},${destinationLng}&by=${mode}`;
     
-    // 카카오맵 웹 URL
+    // 카카오맵 웹 URL (eY=위도, eX=경도)
     const webTarget = mode === 'PUBLICTRANSIT' ? 'traffic' : (mode === 'FOOT' ? 'walk' : 'car');
     const webUrl = `https://map.kakao.com/?eName=${encodeURIComponent(destinationName)}&eX=${destinationLng}&eY=${destinationLat}&target=${webTarget}`;
     
