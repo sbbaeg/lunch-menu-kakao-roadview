@@ -71,11 +71,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // If the inquiry is from an admin, only an admin can delete it
-    if (inquiry.isFromAdmin && !session.user.isAdmin) {
-      return NextResponse.json({ error: 'Access denied: Only admins can delete admin inquiries' }, { status: 403 });
-    }
-
     await prisma.inquiry.delete({
       where: { id: inquiryId },
     });
