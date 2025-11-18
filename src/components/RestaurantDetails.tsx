@@ -75,8 +75,9 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
     // App URL supports travel mode
     const appUrl = `kakaomap://route?ep=${destinationLat},${destinationLng}&by=${mode}`;
     
-    // Web URL uses the simple, working format. It does not support travel mode.
-    const webUrl = `https://map.kakao.com/link/map/${destinationName},${destinationLat},${destinationLng}`;
+    // Web URL also supports travel mode, using the eName/eX/eY format.
+    const webTarget = mode === 'PUBLICTRANSIT' ? 'traffic' : (mode === 'FOOT' ? 'walk' : 'car');
+    const webUrl = `https://map.kakao.com/?eName=${encodeURIComponent(destinationName)}&eX=${destinationLng}&eY=${destinationLat}&target=${webTarget}`;
     
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
