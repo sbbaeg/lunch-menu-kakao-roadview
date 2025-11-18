@@ -36,6 +36,13 @@ interface NewGooglePlace {
   parkingOptions?: GoogleParkingOptions;
   userRatingCount?: number;
   adrFormatAddress?: string;
+  geometry?: {
+    location: {
+      latitude: number;
+      longitude: number;
+    }
+  };
+  types?: string[];
   accessibilityOptions?: {
     wheelchairAccessibleParking?: boolean;
     wheelchairAccessibleEntrance?: boolean;
@@ -46,7 +53,7 @@ interface NewGooglePlace {
 
 // --- Migration of fetchFullGoogleDetails ---
 
-export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<GooglePlaceItem> {
+export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<GooglePlaceItem & { geometry?: any, types?: any }> {
   try {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
     if (!GOOGLE_API_KEY) throw new Error("Google API Key is not configured");
@@ -64,6 +71,7 @@ export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<Go
       'id', 'displayName', 'rating', 'regularOpeningHours', 'internationalPhoneNumber',
       'websiteUri', 'reviews', 'photos', 'dineIn', 'takeout',
       'allowsDogs', 'parkingOptions', 'userRatingCount', 'adrFormatAddress',
+      'geometry', 'types',
       'accessibilityOptions.wheelchairAccessibleParking', 
       'accessibilityOptions.wheelchairAccessibleEntrance', 
       'accessibilityOptions.wheelchairAccessibleRestroom', 
@@ -120,6 +128,8 @@ export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<Go
       place_name: detailsData.displayName?.text || place.place_name,
       road_address_name: detailsData.adrFormatAddress ? detailsData.adrFormatAddress.replace(/<[^>]*>?/gm, '') : place.road_address_name,
       googleDetails,
+      geometry: detailsData.geometry,
+      types: detailsData.types,
     };
 
   } catch (error) {

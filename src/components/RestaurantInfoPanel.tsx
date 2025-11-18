@@ -9,7 +9,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { StarRating } from "./ui/StarRating";
-import { ThumbsUp, ThumbsDown, Car, Footprints, Bus } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Car, Footprints, Bus, Map } from 'lucide-react';
 import { VoteType } from '@prisma/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppStore } from '@/store/useAppStore';
@@ -54,6 +54,7 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
   const details = restaurant.googleDetails;
   const [isMounted, setIsMounted] = useState(false);
   const [travelMode, setTravelMode] = useState('WALK');
+  const [showDirections, setShowDirections] = useState(false);
 
   const userLocation = useAppStore((state) => state.userLocation);
   const getDirections = useAppStore((state) => state.getDirections);
@@ -64,12 +65,12 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
   }, []);
 
   useEffect(() => {
-    if (userLocation && restaurant.y && restaurant.x) {
+    if (showDirections && userLocation && restaurant.y && restaurant.x) {
       const origin = `${userLocation.lat},${userLocation.lng}`;
       const destination = `${restaurant.y},${restaurant.x}`;
       getDirections(origin, destination, travelMode);
     }
-  }, [travelMode, restaurant, userLocation, getDirections]);
+  }, [showDirections, travelMode, restaurant, userLocation, getDirections]);
 
   return (
     <div className="space-y-6">
@@ -129,20 +130,32 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
       <div className="space-y-4">
         <div>
             <p className="text-sm font-semibold text-muted-foreground">길찾기</p>
-            <Tabs value={travelMode} onValueChange={setTravelMode} className="w-full mt-2">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="DRIVE" className="flex items-center gap-2">
-                  <Car className="h-4 w-4" /> 자동차
-                </TabsTrigger>
-                <TabsTrigger value="TRANSIT" className="flex items-center gap-2">
-                  <Bus className="h-4 w-4" /> 대중교통
-                </TabsTrigger>
-                <TabsTrigger value="WALK" className="flex items-center gap-2">
-                  <Footprints className="h-4 w-4" /> 도보
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <DirectionsDisplay directions={directions} />
+            {!showDirections ? (
+              <Button 
+                variant="outline" 
+                className="mt-2 w-full flex items-center gap-2"
+                onClick={() => setShowDirections(true)}
+              >
+                <Map className="h-4 w-4" /> 길 안내 보기
+              </Button>
+            ) : (
+              <div className="mt-2">
+                <Tabs value={travelMode} onValueChange={setTravelMode} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="DRIVE" className="flex items-center gap-2">
+                      <Car className="h-4 w-4" /> 자동차
+                    </TabsTrigger>
+                    <TabsTrigger value="TRANSIT" className="flex items-center gap-2">
+                      <Bus className="h-4 w-4" /> 대중교통
+                    </TabsTrigger>
+                    <TabsTrigger value="WALK" className="flex items-center gap-2">
+                      <Footprints className="h-4 w-4" /> 도보
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <DirectionsDisplay directions={directions} />
+              </div>
+            )}
         </div>
         <div>
             <p className="text-sm font-semibold text-muted-foreground">카테고리</p>

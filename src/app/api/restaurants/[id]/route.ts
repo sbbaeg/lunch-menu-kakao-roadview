@@ -23,7 +23,7 @@ export async function GET(
   const userId = session?.user?.id;
 
   try {
-    const restaurantFromDb = await prisma.restaurant.findUnique({
+    let restaurantFromDb = await prisma.restaurant.findUnique({
       where: { googlePlaceId },
       select: {
         id: true,
@@ -50,8 +50,60 @@ export async function GET(
       }
     });
 
+    // If not in our DB, fetch from Google and create it
     if (!restaurantFromDb) {
-      return NextResponse.json({ error: 'Restaurant not found in our DB. It should be created first.' }, { status: 404 });
+      const initialGoogleData: GooglePlaceItem = {
+        id: googlePlaceId,
+        place_name: '',
+        y: '0',
+        x: '0',
+        place_url: '',
+        category_name: '',
+        road_address_name: '',
+        address_name: '',
+        distance: '',
+      };
+      
+      const fullDetails = await fetchFullGoogleDetails(initialGoogleData);
+      
+      if (!fullDetails || !fullDetails.geometry?.location) {
+        return NextResponse.json({ error: 'Restaurant not found on Google Maps.' }, { status: 404 });
+      }
+
+      const newRestaurant = await prisma.restaurant.create({
+        data: {
+          googlePlaceId: googlePlaceId,
+          placeName: fullDetails.place_name,
+          address: fullDetails.road_address_name,
+          latitude: fullDetails.geometry.location.latitude,
+          longitude: fullDetails.geometry.location.longitude,
+          categoryName: fullDetails.types?.[0] || '음식점', // Use first type as category
+        },
+        select: {
+          id: true,
+          googlePlaceId: true,
+          placeName: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+          categoryName: true,
+          likeCount: true,
+          dislikeCount: true,
+          taggedBy: {
+            select: {
+              tag: {
+                select: {
+                  id: true,
+                  name: true,
+                  isPublic: true,
+                  userId: true
+                }
+              }
+            }
+          }
+        }
+      });
+      restaurantFromDb = newRestaurant;
     }
 
     const reviewAggregations = await prisma.review.aggregate({
