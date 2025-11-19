@@ -24,9 +24,11 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
         <DialogHeader>
           <DialogTitle>설정</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-1 min-h-0 p-4">
-          <AppSettings />
-        </ScrollArea>
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full p-4">
+            <AppSettings />
+          </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
