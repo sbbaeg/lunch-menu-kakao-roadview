@@ -95,19 +95,42 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
     openApp();
   };
 
-  // New handler for PC ONLY
-  const handlePcDirections = () => {
+  // New handler for PC ONLY - now async to handle coordinate conversion
+  const handlePcDirections = async () => {
     if (!restaurant.y || !restaurant.x) {
       toast.error("식당 좌표 정보가 없어 길찾기를 시작할 수 없습니다.");
       return;
     }
-    const destinationName = restaurant.placeName;
-    const destinationLat = restaurant.y;
-    const destinationLng = restaurant.x;
 
-    // Use the robust desktop URL scheme
-    const webUrl = `https://map.kakao.com/link/route?eName=${encodeURIComponent(destinationName)}&eX=${destinationLng}&eY=${destinationLat}`;
-    window.open(webUrl, '_blank');
+    const toastId = toast.loading("좌표를 변환하는 중입니다...");
+
+    try {
+      // 1. Call our backend API to convert coordinates
+      const transcoordResponse = await fetch('/api/transcoord', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ x: restaurant.x, y: restaurant.y }),
+      });
+
+      if (!transcoordResponse.ok) {
+        throw new Error('좌표 변환에 실패했습니다.');
+      }
+
+      const converted = await transcoordResponse.json();
+
+      // 2. Build the URL with the converted KATEC coordinates
+      const destinationName = restaurant.placeName;
+      const webUrl = `https://map.kakao.com/?eName=${encodeURIComponent(destinationName)}&eX=${converted.x}&eY=${converted.y}`;
+      
+      window.open(webUrl, '_blank');
+      toast.success("길찾기 페이지를 열었습니다.", { id: toastId });
+
+    } catch (error) {
+      console.error("Failed to get directions for PC:", error);
+      toast.error(error instanceof Error ? error.message : "길찾기 중 오류가 발생했습니다.", { id: toastId });
+    }
   };
 
   return (
