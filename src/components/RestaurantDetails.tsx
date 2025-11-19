@@ -176,13 +176,18 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
             )}
           </>
         ) : (
-          <Button 
-            variant="outline" 
-            className="w-full mt-2" 
-            onClick={handlePcDirections}
-          >
-            카카오맵으로 길찾기
-          </Button>
+          <div>
+            <Button 
+              variant="outline" 
+              className="w-full mt-2" 
+              onClick={handlePcDirections}
+            >
+              카카오맵으로 길찾기
+            </Button>
+            <p className="text-xs text-gray-500 text-center mt-1 py-0 my-0">
+              웹 버전에선 출발지를 직접 입력해야 합니다.
+            </p>
+          </div>
         )}
       </div>
 
