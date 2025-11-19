@@ -225,7 +225,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
               <TabsTrigger value="inquiries">문의 내역</TabsTrigger>
               <TabsTrigger value="messages">받은 메시지</TabsTrigger>
             </TabsList>
-            <div className="max-h-[50vh] min-h-[300px] overflow-y-auto space-y-3 pr-2 py-4">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-2 py-4">
               {isLoading && <p>목록을 불러오는 중...</p>}
               {error && <p className="text-red-500">{error}</p>}
               {!isLoading && (
@@ -262,7 +262,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
               <DialogTitle className="truncate">{selectedInquiry.title}</DialogTitle>
             </div>
           </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto space-y-4 py-4">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 py-4">
             <div>
               <Label className="font-semibold">{selectedInquiry.isFromAdmin ? "관리자 메시지" : "문의 내용"}</Label>
               <div className="mt-1 p-3 rounded-md border bg-muted/50 text-sm whitespace-pre-wrap">
@@ -318,7 +318,7 @@ export function ContactAdminDialog({ children }: ContactAdminDialogProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-w-xl h-[70vh] flex flex-col">
         {renderContent()}
       </DialogContent>
     </Dialog>
