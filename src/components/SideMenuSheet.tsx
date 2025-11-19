@@ -107,7 +107,7 @@ export function SideMenuSheet({
                 <SheetHeader>
                     <SheetTitle>메뉴</SheetTitle>
                 </SheetHeader>
-                <div className="py-4">
+                <div className="py-4 h-full overflow-y-auto">
                     {/* --- [수정된 부분 시작] --- */}
 
                     {/* 3. [추가] 마운트 전(!isMounted)에는 무조건 스켈레톤을 렌더링합니다. (서버와 동일한 화면) */}

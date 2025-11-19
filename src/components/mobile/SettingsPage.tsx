@@ -40,8 +40,11 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                         onValueChange={(value: FontSize) => {
                             if (value) setFontSize(value);
                         }}
-                        className="w-full grid grid-cols-3"
+                        className="w-full grid grid-cols-4"
                     >
+                        <ToggleGroupItem value="small" aria-label="작은 크기">
+                            작게
+                        </ToggleGroupItem>
                         <ToggleGroupItem value="normal" aria-label="보통 크기">
                             보통
                         </ToggleGroupItem>

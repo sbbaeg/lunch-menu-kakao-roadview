@@ -13,6 +13,9 @@ function FontSizeManager() {
   useEffect(() => {
     const root = document.documentElement;
     switch (fontSize) {
+      case 'small':
+        root.style.fontSize = '90%';
+        break;
       case 'large':
         root.style.fontSize = '110%';
         break;
