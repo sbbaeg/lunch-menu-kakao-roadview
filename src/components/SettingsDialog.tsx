@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAppStore, FontSize } from '@/store/useAppStore';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface SettingsDialogProps {
   children: React.ReactNode;
@@ -17,6 +19,8 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ children }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
+  const fontSize = useAppStore((state) => state.fontSize);
+  const setFontSize = useAppStore((state) => state.setFontSize);
 
   return (
     <Dialog>
@@ -33,7 +37,27 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
                 <span className="text-sm font-medium">테마 변경</span>
                 <ThemeToggle />
             </Button>
-            {/* Font size setting will go here in the future */}
+        </div>
+        <div className="py-4 mt-4">
+            <h3 className="text-lg font-semibold mb-2">글자 크기</h3>
+            <ToggleGroup 
+                type="single" 
+                defaultValue={fontSize}
+                onValueChange={(value: FontSize) => {
+                    if (value) setFontSize(value);
+                }}
+                className="w-full grid grid-cols-3"
+            >
+                <ToggleGroupItem value="normal" aria-label="보통 크기">
+                    보통
+                </ToggleGroupItem>
+                <ToggleGroupItem value="large" aria-label="큰 크기">
+                    크게
+                </ToggleGroupItem>
+                <ToggleGroupItem value="xlarge" aria-label="아주 큰 크기">
+                    더 크게
+                </ToggleGroupItem>
+            </ToggleGroup>
         </div>
       </DialogContent>
     </Dialog>

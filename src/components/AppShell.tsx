@@ -3,6 +3,32 @@
 import { usePathname } from 'next/navigation';
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import MobileLayout from "./mobile/MobileLayout";
+import { useAppStore } from '@/store/useAppStore';
+import { useEffect } from 'react';
+
+// This component manages the global font size based on user settings
+function FontSizeManager() {
+  const fontSize = useAppStore((state) => state.fontSize);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    switch (fontSize) {
+      case 'large':
+        root.style.fontSize = '110%';
+        break;
+      case 'xlarge':
+        root.style.fontSize = '120%';
+        break;
+      case 'normal':
+      default:
+        root.style.fontSize = '100%';
+        break;
+    }
+  }, [fontSize]);
+
+  return null; // This component does not render anything visible
+}
+
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -10,16 +36,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isAdminPage = pathname.startsWith('/admin');
 
-  // 관리자 페이지일 경우, PWA 여부와 상관없이 children을 그대로 렌더링
-  if (isAdminPage) {
-    return <>{children}</>;
-  }
-
-  // PWA가 독립 실행 모드일 경우 모바일 UI를 렌더링합니다.
-  if (isStandalone) {
-    return <MobileLayout />;
-  }
-
-  // 그 외의 경우 (일반 브라우저) 기존 UI를 렌더링합니다.
-  return <>{children}</>;
+  return (
+    <>
+      <FontSizeManager />
+      {isAdminPage ? children : (isStandalone ? <MobileLayout /> : children)}
+    </>
+  );
 }
