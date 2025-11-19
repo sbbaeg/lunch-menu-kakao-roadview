@@ -7,6 +7,7 @@ import FavoritesPage from './FavoritesPage';
 import RoulettePage from './RoulettePage'; // 룰렛 페이지 컴포넌트 import
 import MyPage from './MyPage'; // 마이페이지 컴포넌트 import
 import MyReviewsPage from './MyReviewsPage';
+import SettingsPage from './SettingsPage';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -69,6 +70,7 @@ export default function MobileLayout() {
     const setIsMapReady = useAppStore((state) => state.setIsMapReady);
     const showRanking = useAppStore((state) => state.showRanking); // 2. Get action from store
     const showNotifications = useAppStore((state) => state.showNotifications);
+    const hideSettingsPage = useAppStore((state) => state.hideSettingsPage);
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
@@ -290,6 +292,10 @@ export default function MobileLayout() {
             ) : activeView === 'likedRestaurants' ? (
                 <main className="absolute inset-0">
                     <LikedRestaurantsPage {...likedRestaurantsPageProps} />
+                </main>
+            ) : activeView === 'settings' ? (
+                <main className="absolute inset-0">
+                    <SettingsPage onBack={hideSettingsPage} />
                 </main>
             ) : null}
 
