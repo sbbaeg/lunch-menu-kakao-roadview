@@ -23,7 +23,7 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>설정</DialogTitle>
         </DialogHeader>
