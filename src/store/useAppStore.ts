@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { AppRestaurant, RestaurantWithTags } from '@/lib/types';
 import { FilterState } from '@/components/FilterDialog';
 
-export type FontSize = 'normal' | 'large' | 'xlarge';
+export type FontSize = 'small' | 'normal' | 'large' | 'xlarge';
 
 interface AppState {
   // State
