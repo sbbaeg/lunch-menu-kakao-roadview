@@ -34,7 +34,7 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
 
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
-  const [showTravelModes, setShowTravelModes] = useState(false);
+  const [showKakaoOptions, setShowKakaoOptions] = useState(false);
   const { isStandalone } = usePwaDisplayMode();
   const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
 
@@ -133,6 +133,17 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
     }
   };
 
+  const handleViewOnKakaoMap = () => {
+    if (!restaurant.y || !restaurant.x) {
+      toast.error("식당 좌표 정보가 없어 상세 정보를 볼 수 없습니다.");
+      return;
+    }
+    // URL-encode the place name to handle special characters safely
+    const placeName = encodeURIComponent(restaurant.placeName);
+    const url = `https://map.kakao.com/link/map/${placeName},${restaurant.y},${restaurant.x}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div
       className="px-4 pb-4 text-sm space-y-3"
@@ -150,43 +161,50 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
           props.onTagManagement && <RestaurantActionButtons {...props} />}
       </div>
 
-      {/* Conditional rendering for the directions button */}
+      {/* Kakao Map Actions */}
       <div>
-        {isMobile ? (
-          <>
-            <Button 
-              variant="outline" 
-              className="w-full mt-2" 
-              onClick={() => setShowTravelModes(!showTravelModes)}
-            >
-              카카오맵으로 길찾기
-            </Button>
-            {showTravelModes && (
-              <div className="grid grid-cols-3 gap-2 mt-2">
+        <Button 
+          variant="outline" 
+          className="w-full mt-2" 
+          onClick={() => setShowKakaoOptions(!showKakaoOptions)}
+        >
+          카카오맵
+        </Button>
+
+        {showKakaoOptions && (
+          <div className="mt-2">
+            {isMobile ? (
+              // Mobile View: 4 buttons
+              <div className="grid grid-cols-4 gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('CAR')}>
-                  <Car className="h-4 w-4 mr-2" /> 자동차
+                  <Car className="h-4 w-4 mr-1" /> 자동차
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('FOOT')}>
-                  <Footprints className="h-4 w-4 mr-2" /> 도보
+                  <Footprints className="h-4 w-4 mr-1" /> 도보
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('PUBLICTRANSIT')}>
-                  <Bus className="h-4 w-4 mr-2" /> 대중교통
+                  <Bus className="h-4 w-4 mr-1" /> 교통
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleViewOnKakaoMap}>
+                  상세
                 </Button>
               </div>
+            ) : (
+              // PC View: 2 buttons + helper text
+              <div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" onClick={handlePcDirections}>
+                    길찾기
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleViewOnKakaoMap}>
+                    상세보기
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  웹 버전에선 출발지를 직접 입력해야 합니다.
+                </p>
+              </div>
             )}
-          </>
-        ) : (
-          <div>
-            <Button 
-              variant="outline" 
-              className="w-full mt-2" 
-              onClick={handlePcDirections}
-            >
-              카카오맵으로 길찾기
-            </Button>
-            <p className="text-xs text-gray-500 text-center mt-1 py-0 my-0">
-              웹 버전에선 출발지를 직접 입력해야 합니다.
-            </p>
           </div>
         )}
       </div>
