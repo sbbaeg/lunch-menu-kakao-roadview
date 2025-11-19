@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const data = await response.json();
 
     if (!data.documents || data.documents.length === 0) {
-        return NextResponse.json({ error: 'No place found for the given name and coordinates' }, { status: 404 });
+        return NextResponse.json({ error: '카카오맵에 등록된 정보가 없습니다. 장소가 폐업했거나 이전했을 수 있습니다.' }, { status: 404 });
     }
 
     // Find the most relevant place_url (e.g., the first one, or refine if needed)
