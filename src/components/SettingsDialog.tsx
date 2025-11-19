@@ -20,7 +20,7 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-xl flex flex-col">
+      <DialogContent className="max-w-xl flex flex-col max-h-[85vh]">
         <DialogHeader>
           <DialogTitle>설정</DialogTitle>
         </DialogHeader>
