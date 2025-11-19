@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, MessageSquare, HelpCircle, Shield } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, MessageSquare, HelpCircle, Shield, Cog } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,6 +53,7 @@ export default function MyPage({
     const showLikedRestaurantsPage = useAppStore((state) => state.showLikedRestaurantsPage);
     const showTagExplore = useAppStore((state) => state.showTagExplore);
     const showMyReviews = useAppStore((state) => state.showMyReviews);
+    const showSettingsPage = useAppStore((state) => state.showSettingsPage);
     const { unreadCount } = useNotifications(); // 알림 훅 임포트
     const { unreadInquiryCount } = useInquiryNotifications();
     const { theme, setTheme } = useTheme();
@@ -218,10 +219,10 @@ export default function MyPage({
 
                     <div className="px-4">
                         <h3 className="text-lg font-semibold mb-2">앱 설정</h3>
-                        <Button variant="ghost" className="justify-between w-full p-2" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-                            <span className="text-sm font-medium">테마 변경</span>
-                            <ThemeToggle />
+                        <Button variant="ghost" className="justify-start w-full p-2" onClick={showSettingsPage}>
+                            <Cog className="mr-2 h-4 w-4" /> 설정
                         </Button>
+
                     </div>
 
                     {isMounted && session?.user?.isAdmin && (

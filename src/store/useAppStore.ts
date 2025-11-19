@@ -9,7 +9,7 @@ interface AppState {
   rouletteItems: AppRestaurant[];
   userLocation: { lat: number; lng: number } | null;
   activeTab: 'map' | 'favorites' | 'roulette' | 'my-page';
-    activeView: 'tabs' | 'tagDetail' | 'restaurantDetail' | 'tagExplore' | 'myReviews' | 'ranking' | 'notifications' | 'favorites' | 'likedRestaurants';
+    activeView: 'tabs' | 'tagDetail' | 'restaurantDetail' | 'tagExplore' | 'myReviews' | 'ranking' | 'notifications' | 'favorites' | 'likedRestaurants' | 'settings';
     previousView: AppState['activeView'];
     activeTagId: number | null;
     activeRestaurantId: string | null;
@@ -38,6 +38,8 @@ interface AppState {
     showNotifications: () => void;
     showFavoritesPage: () => void;
     showLikedRestaurantsPage: () => void;
+    showSettingsPage: () => void;
+    hideSettingsPage: () => void;
     
     setSelectedItemId: (id: string) => void;
     setRestaurantList: (restaurants: AppRestaurant[]) => void;
@@ -120,6 +122,8 @@ interface AppState {
   
     showLikedRestaurantsPage: () => set({ activeView: 'likedRestaurants', previousView: 'tabs' }),
   
+    showSettingsPage: () => set({ activeView: 'settings', previousView: 'tabs' }),
+  
     goBack: () => set(state => {
       const isReturningFromDetail = state.activeView !== 'tabs';
       return {
@@ -134,6 +138,7 @@ interface AppState {
     hideRestaurantDetail: () => get().goBack(),
     hideTagExplore: () => get().goBack(),
     hideMyReviews: () => get().goBack(),
+    hideSettingsPage: () => get().goBack(),
   
     setSelectedItemId: (id) => set({ selectedItemId: id }),
     setRestaurantList: (restaurants) => set({ restaurantList: restaurants }),

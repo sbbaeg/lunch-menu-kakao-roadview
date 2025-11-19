@@ -37,6 +37,7 @@ import BadgeManagementDialog from "@/components/BadgeManagementDialog";
 import BadgeDisplay from "@/components/BadgeDisplay";
 import { ContactAdminDialog } from "@/components/ContactAdminDialog";
 import { HelpDialog } from "@/components/HelpDialog";
+import { SettingsDialog } from "@/components/SettingsDialog";
 
 interface SideMenuSheetProps {
     onShowFavorites: () => void;
@@ -260,11 +261,14 @@ export function SideMenuSheet({
                     )}
 
                     <div className="px-4">
-                        <Button variant="ghost" className="justify-between w-full" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-                            테마 변경
-                            <ThemeToggle />
-                        </Button>
+                        <SettingsDialog>
+                            <Button variant="ghost" className="justify-start w-full">
+                                설정
+                            </Button>
+                        </SettingsDialog>
                     </div>
+
+
 
                     <div className="px-4 mt-4">
                         <HelpDialog />
