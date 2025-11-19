@@ -4,7 +4,7 @@
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { RestaurantPreviewContent } from "./RestaurantPreviewContent";
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
@@ -38,6 +38,13 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
   const { isStandalone } = usePwaDisplayMode();
   const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
 
+  // New state and effect to check for mobile environment
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  }, []);
+
+
   const handleViewDetails = async () => {
     setIsNavigating(true);
     try {
@@ -61,42 +68,46 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
     }
   };
 
+  // This handler is now for MOBILE ONLY
   const handleKakaoDirections = (mode: TravelMode) => {
     if (!restaurant.y || !restaurant.x) {
       toast.error("식당 좌표 정보가 없어 길찾기를 시작할 수 없습니다.");
       return;
     }
     
-    // Reverted to the original, working coordinate assignment
     const destinationLat = restaurant.y;
     const destinationLng = restaurant.x;
-    const destinationName = restaurant.placeName;
 
-    // App URL supports travel mode
-    const appUrl = `kakaomap://route?ep=${destinationLat},${destinationLng}&by=${mode}`;
+    const appUrl = `kakaomap://route?ep=${destinationLat},${destinationLng}&by=${mode.toLowerCase()}`;
+    const webUrl = `https://m.map.kakao.com/scheme/route?ep=${destinationLat},${destinationLng}&by=${mode.toLowerCase()}`;
     
-    // For web, use the mobile web URL scheme which supports pre-selecting the travel mode.
-    // This may display a mobile-optimized UI on desktop.
-    const by = mode.toLowerCase();
-    const webUrl = `https://m.map.kakao.com/scheme/route?ep=${destinationLat},${destinationLng}&by=${by}`;
-    
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // Mobile-only logic to try opening the app, with a fallback to the mobile site.
+    const openApp = () => {
+      const check = new Date().getTime();
+      setTimeout(() => {
+        const now = new Date().getTime();
+        if (now - check < 2500 && !document.hidden) {
+          window.location.href = webUrl;
+        }
+      }, 2000);
+      window.location.href = appUrl;
+    };
+    openApp();
+  };
 
-    if (isMobile) {
-      const openApp = () => {
-        const check = new Date().getTime();
-        setTimeout(() => {
-          const now = new Date().getTime();
-          if (now - check < 2500 && !document.hidden) {
-            window.location.href = webUrl;
-          }
-        }, 2000);
-        window.location.href = appUrl;
-      };
-      openApp();
-    } else {
-      window.open(webUrl, '_blank');
+  // New handler for PC ONLY
+  const handlePcDirections = () => {
+    if (!restaurant.y || !restaurant.x) {
+      toast.error("식당 좌표 정보가 없어 길찾기를 시작할 수 없습니다.");
+      return;
     }
+    const destinationName = restaurant.placeName;
+    const destinationLat = restaurant.y;
+    const destinationLng = restaurant.x;
+
+    // Use the robust desktop URL scheme
+    const webUrl = `https://map.kakao.com/link/route?eName=${encodeURIComponent(destinationName)}&eX=${destinationLng}&eY=${destinationLat}`;
+    window.open(webUrl, '_blank');
   };
 
   return (
@@ -116,26 +127,39 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
           props.onTagManagement && <RestaurantActionButtons {...props} />}
       </div>
 
+      {/* Conditional rendering for the directions button */}
       <div>
-        <Button 
-          variant="outline" 
-          className="w-full mt-2" 
-          onClick={() => setShowTravelModes(!showTravelModes)}
-        >
-          카카오맵으로 길찾기
-        </Button>
-        {showTravelModes && (
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('CAR')}>
-              <Car className="h-4 w-4 mr-2" /> 자동차
+        {isMobile ? (
+          <>
+            <Button 
+              variant="outline" 
+              className="w-full mt-2" 
+              onClick={() => setShowTravelModes(!showTravelModes)}
+            >
+              카카오맵으로 길찾기
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('FOOT')}>
-              <Footprints className="h-4 w-4 mr-2" /> 도보
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('PUBLICTRANSIT')}>
-              <Bus className="h-4 w-4 mr-2" /> 대중교통
-            </Button>
-          </div>
+            {showTravelModes && (
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('CAR')}>
+                  <Car className="h-4 w-4 mr-2" /> 자동차
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('FOOT')}>
+                  <Footprints className="h-4 w-4 mr-2" /> 도보
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleKakaoDirections('PUBLICTRANSIT')}>
+                  <Bus className="h-4 w-4 mr-2" /> 대중교통
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <Button 
+            variant="outline" 
+            className="w-full mt-2" 
+            onClick={handlePcDirections}
+          >
+            카카오맵으로 길찾기
+          </Button>
         )}
       </div>
 
