@@ -159,7 +159,7 @@ export default function MyPage({
             <header className="p-4 border-b flex-shrink-0">
                 <h1 className="text-2xl font-bold">마이페이지</h1>
             </header>
-            <main className="flex-1 overflow-y-auto p-2 min-h-0 bg-white">
+            <main className="flex-1 overflow-y-auto p-2 min-h-0 bg-background">
                 <div className="py-4">
                     {renderAuthSection()}
                     
