@@ -131,7 +131,7 @@ export function AppSettings() {
                     <AlertDialogTrigger asChild>
                         <Button variant="destructive" id="reset-settings">초기화</Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="sm:max-w-sm">
                         <AlertDialogHeader>
                         <AlertDialogTitle>정말로 초기화하시겠습니까?</AlertDialogTitle>
                         <AlertDialogDescription>
