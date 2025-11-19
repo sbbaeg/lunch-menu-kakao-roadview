@@ -56,7 +56,6 @@ export default function MyPage({
     const showSettingsPage = useAppStore((state) => state.showSettingsPage);
     const { unreadCount } = useNotifications(); // 알림 훅 임포트
     const { unreadInquiryCount } = useInquiryNotifications();
-    const { theme, setTheme } = useTheme();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -222,7 +221,6 @@ export default function MyPage({
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={showSettingsPage}>
                             <Cog className="mr-2 h-4 w-4" /> 설정
                         </Button>
-
                     </div>
 
                     {isMounted && session?.user?.isAdmin && (
