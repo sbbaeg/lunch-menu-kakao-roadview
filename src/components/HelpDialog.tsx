@@ -21,7 +21,7 @@ export function HelpDialog() {
                     도움말 및 정보
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg flex flex-col h-[85vh] p-0">
+            <DialogContent className="max-w-xl h-[70vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-2">
                     <DialogTitle>사용 가이드</DialogTitle>
                 </DialogHeader>

@@ -22,11 +22,11 @@ export function BlacklistDialog({
 }: BlacklistDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xl h-[70vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl">블랙리스트 관리</DialogTitle>
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto pr-4 mt-4">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-2 mt-4">
           {blacklist.length > 0 ? (
             <ul className="space-y-3">
               {blacklist.map((place) => (
