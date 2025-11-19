@@ -133,15 +133,45 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
     }
   };
 
-  const handleViewOnKakaoMap = () => {
-    if (!restaurant.y || !restaurant.x) {
-      toast.error("식당 좌표 정보가 없어 상세 정보를 볼 수 없습니다.");
+  const handleViewOnKakaoMap = async () => {
+    if (!restaurant.y || !restaurant.x || !restaurant.placeName) {
+      toast.error("식당 정보가 불완전하여 상세 정보를 볼 수 없습니다.");
       return;
     }
-    // URL-encode the place name to handle special characters safely
-    const placeName = encodeURIComponent(restaurant.placeName);
-    const url = `https://map.kakao.com/link/map/${placeName},${restaurant.y},${restaurant.x}`;
-    window.open(url, '_blank');
+
+    const toastId = toast.loading("카카오맵 상세 정보 로딩 중...");
+
+    try {
+      const response = await fetch('/api/kakao-place-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          placeName: restaurant.placeName, 
+          x: restaurant.x, 
+          y: restaurant.y 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '카카오맵 상세 정보 조회에 실패했습니다.');
+      }
+
+      const { placeUrl } = await response.json();
+
+      if (!placeUrl) {
+        throw new Error('카카오맵 상세 URL을 찾을 수 없습니다.');
+      }
+      
+      window.open(placeUrl, '_blank');
+      toast.success("카카오맵 상세 페이지를 열었습니다.", { id: toastId });
+
+    } catch (error) {
+      console.error("Failed to view details on Kakao Map:", error);
+      toast.error(error instanceof Error ? error.message : "카카오맵 상세 정보 조회 중 오류가 발생했습니다.", { id: toastId });
+    }
   };
 
   return (
