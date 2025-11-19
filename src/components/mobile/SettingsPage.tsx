@@ -17,7 +17,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                 </Button>
                 <h1 className="text-2xl font-bold">설정</h1>
             </header>
-            <main className="flex-1 overflow-y-auto p-4">
+            <main className="flex-1 overflow-y-auto">
                 <AppSettings />
             </main>
         </div>

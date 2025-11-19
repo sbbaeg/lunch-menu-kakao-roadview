@@ -53,7 +53,7 @@ export function AppSettings() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4">
       {/* Appearance Settings */}
       <div>
         <h3 className="text-lg font-semibold mb-4">화면 설정</h3>
@@ -65,10 +65,7 @@ export function AppSettings() {
                 라이트 모드와 다크 모드를 전환합니다.
               </span>
             </Label>
-            <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setTheme('light')}>Light</Button>
-                <Button variant="outline" size="sm" onClick={() => setTheme('dark')}>Dark</Button>
-            </div>
+            <ThemeToggle />
           </div>
           <div className="rounded-lg border p-4">
             <Label className="flex flex-col space-y-1 mb-4">
