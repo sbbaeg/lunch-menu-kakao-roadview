@@ -4,6 +4,8 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ArrowLeft } from "lucide-react";
+import { useAppStore, FontSize } from '@/store/useAppStore';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface SettingsPageProps {
     onBack: () => void;
@@ -11,6 +13,8 @@ interface SettingsPageProps {
 
 export default function SettingsPage({ onBack }: SettingsPageProps) {
     const { theme, setTheme } = useTheme();
+    const fontSize = useAppStore((state) => state.fontSize);
+    const setFontSize = useAppStore((state) => state.setFontSize);
 
     return (
         <div className="h-full w-full flex flex-col bg-background">
@@ -27,7 +31,27 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                         <span className="text-sm font-medium">테마 변경</span>
                         <ThemeToggle />
                     </Button>
-                    {/* Font size setting will go here in the future */}
+                </div>
+                <div className="px-4 py-4 mt-4">
+                    <h3 className="text-lg font-semibold mb-2">글자 크기</h3>
+                    <ToggleGroup 
+                        type="single" 
+                        defaultValue={fontSize}
+                        onValueChange={(value: FontSize) => {
+                            if (value) setFontSize(value);
+                        }}
+                        className="w-full grid grid-cols-3"
+                    >
+                        <ToggleGroupItem value="normal" aria-label="보통 크기">
+                            보통
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="large" aria-label="큰 크기">
+                            크게
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="xlarge" aria-label="아주 큰 크기">
+                            더 크게
+                        </ToggleGroupItem>
+                    </ToggleGroup>
                 </div>
             </main>
         </div>
