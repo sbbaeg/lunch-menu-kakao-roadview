@@ -81,11 +81,11 @@ export function LikedRestaurantsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl h-[70vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl">좋아요한 음식점</DialogTitle>
         </DialogHeader>
-        <div className="max-h-[70vh] overflow-y-auto pr-4 mt-4">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-2 mt-4">
           {renderContent()}
         </div>
       </DialogContent>
