@@ -23,6 +23,10 @@ export function useAppBadge() {
   const showAppBadge = useAppStore((state) => state.showAppBadge);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // --- 디버깅용 토스트 메시지 ---
+  toast.info(`Firebase API Key: ${process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'Loaded' : 'NOT LOADED'}`);
+  // -----------------------------
+
   // Initialize Firebase App
   let messaging: any;
   if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
