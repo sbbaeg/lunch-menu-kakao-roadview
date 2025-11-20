@@ -31,6 +31,7 @@ export function useAppBadge() {
   
   // Update badge when count or setting changes
   useEffect(() => {
+    toast.info(`Badge effect triggered. Count: ${unreadCount}, Show: ${showAppBadge}`);
     if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
       if (showAppBadge && unreadCount > 0) {
         toast.success(`Setting app badge to: ${unreadCount}`);
