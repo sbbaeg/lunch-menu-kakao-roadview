@@ -47,8 +47,14 @@ export function useAppBadge() {
       Notification.requestPermission().then((permission) => {
         if (permission === 'granted') {
           console.log('Notification permission granted.');
+          toast.info('알림 권한이 허용되었습니다.'); // 1. 'granted' 블록 진입 확인
+
           // 서비스 워커 등록을 기다립니다. next-pwa가 처리할 것으로 예상
+          toast.info('서비스 워커 준비를 기다리는 중...'); // 2. serviceWorker.ready 이전
           navigator.serviceWorker.ready.then((registration) => {
+            toast.success('서비스 워커가 준비되었습니다.'); // 3. serviceWorker.ready 이후
+            
+            toast.info('FCM 토큰 요청 시작...'); // 4. getToken 호출 이전
             getToken(messaging, {
               vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY, // VAPID 키 필요
               serviceWorkerRegistration: registration,
@@ -84,7 +90,7 @@ export function useAppBadge() {
               }
             }).catch((err) => {
               console.error('An error occurred while retrieving token. ', err);
-              toast.error('FCM 토큰을 얻는 중 오류가 발생했습니다.');
+              toast.error(`FCM 토큰 얻기 오류: ${err.message}`); // 5. getToken의 catch 블록
             });
           });
 
