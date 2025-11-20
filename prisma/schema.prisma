@@ -57,6 +57,12 @@ model User {
   reportsReceived  Report[]      @relation("ReportedUser")
   rouletteSpins    Int           @default(0)
   inquiries        Inquiry[]
+
+  // Notification Settings
+  notifyOnReviewUpvote Boolean @default(true)
+  notifyOnBestReview   Boolean @default(true)
+  notifyOnNewBadge     Boolean @default(true)
+  notifyOnInquiryReply Boolean @default(true)
 }
 
 // 2. 음식점 정보 모델
