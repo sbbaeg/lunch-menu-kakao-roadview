@@ -63,6 +63,8 @@ model User {
   notifyOnBestReview   Boolean @default(true)
   notifyOnNewBadge     Boolean @default(true)
   notifyOnInquiryReply Boolean @default(true)
+
+  fcmTokens FcmToken[] // User 모델에 추가될 부분
 }
 
 // 2. 음식점 정보 모델
@@ -297,6 +299,18 @@ model DailyStat {
 
   newReviewVotes     Int      @default(0)
 
+}
+
+// FcmToken 모델 (FCM 토큰 저장)
+model FcmToken {
+  id        String   @id @default(cuid())
+  token     String   @unique // FCM 토큰은 고유해야 함
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Notification {
