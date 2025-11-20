@@ -63,15 +63,29 @@ export function useAppBadge() {
             }).then((currentToken) => {
               if (currentToken) {
                 console.log('FCM registration token:', currentToken);
-                // TODO: Send the token to your server and store it
-                // fetch('/api/notifications/register-fcm-token', {
-                //   method: 'POST',
-                //   headers: {
-                //     'Content-Type': 'application/json',
-                //   },
-                //   body: JSON.stringify({ token: currentToken }),
-                // });
-                toast.success('FCM 토큰을 성공적으로 등록했습니다.');
+                
+                // FCM 토큰을 서버로 전송
+                fetch('/api/notifications/register-fcm-token', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ token: currentToken }),
+                })
+                .then(response => {
+                  if (response.ok) {
+                    toast.success('알림을 위한 기기 등록이 완료되었습니다.');
+                    console.log('FCM token sent to server successfully.');
+                  } else {
+                    toast.error('기기 등록에 실패했습니다.');
+                    console.error('Failed to send FCM token to server.');
+                  }
+                })
+                .catch(error => {
+                  toast.error('기기 등록 중 오류가 발생했습니다.');
+                  console.error('Error sending FCM token to server:', error);
+                });
+
               } else {
                 console.log('No registration token available. Request permission to generate one.');
                 toast.error('FCM 토큰을 얻을 수 없습니다. 권한을 확인하세요.');
