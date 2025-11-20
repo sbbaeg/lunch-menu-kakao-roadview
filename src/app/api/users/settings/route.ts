@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(userSettings);
   } catch (error) {
     console.error("Error fetching user settings:", error);
-    return NextResponse.json({ error: "Internal Server Error", details: error }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
