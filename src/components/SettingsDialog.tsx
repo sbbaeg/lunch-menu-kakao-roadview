@@ -20,15 +20,13 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-xl flex flex-col max-h-[85vh]">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>설정</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full p-4">
-            <AppSettings />
-          </ScrollArea>
-        </div>
+        <ScrollArea className="h-[70vh] p-4 border-t border-b">
+          <AppSettings />
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
