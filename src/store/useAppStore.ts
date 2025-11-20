@@ -17,6 +17,7 @@ interface AppState {
   activeRestaurantId: string | null;
   taggingRestaurant: AppRestaurant | null;
   fontSize: FontSize;
+  showAppBadge: boolean;
 
   // Filter State
   filters: Omit<FilterState, 'categories' | 'allowsDogsOnly' | 'hasParkingOnly'> & { categories: string[]; allowsDogsOnly: boolean; hasParkingOnly: boolean; };
@@ -52,6 +53,7 @@ interface AppState {
   setIsMapReady: (isMapReady: boolean) => void;
   setTaggingRestaurant: (restaurant: AppRestaurant | null) => void;
   setFontSize: (size: FontSize) => void;
+  setShowAppBadge: (show: boolean) => void;
   
   clearMapAndResults: () => void;
   getNearbyRestaurants: (center: { lat: number; lng: number }, query?: string) => Promise<AppRestaurant[]>;
@@ -74,6 +76,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeRestaurantId: null,
   taggingRestaurant: null,
   fontSize: 'normal',
+  showAppBadge: true,
   
   filters: {
     categories: [],
@@ -153,6 +156,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsMapReady: (isMapReady) => set({ isMapReady }),
   setTaggingRestaurant: (restaurant) => set({ taggingRestaurant: restaurant }),
   setFontSize: (size) => set({ fontSize: size }),
+  setShowAppBadge: (show) => set({ showAppBadge: show }),
 
   clearMapAndResults: () => {
     set({ selectedItemId: '', restaurantList: [] });

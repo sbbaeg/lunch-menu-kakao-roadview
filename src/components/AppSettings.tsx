@@ -39,6 +39,8 @@ type NotificationSettings = {
 export function AppSettings() {
   const fontSize = useAppStore((state) => state.fontSize);
   const setFontSize = useAppStore((state) => state.setFontSize);
+  const showAppBadge = useAppStore((state) => state.showAppBadge);
+  const setShowAppBadge = useAppStore((state) => state.setShowAppBadge);
 
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -184,6 +186,22 @@ export function AppSettings() {
               </div>
             ))
           ) : null}
+          {/* App Badge Setting */}
+          {!isLoading && !error && (
+            <div className="flex items-center justify-between p-4">
+              <Label htmlFor="app-badge-setting" className="flex flex-col space-y-1 pr-4">
+                <span>홈 화면에 알림 배지 표시</span>
+                <span className="font-normal leading-snug text-muted-foreground">
+                  읽지 않은 알림 수를 앱 아이콘에 표시합니다.
+                </span>
+              </Label>
+              <Switch
+                id="app-badge-setting"
+                checked={showAppBadge}
+                onCheckedChange={setShowAppBadge}
+              />
+            </div>
+          )}
         </div>
       </div>
 
