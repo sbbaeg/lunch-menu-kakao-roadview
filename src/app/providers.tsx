@@ -2,8 +2,13 @@
 import { SessionProvider } from 'next-auth/react'
 import { useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { useAppBadge } from '@/hooks/useAppBadge';
 
-
+// This component manages the app badge functionality globally.
+function AppBadgeManager() {
+  useAppBadge();
+  return null; // This component does not render anything.
+}
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const setIsMapReady = useAppStore((state) => state.setIsMapReady);
@@ -51,5 +56,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     };
   }, [setIsMapReady]);
 
-  return <SessionProvider>{children}</SessionProvider>
+  return (
+    <SessionProvider>
+      <AppBadgeManager />
+      {children}
+    </SessionProvider>
+  );
 }
