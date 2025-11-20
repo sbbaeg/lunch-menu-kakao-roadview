@@ -53,7 +53,7 @@ export function AppSettings() {
   };
 
   return (
-    <div className="space-y-8 p-4">
+    <div className="space-y-8">
       {/* Appearance Settings */}
       <div>
         <h3 className="text-lg font-semibold mb-4">화면 설정</h3>
