@@ -3,21 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
-import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getToken, onMessage } from 'firebase/messaging';
+import { getFirebaseMessaging } from '@/lib/firebase';
 
 // TODO: Replace with your actual Firebase configuration from your project settings.
 // These values should be stored in environment variables (e.g., .env.local)
 // and prefixed with NEXT_PUBLIC_ to be accessible on the client-side.
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
+
 
 export function useAppBadge() {
   const showAppBadge = useAppStore((state) => state.showAppBadge);
@@ -28,11 +20,7 @@ export function useAppBadge() {
   // -----------------------------
 
   // Initialize Firebase App
-  let messaging: any;
-  if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
-    const app = initializeApp(firebaseConfig);
-    messaging = getMessaging(app);
-  }
+  const messaging = getFirebaseMessaging();
 
   const fetchUnreadCount = async () => {
     try {
