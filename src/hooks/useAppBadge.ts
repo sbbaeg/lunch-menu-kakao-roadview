@@ -8,6 +8,8 @@ export function useAppBadge() {
   const showAppBadge = useAppStore((state) => state.showAppBadge);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  toast.success('useAppBadge hook initialized!');
+
   const fetchUnreadCount = async () => {
     try {
       const response = await fetch('/api/notifications/count');
@@ -24,9 +26,14 @@ export function useAppBadge() {
     }
   };
 
-  // Fetch count on initial load
+  // Fetch count on initial load & track mount/unmount
   useEffect(() => {
+    toast.info('useAppBadge mounted. Fetching count...');
     fetchUnreadCount();
+
+    return () => {
+        toast.warning('useAppBadge unmounted!');
+    }
   }, []);
   
   // Update badge when count or setting changes
