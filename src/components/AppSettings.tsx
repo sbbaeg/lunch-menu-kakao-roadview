@@ -119,9 +119,9 @@ export function AppSettings() {
     <div className="space-y-8">
       {/* Appearance Settings */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">화면 설정</h3>
+        <h3 className="text-lg font-semibold mb-4 pl-4">화면 설정</h3>
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
+          <div className="flex items-center justify-between p-4">
             <Label htmlFor="theme-change" className="flex flex-col space-y-1">
               <span>테마 변경</span>
               <span className="font-normal leading-snug text-muted-foreground">
@@ -130,7 +130,8 @@ export function AppSettings() {
             </Label>
             <ThemeToggle />
           </div>
-          <div className="rounded-lg border p-4">
+          <div className="border-t"></div>
+          <div className="p-4">
             <Label className="flex flex-col space-y-1 mb-4">
                 <span>글자 크기</span>
                 <span className="font-normal leading-snug text-muted-foreground">
@@ -154,19 +155,21 @@ export function AppSettings() {
         </div>
       </div>
 
+      <div className="border-t"></div>
+
       {/* Notification Settings */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">알림 설정</h3>
-        <div className="space-y-2 rounded-lg border p-4">
+        <h3 className="text-lg font-semibold mb-4 pt-8 pl-4">알림 설정</h3>
+        <div className="divide-y">
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-4 p-4">
               {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
             </div>
           ) : error ? (
-             <p className="text-sm text-destructive">{error}</p>
+             <p className="text-sm text-destructive p-4">{error}</p>
           ) : settings ? (
             notificationSettingMeta.map(setting => (
-              <div key={setting.id} className="flex items-center justify-between">
+              <div key={setting.id} className="flex items-center justify-between p-4">
                 <Label htmlFor={setting.id} className="flex flex-col space-y-1 pr-4">
                   <span>{setting.label}</span>
                   <span className="font-normal leading-snug text-muted-foreground">
@@ -184,10 +187,12 @@ export function AppSettings() {
         </div>
       </div>
 
+      <div className="border-t"></div>
+
       {/* Data Management */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">데이터 관리</h3>
-        <div className="rounded-lg border p-4">
+        <h3 className="text-lg font-semibold mb-4 pt-8 pl-4">데이터 관리</h3>
+        <div className="p-4">
             <div className="flex items-center justify-between">
                 <Label htmlFor="reset-settings" className="flex flex-col space-y-1">
                     <span>설정 초기화</span>
