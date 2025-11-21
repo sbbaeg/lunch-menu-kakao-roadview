@@ -33,7 +33,7 @@ const pwaConfig = {
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  swSrc: 'src/sw.ts', // 커스텀 서비스 워커 파일 지정
+  importScripts: ['/firebase-messaging-sw.js'],
 };
 
 export default withPWA(pwaConfig)(nextConfig); // PWA 활성화
