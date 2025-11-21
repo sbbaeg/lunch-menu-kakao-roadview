@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npx next dev",
-    "build": "npx prisma generate && npx next build",
+    "build": "npx prisma generate && node --stack-size=8192 node_modules/next/dist/bin/next build",
     "start": "npx next start",
     "lint": "eslint"
   },
