@@ -5,8 +5,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppShell } from "@/components/AppShell";
-import Providers from './providers'; // <--- 1. 이 줄을 추가합니다.
+import Providers from './providers';
 import { Toaster } from "@/components/ui/toaster";
+import Script from "next/script"; // <--- Script 태그 import
 
 const inter = Inter({
   variable: "--font-inter",
@@ -67,6 +68,20 @@ export default function RootLayout({
           </Providers>
           <Toaster position="top-center" />
         </ThemeProvider>
+        {/* --- 서비스 워커 수동 등록 스크립트 --- */}
+        <Script id="service-worker-manual-registration" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                  console.log('Manual SW registered: ', registration);
+                }).catch(registrationError => {
+                  console.error('Manual SW registration failed: ', registrationError);
+                });
+              });
+            }
+          `}
+        </Script>
       </body>
     </html>
   );
