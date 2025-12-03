@@ -39,9 +39,10 @@ export function AppHeader() {
     });
   };
 
-  const { notifications, unreadCount, deleteNotifications } = useNotifications({
+  const { notifications, deleteNotifications } = useNotifications({
     onNewNotification: handleNewNotification,
   });
+  const unreadCount = useAppStore((state) => state.unreadNotificationCount);
   const { unreadInquiryCount } = useInquiryNotifications();
 
   // Hooks for dialogs managed by the header

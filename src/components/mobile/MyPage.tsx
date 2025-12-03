@@ -54,7 +54,7 @@ export default function MyPage({
     const showTagExplore = useAppStore((state) => state.showTagExplore);
     const showMyReviews = useAppStore((state) => state.showMyReviews);
     const showSettingsPage = useAppStore((state) => state.showSettingsPage);
-    const { unreadCount } = useNotifications(); // 알림 훅 임포트
+    const unreadCount = useAppStore((state) => state.unreadNotificationCount); // 알림 개수를 전역 스토어에서 가져옴
     const { unreadInquiryCount } = useInquiryNotifications();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);

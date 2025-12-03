@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Notification } from '@prisma/client';
 import { useSession } from 'next-auth/react';
+import { useAppStore } from '@/store/useAppStore';
 
 interface UseNotificationsOptions {
   onNewNotification?: (notification: Notification) => void;
@@ -9,6 +10,7 @@ interface UseNotificationsOptions {
 
 export function useNotifications({ onNewNotification }: UseNotificationsOptions = {}) {
   const { data: session } = useSession();
+  const setUnreadNotificationCount = useAppStore((state) => state.setUnreadNotificationCount);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,8 @@ export function useNotifications({ onNewNotification }: UseNotificationsOptions 
         throw new Error('알림을 불러오는데 실패했습니다.');
       }
       const data: Notification[] = await response.json();
+      
+      setUnreadNotificationCount(data.filter(n => !n.read).length);
 
       setNotifications(prevNotifications => {
         if (!isInitialFetch && data.length > 0 && onNewNotification) {
@@ -49,7 +53,7 @@ export function useNotifications({ onNewNotification }: UseNotificationsOptions 
         setIsLoading(false);
       }
     }
-  }, [session, isInitialFetch, onNewNotification]);
+  }, [session, isInitialFetch, onNewNotification, setUnreadNotificationCount]);
 
   useEffect(() => {
     if (session) {
@@ -73,10 +77,8 @@ export function useNotifications({ onNewNotification }: UseNotificationsOptions 
         throw new Error('알림을 읽음 처리하는데 실패했습니다.');
       }
 
-      // 로컬 상태 업데이트
-      setNotifications(prev =>
-        prev.map(n => (notificationIds.includes(n.id) ? { ...n, read: true } : n))
-      );
+      // 서버로부터 최신 데이터를 다시 가져와 상태를 동기화
+      await fetchNotifications();
       return { success: true };
     } catch (err: any) {
       setError(err.message);
@@ -98,13 +100,8 @@ export function useNotifications({ onNewNotification }: UseNotificationsOptions 
         throw new Error('알림을 삭제하는데 실패했습니다.');
       }
 
-      // 로컬 상태 업데이트
-      if (notificationIds) {
-        setNotifications(prev => prev.filter(n => !notificationIds.includes(n.id)));
-      } else {
-        setNotifications(prev => prev.filter(n => !n.read));
-      }
-      
+      // 서버로부터 최신 데이터를 다시 가져와 상태를 동기화
+      await fetchNotifications();
       return { success: true };
     } catch (err: any) {
       setError(err.message);
@@ -112,11 +109,8 @@ export function useNotifications({ onNewNotification }: UseNotificationsOptions 
     }
   };
   
-  const unreadCount = notifications.filter(n => !n.read).length;
-
   return { 
     notifications, 
-    unreadCount,
     isLoading, 
     error, 
     fetchNotifications, 

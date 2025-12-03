@@ -18,6 +18,7 @@ interface AppState {
   taggingRestaurant: AppRestaurant | null;
   fontSize: FontSize;
   showAppBadge: boolean;
+  unreadNotificationCount: number;
 
   // Filter State
   filters: Omit<FilterState, 'categories' | 'allowsDogsOnly' | 'hasParkingOnly'> & { categories: string[]; allowsDogsOnly: boolean; hasParkingOnly: boolean; };
@@ -54,6 +55,7 @@ interface AppState {
   setTaggingRestaurant: (restaurant: AppRestaurant | null) => void;
   setFontSize: (size: FontSize) => void;
   setShowAppBadge: (show: boolean) => void;
+  setUnreadNotificationCount: (count: number) => void;
   
   clearMapAndResults: () => void;
   getNearbyRestaurants: (center: { lat: number; lng: number }, query?: string) => Promise<AppRestaurant[]>;
@@ -77,6 +79,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   taggingRestaurant: null,
   fontSize: 'normal',
   showAppBadge: true,
+  unreadNotificationCount: 0,
   
   filters: {
     categories: [],
@@ -155,11 +158,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setIsMapReady: (isMapReady) => set({ isMapReady }),
   setTaggingRestaurant: (restaurant) => set({ taggingRestaurant: restaurant }),
-  setFontSize: (size) => set({ fontSize: size }),
-  setShowAppBadge: (show) => set({ showAppBadge: show }),
-
-  clearMapAndResults: () => {
-    set({ selectedItemId: '', restaurantList: [] });
+    setFontSize: (size) => set({ fontSize: size }),
+    setShowAppBadge: (show) => set({ showAppBadge: show }),
+    setUnreadNotificationCount: (count) => set({ unreadNotificationCount: count }),
+    
+    clearMapAndResults: () => {    set({ selectedItemId: '', restaurantList: [] });
   },
   getNearbyRestaurants: async (center, queryOverride) => {
     const { filters } = get();

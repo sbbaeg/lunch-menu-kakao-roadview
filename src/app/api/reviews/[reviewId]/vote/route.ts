@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 export async function POST(
   request: Request,
@@ -171,6 +172,16 @@ export async function POST(
         }
       }
       // --- End of Badge Logic ---
+
+      // --- Send Push Notification ---
+      try {
+        const notificationTitle = '새로운 리뷰 추천';
+        const notificationBody = `'${review.restaurant.placeName}'에 대한 회원님의 리뷰를 다른 사용자가 추천했습니다.`;
+        await sendPushNotification(review.userId, notificationTitle, notificationBody);
+      } catch (pushError) {
+        console.error('Failed to send push notification:', pushError);
+      }
+      // --- End of Push Notification ---
     }
 
     return NextResponse.json({

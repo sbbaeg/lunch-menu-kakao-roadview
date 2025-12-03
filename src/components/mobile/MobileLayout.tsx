@@ -106,9 +106,10 @@ export default function MobileLayout() {
         });
     };
 
-    const { unreadCount: unreadGeneralNotificationCount } = useNotifications({
+    useNotifications({
         onNewNotification: handleNewMobileNotification,
     });
+    const unreadNotificationCount = useAppStore((state) => state.unreadNotificationCount);
     const { unreadInquiryCount } = useInquiryNotifications();
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
@@ -225,7 +226,7 @@ export default function MobileLayout() {
         return <SplashScreen />;
     }
 
-    const hasUnreadNotifications = unreadGeneralNotificationCount > 0 || unreadInquiryCount > 0;
+    const hasUnreadNotifications = unreadNotificationCount > 0 || unreadInquiryCount > 0;
 
     const myPageProps = {
         onShowBlacklist: () => setIsBlacklistOpen(true),
