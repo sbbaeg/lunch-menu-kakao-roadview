@@ -8,7 +8,7 @@ docker build `
 --build-arg "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=todays-lunch-pwa.firebasestorage.app" `
 --build-arg "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=766499284858" `
 --build-arg "NEXT_PUBLIC_FIREBASE_APP_ID=1:766499284858:web:a4d613a76eb4da75c258c3" `
---build-arg "NEXT_PUBLIC_FIREBASE_VAPID_KEY=BDYy2_LE3kA2YRfZcOCqqyFl_xSfNUWkno0C3tubY1-q-tc0shfTqhE7ba3JDqvyUuWoCeSKhLqiQWxJ50YNBT" `
+--build-arg "NEXT_PUBLIC_FIREBASE_VAPID_KEY=BDYy2_LE3kA2YRfZcOCqqyFl_xSfNUWkno0C3tubY1-q-tc0shfTqhE7ba3JDqvyUuWoCeSKhLqiQWxJ50YNB-w" `
 --build-arg "NEXTAUTH_URL=https://lunchmenu.duckdns.org" `
 --build-arg "GOOGLE_API_KEY=AIzaSyCxA_JQO6xTYQm-QqKbU37KTYbUZHe3Y5k" `
 --build-arg "KAKAO_REST_API_KEY=92f1a43539bd8c0acfe24beada269e92" `
