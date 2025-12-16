@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { NotificationType } from '@prisma/client';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -40,6 +41,10 @@ export async function POST(request: Request) {
 
       return { newInquiry, newNotification };
     });
+
+    // Send push notification immediately after successful transaction
+    // This will trigger the UI update on the client side.
+    await sendPushNotification(userId, title, message);
 
     return NextResponse.json({ inquiry: result.newInquiry, notification: result.newNotification }, { status: 201 });
 
