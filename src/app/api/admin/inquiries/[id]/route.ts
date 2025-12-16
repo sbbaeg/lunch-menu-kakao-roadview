@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { NotificationType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { sendPushNotification } from '@/lib/sendPushNotification';
 
 export async function PUT(
@@ -27,7 +27,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Admin reply text is required.' }, { status: 400 });
     }
 
-    const updatedInquiry = await prisma.$transaction(async (tx) => {
+    const updatedInquiry = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const inquiry = await tx.inquiry.update({
         where: { id: inquiryId },
         data: {
@@ -48,7 +48,7 @@ export async function PUT(
       await tx.notification.create({
         data: {
           userId: inquiry.userId,
-          type: NotificationType.INQUIRY_REPLY,
+          type: 'INQUIRY_REPLY', // Use string literal to avoid type resolution issue
           message: adminReply, // Use the admin reply as the message
           inquiryId: inquiry.id,
         }
