@@ -24,8 +24,11 @@ export async function sendPushNotification(userId: string, title: string, body: 
       const tokens = fcmTokens.map(t => t.token);
       
       const message = {
-        notification: { title, body },
-        data: { badgeCount: String(totalUnreadCount) },
+        data: { 
+          title, 
+          body, 
+          badgeCount: String(totalUnreadCount) 
+        },
         tokens: tokens,
       };
 
