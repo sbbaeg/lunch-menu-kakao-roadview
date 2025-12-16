@@ -16,4 +16,5 @@ docker build `
 --build-arg "KAKAO_CLIENT_ID=92f1a43539bd8c0acfe24beada269e92" `
 --build-arg "KAKAO_CLIENT_SECRET=srnR5HwQaJRzcAH7Pry7RHNKN6xERTof" `
 --build-arg "NEXTAUTH_SECRET=WVMfDMtAVH/04kPE+PPsb+0cBlivqZkhP7fKf1a4Oio=" `
+--build-arg "FIREBASE_SERVICE_ACCOUNT_KEY_BASE64=<YOUR_FIREBASE_SERVICE_ACCOUNT_KEY_BASE64>" `
 -t menu-kako-roadview:latest .
