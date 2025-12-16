@@ -57,7 +57,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
       };
 
       // Now that we're sure the app is initialized, get the messaging service and send.
-      await getMessaging().sendMulticast(message);
+      await getMessaging().sendEachForMulticast(message);
       console.log("Push notification sent successfully for user:", userId);
     }
   } catch (pushError) {
