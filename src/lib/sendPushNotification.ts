@@ -33,7 +33,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
         tokens: tokens,
       };
 
-      await getMessaging().sendMulticast(message);
+      await (getMessaging() as any).sendMulticast(message);
       console.log("Push notification sent successfully for user:", userId);
     }
   } catch (pushError) {
