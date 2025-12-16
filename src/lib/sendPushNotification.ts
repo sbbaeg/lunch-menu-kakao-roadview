@@ -32,7 +32,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
         tokens: tokens,
       };
 
-      await (adminMessaging as any).sendMulticast(message);
+      await adminMessaging.sendMulticast(message);
       console.log("Push notification sent successfully for user:", userId);
     } else if (!adminMessaging) {
       console.warn("Firebase Admin SDK is not initialized. Cannot send push notification.");
