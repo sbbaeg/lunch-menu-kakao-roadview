@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         data: {
           userId,
           type: NotificationType.GENERAL,
-          message: title,
+          message: message,
           inquiryId: newInquiry.id,
         },
       });

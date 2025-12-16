@@ -70,36 +70,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 },
             });
 
-            // Find the tag and its subscribers
-            const tagWithSubscribers = await prisma.tag.findUnique({
-                where: { id: tagId },
-                include: { 
-                    subscribers: true,
-                    user: true // for tag name
-                },
-            });
-
-            if (tagWithSubscribers && tagWithSubscribers.subscribers.length > 0) {
-                const subscribersToNotify = tagWithSubscribers.subscribers.filter(
-                    (sub) => sub.userId !== session.user.id
-                );
-
-                if (subscribersToNotify.length > 0) {
-                    const notifications = subscribersToNotify.map(subscription => ({
-                        userId: subscription.userId,
-                        type: NotificationType.TAG_SUBSCRIPTION,
-                        message: JSON.stringify({
-                            text: `'${tagWithSubscribers.name}' 태그에 '${dbRestaurant.placeName}'이(가) 추가되었습니다.`,
-                            tagId: tagId,
-                        }),
-                    }));
-
-                    await prisma.notification.createMany({
-                        data: notifications,
-                    });
-                }
-            }
-
             return NextResponse.json({ message: '태그가 음식점에 추가되었습니다.', action: 'attached' });
         }
     } catch (error) {

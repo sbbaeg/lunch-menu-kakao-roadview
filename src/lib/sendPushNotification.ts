@@ -5,21 +5,37 @@ export async function sendPushNotification(userId: string, title: string, body: 
   try {
     const fcmTokens = await prisma.fcmToken.findMany({ where: { userId } });
 
-    if (fcmTokens.length > 0) {
-      const unreadCount = await prisma.notification.count({
+    if (fcmTokens.length > 0 && adminMessaging) {
+      // Calculate unread count from both notifications and inquiries
+      const unreadNotifications = await prisma.notification.count({
         where: { userId, read: false },
       });
+      
+      const unreadInquiries = await prisma.inquiry.count({
+        where: {
+          userId,
+          isResolved: true, // Admin has replied
+          isReadByUser: false, // User has not read it
+        },
+      });
 
-      const messagePayload = {
-        notification: { title, body },
-        data: { badgeCount: String(unreadCount) },
-      };
+      const totalUnreadCount = unreadNotifications + unreadInquiries;
 
       const tokens = fcmTokens.map(t => t.token);
-      await adminMessaging.sendToDevice(tokens, messagePayload);
+      
+      const message = {
+        notification: { title, body },
+        data: { badgeCount: String(totalUnreadCount) },
+        tokens: tokens,
+      };
+
+      await (adminMessaging as any).sendMulticast(message);
       console.log("Push notification sent successfully for user:", userId);
+    } else if (!adminMessaging) {
+      console.warn("Firebase Admin SDK is not initialized. Cannot send push notification.");
     }
   } catch (pushError) {
     console.error("Failed to send push notification:", pushError);
   }
 }
+

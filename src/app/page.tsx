@@ -18,7 +18,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 import { useSession } from "next-auth/react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -32,7 +32,6 @@ import {
 export default function Home() {
     const { data: session } = useSession();
 
-    // --- Zustand 스토어에서 상태 및 액션 가져오기 ---
     const {
         selectedItemId,
         restaurantList,
@@ -44,7 +43,6 @@ export default function Home() {
         isMapReady,
         setSelectedItemId,
         setFilters,
-        setIsMapReady,
         recommendProcess,
         handleSearchInArea,
         handleAddressSearch,
@@ -63,6 +61,15 @@ export default function Home() {
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; } | null>(null);
+
+    const selectedRestaurant = useMemo(() => 
+        restaurantList.find(r => r.id === selectedItemId) || null,
+        [restaurantList, selectedItemId]
+    );
+
+    const onAddressSearchCallback = useCallback((keyword: string, mode: 'place' | 'food', center: { lat: number, lng: number }) => {
+        handleAddressSearch(keyword, center);
+    }, [handleAddressSearch]);
 
     useEffect(() => {
         // 카카오톡 인앱 브라우저인지 확인
@@ -105,21 +112,18 @@ export default function Home() {
         <main className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-card">
             <AppHeader />
             
-            <div className="w-full max-w-6xl p-6 md:p-8 flex flex-col md:flex-row gap-6">
+            <div className="w-full max-w-6xl p-6 md:p-8 flex flex-col md:flex-row gap-6 flex-1 min-h-0">
                 <div className="w-full md:w-3/5 h-[400px] md:h-auto">
                     <MapPanel
                         restaurants={restaurantList}
-                        selectedRestaurant={restaurantList.find(r => r.id === selectedItemId) || null}
+                        selectedRestaurant={selectedRestaurant}
                         userLocation={userLocation}
                         onSearchInArea={handleSearchInArea}
-                        onAddressSearch={(keyword, mode, center) => {
-                            handleAddressSearch(keyword, center); 
-                        }}
-                        onMapReady={setIsMapReady}
+                        onAddressSearch={onAddressSearchCallback}
                     />
                 </div>
 
-                <div className="w-full md:w-2/5 flex flex-col items-center md:justify-start md:h-[800px]">
+                <div className="w-full md:w-2/5 flex flex-col gap-2 flex-1 min-h-0">
                     <MainControlPanel
                         isSearchDisabled={loading || !isMapReady} 
                         onSearchClick={handleSearchClick} 

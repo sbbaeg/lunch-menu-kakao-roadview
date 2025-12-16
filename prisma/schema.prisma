@@ -24,6 +24,8 @@ enum NotificationType {
   GENERAL
   REVIEW_UPVOTE
   BEST_REVIEW
+  INQUIRY_REPLY
+  ADMIN_MESSAGE
 }
 
 // 1. 사용자 계정 모델 (NextAuth.js와 연동)

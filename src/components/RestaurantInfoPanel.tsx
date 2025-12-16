@@ -159,11 +159,11 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
                         <Dialog>
                             <DialogTrigger asChild>
                               <button className="w-full focus:outline-none relative aspect-video">
-                                <Image src={photoUrl} alt={`${restaurant.placeName} photo ${index + 1}`} fill className="object-cover rounded-md" />
+                                <Image src={`/api/google-photo/${photoUrl}`} alt={`${restaurant.placeName} photo ${index + 1}`} fill className="object-cover rounded-md" />
                               </button>
                             </DialogTrigger>
                             <DialogContent className="max-w-4xl h-[90vh] p-2">
-                            <Image src={photoUrl} alt={`${restaurant.placeName} photo ${index + 1}`} fill style={{ objectFit: "contain" }} />
+                            <Image src={`/api/google-photo/${photoUrl}`} alt={`${restaurant.placeName} photo ${index + 1}`} fill style={{ objectFit: "contain" }} />
                             </DialogContent>
                         </Dialog>
                         </CarouselItem>

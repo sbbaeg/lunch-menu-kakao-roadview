@@ -1,10 +1,40 @@
 import { create } from 'zustand';
 import { AppRestaurant, RestaurantWithTags } from '@/lib/types';
 import { FilterState } from '@/components/FilterDialog';
+import { Notification as PrismaNotification } from '@prisma/client';
+import { getSession } from 'next-auth/react';
 
 export type FontSize = 'small' | 'normal' | 'large' | 'xlarge';
 
-interface AppState {
+// Types moved from useNotifications.ts
+export type UnifiedNotification = Omit<PrismaNotification, 'id'> & {
+  id: string;
+  title: string;
+  link?: string;
+  inquiry?: {
+    id: number;
+    title: string;
+    message: string;
+    adminReply: string | null;
+    isFromAdmin: boolean;
+  };
+};
+
+interface InquiryForNotification {
+  id: number;
+  title: string;
+  message: string;
+  adminReply: string | null;
+  isResolved: boolean;
+  isReadByUser: boolean;
+  createdAt: string;
+  updatedAt: string;
+  isFromAdmin: boolean;
+  userId: string;
+}
+
+
+export interface AppState {
   // State
   selectedItemId: string;
   restaurantList: AppRestaurant[];
@@ -18,7 +48,7 @@ interface AppState {
   taggingRestaurant: AppRestaurant | null;
   fontSize: FontSize;
   showAppBadge: boolean;
-  unreadNotificationCount: number;
+  showNotificationsDialog: boolean;
 
   // Filter State
   filters: Omit<FilterState, 'categories' | 'allowsDogsOnly' | 'hasParkingOnly'> & { categories: string[]; allowsDogsOnly: boolean; hasParkingOnly: boolean; };
@@ -28,6 +58,12 @@ interface AppState {
   loading: boolean;
   isMapReady: boolean;
   resultPanelState: 'collapsed' | 'default' | 'expanded';
+
+  // Notification State
+  notifications: UnifiedNotification[];
+  unreadCount: number;
+  notificationsLoading: boolean;
+  notificationError: string | null;
 
   // Actions
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
@@ -55,7 +91,7 @@ interface AppState {
   setTaggingRestaurant: (restaurant: AppRestaurant | null) => void;
   setFontSize: (size: FontSize) => void;
   setShowAppBadge: (show: boolean) => void;
-  setUnreadNotificationCount: (count: number) => void;
+  setShowNotificationsDialog: (show: boolean) => void;
   
   clearMapAndResults: () => void;
   getNearbyRestaurants: (center: { lat: number; lng: number }, query?: string) => Promise<AppRestaurant[]>;
@@ -64,6 +100,12 @@ interface AppState {
   handleAddressSearch: (keyword: string, center: { lat: number; lng: number }) => void;
   handleRouletteResult: (winner: AppRestaurant) => void;
   handleTagsChange: (updatedRestaurant: AppRestaurant) => void;
+
+  // Notification Actions
+  fetchNotifications: () => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotificationsByIds: (ids: string[]) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -79,7 +121,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   taggingRestaurant: null,
   fontSize: 'normal',
   showAppBadge: true,
-  unreadNotificationCount: 0,
+  showNotificationsDialog: false,
   
   filters: {
     categories: [],
@@ -105,6 +147,225 @@ export const useAppStore = create<AppState>((set, get) => ({
   isMapReady: false,
   resultPanelState: 'default',
 
+  // Initial Notification State
+  notifications: [],
+  unreadCount: 0,
+  notificationsLoading: true,
+  notificationError: null,
+
+  // --- ALL ACTIONS CONSOLIDATED HERE ---
+
+  // Notification Actions
+  fetchNotifications: async () => {
+    const session = await getSession();
+    if (!session?.user?.id) {
+      set({ notifications: [], unreadCount: 0, notificationsLoading: false });
+      return;
+    }
+
+    set({ notificationsLoading: true, notificationError: null });
+    try {
+      const [notificationsRes, inquiriesRes] = await Promise.all([
+        fetch('/api/notifications'),
+        fetch('/api/inquiries')
+      ]);
+
+      if (!notificationsRes.ok) throw new Error('알림 목록을 불러오는 데 실패했습니다.');
+      if (!inquiriesRes.ok) throw new Error('문의 목록을 불러오는 데 실패했습니다.');
+
+      const notificationsData: PrismaNotification[] = await notificationsRes.json();
+      const inquiriesData: InquiryForNotification[] = await inquiriesRes.json();
+      
+      const inquiryMap = new Map<number, InquiryForNotification>(
+        inquiriesData.map(inq => [inq.id, inq])
+      );
+
+      const unifiedNotifications: UnifiedNotification[] = notificationsData.map(n => {
+        const linkedInquiry = n.inquiryId ? inquiryMap.get(n.inquiryId) : undefined;
+        if (linkedInquiry) {
+          return {
+            ...n,
+            id: n.id.toString(),
+            title: linkedInquiry.title,
+            message: linkedInquiry.isFromAdmin ? linkedInquiry.message : linkedInquiry.adminReply || '관리자 답변이 등록되었습니다.',
+            read: linkedInquiry.isReadByUser,
+            type: linkedInquiry.isFromAdmin ? 'ADMIN_MESSAGE' : 'INQUIRY_REPLY',
+            inquiry: {
+              id: linkedInquiry.id,
+              title: linkedInquiry.title,
+              message: linkedInquiry.message,
+              adminReply: linkedInquiry.adminReply,
+              isFromAdmin: linkedInquiry.isFromAdmin,
+            },
+          };
+        } else {
+          return { ...n, id: n.id.toString(), title: n.message };
+        }
+      });
+      
+      const notifiedInquiryIds = new Set(notificationsData.map(n => n.inquiryId).filter(id => id !== null));
+      const unnotifiedInquiries: UnifiedNotification[] = inquiriesData
+        .filter(inq => !notifiedInquiryIds.has(inq.id) && (inq.adminReply !== null || inq.isFromAdmin))
+        .map(inq => ({
+          id: `inquiry-${inq.id}`,
+          userId: inq.userId,
+          type: inq.isFromAdmin ? 'ADMIN_MESSAGE' : 'INQUIRY_REPLY',
+          message: inq.isFromAdmin ? inq.message : inq.adminReply || '관리자 답변이 등록되었습니다.',
+          read: inq.isReadByUser,
+          createdAt: new Date(inq.createdAt),
+          updatedAt: new Date(inq.updatedAt),
+          inquiryId: inq.id,
+          title: inq.title,
+          inquiry: {
+            id: inq.id,
+            title: inq.title,
+            message: inq.message,
+            adminReply: inq.adminReply,
+            isFromAdmin: inq.isFromAdmin,
+          },
+        }));
+
+      const combined = [...unifiedNotifications, ...unnotifiedInquiries].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      set({ 
+        notifications: combined, 
+        unreadCount: combined.filter(n => !n.read).length,
+      });
+    } catch (err: any) {
+      set({ notificationError: err.message });
+    } finally {
+      set({ notificationsLoading: false });
+    }
+  },
+
+  markAllAsRead: async () => {
+    const session = await getSession();
+    if (!session?.user?.id || get().unreadCount === 0) return;
+
+    const unreadGeneralIds = get().notifications
+      .filter(n => !n.read && !n.id.startsWith('inquiry-'))
+      .map(n => parseInt(n.id, 10));
+
+    const unreadInquiryIds = get().notifications
+      .filter(n => !n.read && n.id.startsWith('inquiry-'))
+      .map(n => parseInt(n.id.replace('inquiry-', ''), 10));
+      
+    try {
+      const promises = [];
+      if (unreadGeneralIds.length > 0) {
+        promises.push(fetch('/api/notifications', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationIds: unreadGeneralIds }),
+        }));
+      }
+      if (unreadInquiryIds.length > 0) {
+        promises.push(fetch('/api/inquiries/mark-as-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inquiryIds: unreadInquiryIds }),
+        }));
+      }
+      
+      await Promise.all(promises);
+      
+      set(state => ({
+        notifications: state.notifications.map(n => ({ ...n, read: true })),
+        unreadCount: 0,
+      }));
+    } catch (err: any) {
+      console.error('Failed to mark all as read:', err);
+    }
+  },
+
+  markAsRead: async (id: string) => {
+    const session = await getSession();
+    if (!session?.user?.id) return;
+
+    const notification = get().notifications.find(n => n.id === id);
+    if (!notification || notification.read) return;
+
+    // Optimistic update
+    set(state => ({
+      notifications: state.notifications.map(n => (n.id === id ? { ...n, read: true } : n)),
+      unreadCount: Math.max(0, state.unreadCount - 1),
+    }));
+
+    try {
+      const promises = [];
+      const notificationId = parseInt(id, 10);
+
+      if (!isNaN(notificationId)) {
+        promises.push(fetch('/api/notifications', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notificationIds: [notificationId] }),
+        }));
+      }
+      
+      if (notification.inquiryId) {
+        promises.push(fetch('/api/inquiries/mark-as-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inquiryIds: [notification.inquiryId] }),
+        }));
+      }
+      await Promise.all(promises.map(p => p.catch(e => e)));
+    } catch (err) {
+      console.error(`Failed to mark notification ${id} as read:`, err);
+      // Revert on failure
+      set(state => ({
+        notifications: state.notifications.map(n => (n.id === id ? { ...n, read: false } : n)),
+        unreadCount: state.unreadCount + 1,
+      }));
+    }
+  },
+
+  deleteNotificationsByIds: async (ids: string[]) => {
+    const session = await getSession();
+    if (!session?.user?.id || ids.length === 0) return;
+
+    const notificationsToDelete = get().notifications.filter(n => ids.includes(n.id));
+    if (notificationsToDelete.length === 0) return;
+    
+    const originalNotifications = [...get().notifications];
+    const originalUnreadCount = get().unreadCount;
+
+    // Optimistic update
+    set(state => ({
+      notifications: state.notifications.filter(n => !ids.includes(n.id)),
+      unreadCount: state.unreadCount - notificationsToDelete.filter(n => !n.read).length
+    }));
+
+    try {
+      const notificationIds = notificationsToDelete.map(n => parseInt(n.id, 10)).filter(id => !isNaN(id));
+      const inquiryIds = notificationsToDelete.map(n => n.inquiryId).filter((id): id is number => id !== null && id !== undefined);
+
+      const promises = [];
+      if (notificationIds.length > 0) {
+        promises.push(fetch('/api/notifications', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationIds }),
+        }));
+      }
+      if (inquiryIds.length > 0) {
+        promises.push(fetch('/api/inquiries/bulk-delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: inquiryIds }),
+        }));
+      }
+      await Promise.all(promises);
+    } catch (err: any) {
+      console.error('Failed to delete notifications:', err);
+      set({ notifications: originalNotifications, unreadCount: originalUnreadCount });
+    }
+  },
+
+  // Original Actions
   setResultPanelState: (state) => set({ resultPanelState: state }),
   resetResultPanelState: () => set({ resultPanelState: 'default' }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -122,17 +383,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   })),
 
   showTagExplore: () => set({ activeView: 'tagExplore', previousView: 'tabs' }),
-
   showMyReviews: () => set({ activeView: 'myReviews', previousView: 'tabs' }),
-
   showRanking: () => set({ activeView: 'ranking', previousView: 'tabs' }),
-
   showNotifications: () => set({ activeView: 'notifications', previousView: 'tabs' }),
-
   showFavoritesPage: () => set({ activeView: 'favorites', previousView: 'tabs' }),
-
   showLikedRestaurantsPage: () => set({ activeView: 'likedRestaurants', previousView: 'tabs' }),
-
   showSettingsPage: () => set({ activeView: 'settings', previousView: 'tabs' }),
 
   goBack: () => set(state => {
@@ -158,12 +413,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setIsMapReady: (isMapReady) => set({ isMapReady }),
   setTaggingRestaurant: (restaurant) => set({ taggingRestaurant: restaurant }),
-    setFontSize: (size) => set({ fontSize: size }),
-    setShowAppBadge: (show) => set({ showAppBadge: show }),
-    setUnreadNotificationCount: (count) => set({ unreadNotificationCount: count }),
+  setFontSize: (size) => set({ fontSize: size }),
+  setShowAppBadge: (show) => set({ showAppBadge: show }),
+  setShowNotificationsDialog: (show) => set({ showNotificationsDialog: show }),
     
-    clearMapAndResults: () => {    set({ selectedItemId: '', restaurantList: [] });
-  },
+  clearMapAndResults: () => { set({ selectedItemId: '', restaurantList: [] }); },
+  
   getNearbyRestaurants: async (center, queryOverride) => {
     const { filters } = get();
     const query = queryOverride || (filters.categories.length > 0 ? filters.categories.join(',') : '음식점');
@@ -207,7 +462,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const formattedRestaurants: AppRestaurant[] = (data.documents || []).map(place => ({
         id: place.id,
-        googlePlaceId: place.id, // Add this line
+        googlePlaceId: place.id,
         placeName: place.place_name,
         categoryName: place.category_name,
         address: place.road_address_name,
@@ -218,7 +473,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         googleDetails: place.googleDetails,
         tags: place.tags,
         appReview: place.appReview,
-
         likeCount: place.likeCount ?? 0,
         dislikeCount: place.dislikeCount ?? 0,
     }));
@@ -228,7 +482,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   recommendProcess: async (isRoulette, center) => {
-    get().resetResultPanelState(); // 패널 상태 리셋
+    get().resetResultPanelState();
     set({ loading: true, displayedSortOrder: get().filters.sortOrder, blacklistExcludedCount: 0 });
     get().clearMapAndResults();
 
@@ -281,15 +535,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   handleSearchInArea: async (center) => {
     get().resetResultPanelState();
-    set({ loading: true, userLocation: center }); // 1. Update userLocation to the new center
+    set({ loading: true, userLocation: center });
     get().clearMapAndResults();
     try {
         const restaurants = await get().getNearbyRestaurants(center);
-        // 2. Set the results directly, removing the incorrect random sort.
-        // The API already handles sorting and limits.
         set({ restaurantList: restaurants, displayedSortOrder: get().filters.sortOrder });
         if (restaurants.length === 0) {
-            // Optionally, add a user-facing message here in the future.
         }
     } catch (error) {
         console.error("Error in handleSearchInArea:", error);
@@ -313,7 +564,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (restaurants.length === 0) {
         }
     } catch (error) {
-
     } finally {
         set({ loading: false });
     }

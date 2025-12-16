@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { ResultPanel } from "@/components/ResultPanel";
 import { MapPanel } from "@/components/MapPanel";
+import { AppRestaurant } from '@/lib/types';
 
 // This is now a presentational component. All logic is in MobileLayout.
 export default function MapPage(props: any) {
     const {
         session, loading, restaurantList, blacklistExcludedCount, displayedSortOrder, selectedItemId, setSelectedItemId,
         subscribedTagIds, isFavorite, isBlacklisted, toggleFavorite, toggleBlacklist, setTaggingRestaurant,
-        userLocation, handleSearchInArea, handleAddressSearch, setIsMapReady,
+        userLocation, handleSearchInArea, handleAddressSearch,
         onOpenFilter // 필터 열기 함수 받기
     } = props;
+
+    const selectedRestaurant = useMemo(() => {
+        return restaurantList.find((r: AppRestaurant) => r.id === selectedItemId) || null;
+    }, [restaurantList, selectedItemId]);
 
     const resultPanelState = useAppStore((state) => state.resultPanelState);
 
@@ -36,11 +41,10 @@ export default function MapPage(props: any) {
             <div className={`border-b transition-all duration-300 ease-in-out ${panelHeights.map}`}>
                 <MapPanel
                     restaurants={restaurantList}
-                    selectedRestaurant={restaurantList.find((r: any) => r.id === selectedItemId) || null}
+                    selectedRestaurant={selectedRestaurant}
                     userLocation={userLocation}
                     onSearchInArea={handleSearchInArea}
-                    onAddressSearch={(keyword: string, mode: 'place' | 'food', center: any) => handleAddressSearch(keyword, center)}
-                    onMapReady={setIsMapReady}
+                    onAddressSearch={(keyword, mode, center) => handleAddressSearch(keyword, center)}
                 />
             </div>
 

@@ -1,11 +1,9 @@
 // src/components/AppHeader.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { Notification as PrismaNotification } from '@prisma/client';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useInquiryNotifications } from '@/hooks/useInquiryNotifications';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useBlacklist } from '@/hooks/useBlacklist';
 import { useUserTags } from '@/hooks/useUserTags';
@@ -14,8 +12,6 @@ import { useLikedRestaurants } from '@/hooks/useLikedRestaurants';
 import { useAppStore } from '@/store/useAppStore';
 
 import { SideMenuSheet } from '@/components/SideMenuSheet';
-import { NotificationPopover } from '@/components/ui/NotificationPopover';
-import { NotificationViewerDialog } from '@/components/ui/NotificationViewerDialog';
 import { FavoritesDialog } from '@/components/FavoritesDialog';
 import { BlacklistDialog } from '@/components/BlacklistDialog';
 import { TagManagementDialog } from '@/components/TagManagementDialog';
@@ -27,23 +23,8 @@ import { toast } from 'sonner';
 
 export function AppHeader() {
   const { data: session, status } = useSession();
-  const [selectedNotification, setSelectedNotification] = useState<PrismaNotification | null>(null);
+  const { unreadCount } = useNotifications();
   const { taggingRestaurant, setTaggingRestaurant } = useAppStore();
-
-  const handleNewNotification = (notification: PrismaNotification) => {
-    toast(notification.message, {
-      action: {
-        label: "내용 보기",
-        onClick: () => setSelectedNotification(notification),
-      },
-    });
-  };
-
-  const { notifications, deleteNotifications } = useNotifications({
-    onNewNotification: handleNewNotification,
-  });
-  const unreadCount = useAppStore((state) => state.unreadNotificationCount);
-  const { unreadInquiryCount } = useInquiryNotifications();
 
   // Hooks for dialogs managed by the header
   const { favorites, isFavorite, toggleFavorite, updateFavoriteInList } = useFavorites();
@@ -67,27 +48,6 @@ export function AppHeader() {
     } else {
       toast.error("로그인이 필요한 기능입니다.");
     }
-  };
-
-  const handleDeleteAndCloseDialog = (notificationId: number) => {
-    deleteNotifications([notificationId]);
-    setSelectedNotification(null);
-  };
-
-  const getLinkForNotification = (notification: PrismaNotification | null): string | null => {
-    if (!notification) return null;
-    try {
-      const parsed = JSON.parse(notification.message);
-      if (notification.type === 'TAG_SUBSCRIPTION' && parsed.tagId) {
-        return `/tags/${parsed.tagId}`;
-      }
-      if ((notification.type === 'REVIEW_UPVOTE' || notification.type === 'BEST_REVIEW') && parsed.restaurantId) {
-        return `/restaurants/${parsed.restaurantId}`;
-      }
-    } catch (e) {
-      // ignore parsing errors
-    }
-    return null;
   };
 
   // These handlers are now passed down from AppHeader if needed, or handled within AppHeader's dialogs
@@ -148,17 +108,11 @@ export function AppHeader() {
     }
   };
 
-  const hasUnreadNotifications = unreadCount > 0 || unreadInquiryCount > 0;
+  const hasUnreadNotifications = unreadCount > 0;
 
   return (
     <>
       <div className="absolute top-2 right-2 z-50 flex items-center">
-        <NotificationPopover
-          notifications={notifications}
-          unreadCount={unreadCount}
-          deleteNotifications={deleteNotifications}
-          onNotificationClick={(n) => setSelectedNotification(n)}
-        />
         <div className="relative">
           <SideMenuSheet
             onShowFavorites={() => setIsFavoritesListOpen(true)}
@@ -166,7 +120,6 @@ export function AppHeader() {
             onShowTagManagement={() => setIsTagManagementOpen(true)}
             onShowMyReviews={() => setIsMyReviewsOpen(true)}
             onShowLikedRestaurants={() => setIsLikedRestaurantsOpen(true)}
-            unreadInquiryCount={unreadInquiryCount}
           />
           {hasUnreadNotifications && (
             <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500" />
@@ -232,15 +185,6 @@ export function AppHeader() {
         onCreateAndLinkTag={handleCreateAndLinkTag}
         isBanned={session?.user?.isBanned ?? false}
       />
-      {selectedNotification && (
-        <NotificationViewerDialog
-          isOpen={!!selectedNotification}
-          onOpenChange={() => setSelectedNotification(null)}
-          notification={selectedNotification}
-          onDelete={handleDeleteAndCloseDialog}
-          link={getLinkForNotification(selectedNotification)}
-        />
-      )}
     </>
   );
 }

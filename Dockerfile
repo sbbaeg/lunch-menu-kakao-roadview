@@ -1,31 +1,66 @@
-# 1. Linux 기반의 공식 Node.js 20 이미지를 사용합니다.
-FROM node:20-slim AS base
-
-# Build-time arguments for NEXT_PUBLIC_ variables
-ARG NEXT_PUBLIC_GOOGLE_MAPS_JS_KEY
-
-# Prisma 경고 해결을 위해 openssl 설치
-RUN apt-get update && apt-get install -y openssl
-
-# 2. 컨테이너 내부의 작업 디렉토리를 설정합니다.
+# Stage 1: Install all dependencies
+FROM node:20-slim AS deps
 WORKDIR /app
-
-# 3. package.json과 package-lock.json을 먼저 복사합니다.
-# (이 파일들이 변경되지 않으면, 다음 단계의 npm install은 캐시를 사용해 빠르게 넘어갑니다.)
 COPY package*.json ./
+RUN apt-get update && apt-get install -y openssl && npm install --legacy-peer-deps
 
-# 4. 의존성을 설치합니다.
-# 서버에서 prisma generate를 실행할 필요가 없도록, 여기서 함께 실행합니다.
-RUN npm install --legacy-peer-deps
-
-# 5. 나머지 모든 소스 코드를 복사합니다.
+# Stage 2: Build the application
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# 빌드 시점에 필요한 환경 변수들을 ARG로 선언
+ARG DATABASE_URL
+ARG NEXT_PUBLIC_GOOGLE_MAPS_JS_KEY
+ARG NEXT_PUBLIC_KAKAOMAP_JS_KEY
+ARG NEXT_PUBLIC_FIREBASE_API_KEY
+ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ARG NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ARG NEXT_PUBLIC_FIREBASE_APP_ID
+ARG NEXT_PUBLIC_FIREBASE_VAPID_KEY
+ARG NEXTAUTH_URL
+ARG GOOGLE_API_KEY
+ARG KAKAO_REST_API_KEY
+ARG GOOGLE_CLIENT_SECRET
+ARG KAKAO_CLIENT_ID
+ARG KAKAO_CLIENT_SECRET
+ARG NEXTAUTH_SECRET
 
-# 6. 빌드 명령을 실행합니다.
-# Make the build-time arg available as an env var for the build process
+# ARG로 받은 변수들을 ENV로 설정하여 빌드 프로세스에서 사용 가능하도록 함
+ENV DATABASE_URL=$DATABASE_URL
 ENV NEXT_PUBLIC_GOOGLE_MAPS_JS_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_JS_KEY
-RUN echo "Build-time MAPS_KEY is: $NEXT_PUBLIC_GOOGLE_MAPS_JS_KEY"
+ENV NEXT_PUBLIC_KAKAOMAP_JS_KEY=$NEXT_PUBLIC_KAKAOMAP_JS_KEY
+ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
+ENV NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ENV NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ENV NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ENV NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
+ENV NEXT_PUBLIC_FIREBASE_VAPID_KEY=$NEXT_PUBLIC_FIREBASE_VAPID_KEY
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
+ENV GOOGLE_API_KEY=$GOOGLE_API_KEY
+ENV KAKAO_REST_API_KEY=$KAKAO_REST_API_KEY
+ENV GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+ENV KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID
+ENV KAKAO_CLIENT_SECRET=$KAKAO_CLIENT_SECRET
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+
+# npm run build 스크립트에 이미 prisma generate가 포함되어 있음
 RUN npm run build
 
-# 7. 컨테이너가 시작될 때 실행할 명령어를 지정합니다.
+# Stage 3: Production image
+FROM node:20-slim AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+
+# Copy necessary files from the builder stage
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+# Copy the full node_modules from builder to ensure Prisma client is included
+COPY --from=builder /app/node_modules ./node_modules
+
 CMD ["npm", "start"]

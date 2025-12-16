@@ -1,7 +1,7 @@
 // src/app/restaurants/[id]/page.tsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { AppRestaurant } from '@/lib/types';
@@ -26,6 +26,7 @@ import { useFavorites } from '@/hooks/useFavorites'; // Missing import
 import { useBlacklist } from '@/hooks/useBlacklist'; // Missing import
 
 export default function RestaurantPage() {
+  console.log('RestaurantPage is rendering');
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -44,6 +45,8 @@ export default function RestaurantPage() {
     : null;
 
   const id = params.id as string;
+
+  const mapRestaurants = useMemo(() => (restaurant ? [restaurant] : []), [restaurant]);
 
   useEffect(() => {
     if (!id) return;
@@ -161,7 +164,7 @@ export default function RestaurantPage() {
                                 <AccordionContent>
                                     <div className="aspect-video w-full">
                                         <MapPanel 
-                                            restaurants={[restaurant]}
+                                            restaurants={mapRestaurants}
                                             selectedRestaurant={restaurant}
                                             userLocation={null}
                                             onSearchInArea={() => {}}

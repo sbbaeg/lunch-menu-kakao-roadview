@@ -99,9 +99,7 @@ export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<Go
       url: detailsData.websiteUri,
       rating: detailsData.rating,
       userRatingCount: detailsData.userRatingCount,
-      photos: detailsData.photos?.map(p => 
-        `https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=400&key=${GOOGLE_API_KEY}`
-      ) || [],
+      photos: detailsData.photos?.map(p => p.name) || [],
       opening_hours: detailsData.regularOpeningHours,
       phone: detailsData.internationalPhoneNumber,
       reviews: detailsData.reviews?.map(review => ({

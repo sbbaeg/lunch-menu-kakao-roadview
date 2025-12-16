@@ -1,13 +1,82 @@
 'use client'
-import { SessionProvider } from 'next-auth/react'
+import { SessionProvider, useSession } from 'next-auth/react'
 import { useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAppBadge } from '@/hooks/useAppBadge';
+import { getFirebaseMessaging } from '@/lib/firebase';
+import { onMessage } from 'firebase/messaging';
+import { toast } from 'sonner';
+
+// This component handles foreground FCM messages and displays toasts.
+function FcmListener() {
+  const { data: session } = useSession();
+  const fetchNotifications = useAppStore((state) => state.fetchNotifications);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && session) {
+      const messaging = getFirebaseMessaging();
+      if (messaging) {
+        const unsubscribe = onMessage(messaging, (payload) => {
+          console.log('>>> [FcmListener] Foreground message received!', payload);
+
+          // Show a toast notification
+          const { notification } = payload;
+          if (notification?.title) {
+            toast.info(notification.title, {
+              description: notification.body,
+            });
+          }
+          
+          fetchNotifications();
+        });
+
+        return () => {
+          unsubscribe();
+        };
+      }
+    }
+  }, [session, fetchNotifications]);
+
+  return null;
+}
 
 // This component manages the app badge functionality globally.
 function AppBadgeManager() {
   useAppBadge();
   return null; // This component does not render anything.
+}
+
+// This component fetches notifications when the session is available.
+function NotificationInitializer() {
+  const { data: session } = useSession();
+  const fetchNotifications = useAppStore((state) => state.fetchNotifications);
+
+  useEffect(() => {
+    if (session) {
+      fetchNotifications();
+
+      const handleServiceWorkerMessage = (event: Event) => {
+          console.log('>>> [NotificationInitializer] Message received from Service Worker:', event);
+          const messageEvent = event as MessageEvent;
+          if (messageEvent.data && messageEvent.data.type === 'new-notification') {
+              console.log('>>> [NotificationInitializer] "new-notification" message processed.');
+              fetchNotifications();
+          }
+      };
+
+      if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+      }
+
+      return () => {
+          if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+          }
+      };
+    }
+  }, [session, fetchNotifications]);
+
+  return null;
 }
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -47,18 +116,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     };
 
     return () => {
-        // Cleanup: remove script and global callback when component unmounts
+        // Cleanup: remove script when component unmounts
         const existingScript = document.getElementById(scriptId);
         if (existingScript) {
             document.head.removeChild(existingScript);
         }
-        delete window.initGoogleMap;
+        // No need to delete window.initGoogleMap as providers.tsx is a root component
     };
   }, [setIsMapReady]);
 
   return (
     <SessionProvider>
+      <FcmListener />
       <AppBadgeManager />
+      <NotificationInitializer />
       {children}
     </SessionProvider>
   );

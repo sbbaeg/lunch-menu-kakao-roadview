@@ -14,13 +14,26 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Mark all resolved inquiries for the user as read
+    const body = await request.json().catch(() => null);
+    const inquiryIds = body?.inquiryIds;
+
+    const whereClause: any = {
+      userId: session.user.id,
+      isReadByUser: false,
+    };
+
+    if (Array.isArray(inquiryIds) && inquiryIds.length > 0) {
+      // If specific IDs are provided, target them
+      whereClause.id = {
+        in: inquiryIds,
+      };
+    } else {
+      // Original behavior: mark all resolved inquiries as read
+      whereClause.isResolved = true;
+    }
+
     await prisma.inquiry.updateMany({
-      where: {
-        userId: session.user.id,
-        isResolved: true, // Only mark as read if admin has replied
-        isReadByUser: false, // Only update if not already read
-      },
+      where: whereClause,
       data: {
         isReadByUser: true,
       },

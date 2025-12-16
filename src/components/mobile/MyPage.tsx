@@ -28,18 +28,17 @@ import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useAppStore } from "@/store/useAppStore";
-import { useNotifications } from "@/hooks/useNotifications"; // 알림 훅 임포트
-import { useInquiryNotifications } from "@/hooks/useInquiryNotifications";
+import { useNotifications } from "@/hooks/useNotifications";
 import BadgeDisplay from "@/components/BadgeDisplay";
 import BadgeManagementDialog from "@/components/BadgeManagementDialog";
-import { ContactAdminDialog } from "@/components/ContactAdminDialog";
+import { NotificationsDialog } from "@/components/NotificationsDialog";
 import { HelpDialog } from "@/components/HelpDialog";
 
 interface MyPageProps {
     onShowBlacklist: () => void;
     onShowTagManagement: () => void;
     onShowRanking: () => void;
-    onShowNotifications: () => void; // 알림 핸들러 추가
+    onShowNotifications: () => void;
 }
 
 export default function MyPage({ 
@@ -54,8 +53,7 @@ export default function MyPage({
     const showTagExplore = useAppStore((state) => state.showTagExplore);
     const showMyReviews = useAppStore((state) => state.showMyReviews);
     const showSettingsPage = useAppStore((state) => state.showSettingsPage);
-    const unreadCount = useAppStore((state) => state.unreadNotificationCount); // 알림 개수를 전역 스토어에서 가져옴
-    const { unreadInquiryCount } = useInquiryNotifications();
+    const { unreadCount } = useNotifications();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -167,11 +165,6 @@ export default function MyPage({
 
                     <div className="flex flex-col gap-2 px-4">
                         <h3 className="text-lg font-semibold mb-2">내 활동 관리</h3>
-                        <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowNotifications}>
-                            <Bell className="mr-2 h-4 w-4" /> 
-                            알림
-                            {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
-                        </Button>
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={showFavoritesPage}>
                             <Heart className="mr-2 h-4 w-4" /> 즐겨찾기 목록
                         </Button>
@@ -243,12 +236,12 @@ export default function MyPage({
                             <Separator className="my-4" />
                             <div className="px-4">
                                 <h3 className="text-lg font-semibold mb-2">지원</h3>
-                                <ContactAdminDialog>
+                                <NotificationsDialog>
                                     <Button variant="ghost" className="justify-start w-full p-2">
-                                        <MessageSquare className="mr-2 h-4 w-4" /> 문의
-                                        {unreadInquiryCount > 0 && <Badge className="ml-auto">{unreadInquiryCount}</Badge>}
+                                        <Bell className="mr-2 h-4 w-4" /> 알림 및 문의
+                                        {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
                                     </Button>
-                                </ContactAdminDialog>
+                                </NotificationsDialog>
                             </div>
                         </>
                     )}

@@ -4,17 +4,24 @@
 
 // 푸시 알림 이벤트 리스너
 self.addEventListener('push', (event) => {
-  console.log('Service Worker: Push received!');
+  console.log('[Service Worker] Push event received!');
   const data = event.data?.json() || {};
   const { title, body, icon, badgeCount } = data;
 
   // 뱃지 카운트 업데이트
-  if ('setAppBadge' in navigator && typeof badgeCount === 'number') {
-    navigator.setAppBadge(badgeCount).catch(error => {
-      console.error('Failed to set app badge:', error);
-    });
+  if ('setAppBadge' in navigator) {
+    if (badgeCount !== undefined) {
+      const count = parseInt(badgeCount, 10);
+      if (!isNaN(count)) {
+        navigator.setAppBadge(count).catch(error => {
+          console.error('[Service Worker] Failed to set app badge:', error);
+        });
+      } else {
+        console.warn('[Service Worker] badgeCount is not a parsable number.', badgeCount);
+      }
+    }
   } else {
-    console.warn('Badging API not supported or badgeCount is not a number.');
+    console.warn('[Service Worker] Badging API not supported.');
   }
 
   // 알림 표시
@@ -22,6 +29,14 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(title || '알림', {
       body: body || '새로운 알림이 도착했습니다.',
       icon: icon || '/icon.png',
+    }).then(() => {
+        // Broadcast a message to all open clients
+        console.log('[Service Worker] Broadcasting "new-notification" message to clients.');
+        return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            for (const client of clientList) {
+                client.postMessage({ type: 'new-notification' });
+            }
+        });
     })
   );
 });

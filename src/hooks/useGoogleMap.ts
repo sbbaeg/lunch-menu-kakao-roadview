@@ -1,6 +1,4 @@
-// src/hooks/useGoogleMap.ts
-
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 import { fetchDirections } from '@/lib/googleMaps';
@@ -29,7 +27,7 @@ export function useGoogleMap() {
     const streetviewService = useRef<google.maps.StreetViewService | null>(null);
     const isMapReady = useAppStore((state) => state.isMapReady);
     const [streetViewImageDate, setStreetViewImageDate] = useState('');
-    const [userLocationMarker, setUserLocationMarker] = useState<google.maps.Marker | null>(null);
+    const userLocationMarker = useRef<google.maps.Marker | null>(null);
 
     // Map Initialization
     useEffect(() => {
@@ -56,6 +54,7 @@ export function useGoogleMap() {
     }, [isMapReady]);
 
     const displayMarkers = useCallback((places: AppRestaurant[]) => {
+        console.log('displayMarkers is called with places:', places);
         if (!mapInstance.current) return;
         markers.current.forEach((marker) => marker.setMap(null)); // Clear existing markers
         markers.current = [];
@@ -74,8 +73,8 @@ export function useGoogleMap() {
     const drawUserLocationMarker = useCallback((lat: number, lng: number) => {
         if (!mapInstance.current) return;
 
-        if (userLocationMarker) {
-            userLocationMarker.setMap(null); // Clear existing user location marker
+        if (userLocationMarker.current) {
+            userLocationMarker.current.setMap(null); // Clear existing user location marker
         }
 
         const newUserMarker = new window.google.maps.Marker({
@@ -92,8 +91,8 @@ export function useGoogleMap() {
             title: '내 위치',
             zIndex: 1000, // Ensure it's on top
         });
-        setUserLocationMarker(newUserMarker);
-    }, [mapInstance, userLocationMarker]);
+        userLocationMarker.current = newUserMarker;
+    }, []);
 
     const setCenter = useCallback((lat: number, lng: number) => {
         if (!mapInstance.current) return;
@@ -200,13 +199,14 @@ export function useGoogleMap() {
             directionsPolyline.current.setMap(null);
             directionsPolyline.current = null;
         }
-        if (userLocationMarker) {
-            userLocationMarker.setMap(null);
-            setUserLocationMarker(null);
+        if (userLocationMarker.current) {
+            userLocationMarker.current.setMap(null);
+            userLocationMarker.current = null;
         }
-    }, [userLocationMarker]);
+    }, []);
 
     const relayout = useCallback(() => {
+        if (!window.google?.maps?.event || !mapInstance.current) return;
         // Google Maps usually handles relayout automatically.
         // If map size changes, trigger resize event.
         window.google.maps.event.trigger(mapInstance.current, 'resize');
@@ -214,8 +214,8 @@ export function useGoogleMap() {
         // streetviewPanorama.current?.setVisible(true); // This might trigger a relayout
     }, []);
 
-    return {
-        isMapReady, // This comes from useAppStore, indicating Google Maps script is loaded
+    const memoizedValue = useMemo(() => ({
+        isMapReady,
         isMapInitialized,
         mapContainerRef: mapContainer,
         mapInstance: mapInstance.current,
@@ -223,14 +223,21 @@ export function useGoogleMap() {
         streetviewPanorama: streetviewPanorama.current,
         displayMarkers,
         setCenter,
-        setZoom, // Renamed from setLevel
+        setZoom,
         drawDirections,
         drawStraightLine,
         drawUserLocationMarker,
         clearDirections,
         clearOverlays,
-        displayStreetView, // Renamed from displayRoadview
+        displayStreetView,
         relayout,
         streetViewImageDate,
-    };
+    }), [
+        isMapReady, isMapInitialized, displayMarkers, setCenter, setZoom,
+        drawDirections, drawStraightLine, drawUserLocationMarker, clearDirections,
+        clearOverlays, displayStreetView, relayout, streetViewImageDate,
+        mapInstance.current, streetviewPanorama.current
+    ]);
+
+    return memoizedValue;
 }

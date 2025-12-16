@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AppRestaurant } from "@/lib/types";
 import { Session } from "next-auth";
 import { RestaurantCard } from "./RestaurantCard";
-import { useAppStore } from "@/store/useAppStore"; // zustand 스토어 import
+import { useAppStore } from '@/store/useAppStore'; // zustand 스토어 import
 import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode"; // PWA 모드 감지 훅
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";

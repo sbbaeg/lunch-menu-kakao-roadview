@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import BottomTabBar from './BottomTabBar';
 import MapPage from './MapPage';
 import FavoritesPage from './FavoritesPage';
@@ -45,13 +45,11 @@ import RestaurantDetailPage from './RestaurantDetailPage';
 import TagExplorePage from './TagExplorePage';
 import LikedRestaurantsPage from './LikedRestaurantsPage';
 import RankingPage from '@/app/ranking/page'; // 1. Import RankingPage
-import NotificationsPage from './NotificationsPage'; // 알림 페이지 임포트
+
 import { AppRestaurant, Tag } from '@/lib/types';
 import { useSession } from "next-auth/react";
 import { toast } from 'sonner';
-import { Notification as PrismaNotification } from '@prisma/client';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useInquiryNotifications } from '@/hooks/useInquiryNotifications';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -71,9 +69,11 @@ export default function MobileLayout() {
     const showRanking = useAppStore((state) => state.showRanking); // 2. Get action from store
     const showNotifications = useAppStore((state) => state.showNotifications);
     const hideSettingsPage = useAppStore((state) => state.hideSettingsPage);
+    const fetchNotifications = useAppStore((state) => state.fetchNotifications);
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();
+
 
     const selectedItemId = useAppStore((state) => state.selectedItemId);
     const restaurantList = useAppStore((state) => state.restaurantList);
@@ -97,20 +97,7 @@ export default function MobileLayout() {
     const { subscribedTagIds } = useSubscriptions();
     const { likedRestaurants, isLoading: isLoadingLiked } = useLikedRestaurants();
     
-    const handleNewMobileNotification = (notification: PrismaNotification) => {
-        toast(notification.message, {
-            action: {
-                label: "내용 보기",
-                onClick: () => showNotifications(),
-            },
-        });
-    };
-
-    useNotifications({
-        onNewNotification: handleNewMobileNotification,
-    });
-    const unreadNotificationCount = useAppStore((state) => state.unreadNotificationCount);
-    const { unreadInquiryCount } = useInquiryNotifications();
+    const { unreadCount } = useNotifications();
 
     const [isRouletteOpen, setIsRouletteOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -226,14 +213,13 @@ export default function MobileLayout() {
         return <SplashScreen />;
     }
 
-    const hasUnreadNotifications = unreadNotificationCount > 0 || unreadInquiryCount > 0;
+    const hasUnreadNotifications = unreadCount > 0;
 
     const myPageProps = {
         onShowBlacklist: () => setIsBlacklistOpen(true),
         onShowTagManagement: () => setIsTagManagementOpen(true),
-        onShowRanking: showRanking, // 3. Pass action to MyPage
+        onShowRanking: showRanking,
         onShowNotifications: showNotifications,
-        unreadInquiryCount: unreadInquiryCount,
     };
 
     return (
@@ -281,10 +267,6 @@ export default function MobileLayout() {
             ) : activeView === 'ranking' ? ( // 4. Add ranking view to router
                 <main className="absolute inset-0">
                     <RankingPage />
-                </main>
-            ) : activeView === 'notifications' ? (
-                <main className="absolute inset-0">
-                    <NotificationsPage />
                 </main>
             ) : activeView === 'favorites' ? (
                 <main className="absolute inset-0">

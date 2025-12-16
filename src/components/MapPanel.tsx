@@ -20,7 +20,6 @@ interface MapPanelProps {
   userLocation: { lat: number; lng: number } | null;
   onSearchInArea: (center: { lat: number; lng: number }) => void;
   onAddressSearch: (keyword: string, mode: 'place' | 'food', center: { lat: number; lng: number }) => void;
-  onMapReady?: (isReady: boolean) => void;
   hideControls?: boolean;
   showSearchBar?: boolean; // 검색창 표시 여부 prop 추가
 }
@@ -31,7 +30,6 @@ export function MapPanel({
   userLocation,
   onSearchInArea,
   onAddressSearch,
-  onMapReady,
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
@@ -42,12 +40,6 @@ export function MapPanel({
   const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
   const [isStreetviewVisible, setStreetviewVisible] = useState(false); // Renamed from isRoadviewVisible
   const hasShownStreetViewToast = useRef(false);
-
-  useEffect(() => {
-    if (onMapReady) {
-      onMapReady(isMapReady);
-    }
-  }, [isMapReady, onMapReady]);
 
   // ResizeObserver를 사용하여 컨테이너 크기 변경 시 지도 리레이아웃
   useEffect(() => {
@@ -67,15 +59,18 @@ export function MapPanel({
 
   // Effect for drawing all markers (restaurants and user location)
   useEffect(() => {
-    if (isMapReady) {
-      clearOverlays();
-      displayMarkers(restaurants);
-      if (userLocation) {
-        drawUserLocationMarker(userLocation.lat, userLocation.lng);
-      }
+    if (!isMapReady) return;
+
+    clearOverlays();
+
+    const markersToDisplay = selectedRestaurant ? [selectedRestaurant] : restaurants;
+    displayMarkers(markersToDisplay);
+
+    if (userLocation) {
+      drawUserLocationMarker(userLocation.lat, userLocation.lng);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMapReady, restaurants, userLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMapReady, restaurants, selectedRestaurant, userLocation, displayMarkers, drawUserLocationMarker, clearOverlays]);
 
   // Effect for drawing straight line or clearing it
   useEffect(() => {
@@ -111,13 +106,10 @@ export function MapPanel({
   useEffect(() => {
     const timerId = setTimeout(() => {
         if (isStreetviewVisible) streetviewPanorama?.setVisible(true);
-        const currentCenter = mapInstance?.getCenter(); // Get center once
-        if (mapInstance && currentCenter) { // Check if mapInstance and currentCenter are defined
-            mapInstance.setCenter(currentCenter); // Trigger map relayout
-        }
+        relayout(); // Trigger map relayout using the proper function
     }, 10);
     return () => clearTimeout(timerId);
-  }, [isStreetviewVisible, mapInstance, streetviewPanorama]);
+  }, [isStreetviewVisible, streetviewPanorama, relayout]);
 
   useEffect(() => {
     if (userLocation && !selectedRestaurant) {
@@ -195,7 +187,7 @@ export function MapPanel({
 
         {!hideControls && selectedRestaurant && (
             <Button onClick={handleStreetViewToggle} variant="secondary" className="absolute top-3 right-14 z-10 shadow-lg flex items-center gap-2">
-                {isStreetviewVisible ? <><Map className="h-4 w-4" /> 지도</> : <><Camera className="h-4 w-4" /> 스트리트뷰</>}
+                {isStreetviewVisible ? <><Map className="h-4 w-4" /><span>지도</span></> : <><Camera className="h-4 w-4" /><span>스트리트뷰</span></>}
             </Button>
         )}
         {isStreetviewVisible && streetViewImageDate && (

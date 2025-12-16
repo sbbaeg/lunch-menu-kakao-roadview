@@ -35,7 +35,8 @@ import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BadgeManagementDialog from "@/components/BadgeManagementDialog";
 import BadgeDisplay from "@/components/BadgeDisplay";
-import { ContactAdminDialog } from "@/components/ContactAdminDialog";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationsDialog } from "@/components/NotificationsDialog";
 import { HelpDialog } from "@/components/HelpDialog";
 import { SettingsDialog } from "@/components/SettingsDialog";
 
@@ -45,7 +46,6 @@ interface SideMenuSheetProps {
     onShowTagManagement: () => void;
     onShowMyReviews: () => void;
     onShowLikedRestaurants?: () => void;
-    unreadInquiryCount?: number; // Add unreadInquiryCount to props
 }
 
 export function SideMenuSheet({
@@ -54,10 +54,10 @@ export function SideMenuSheet({
     onShowTagManagement,
     onShowMyReviews,
     onShowLikedRestaurants,
-    unreadInquiryCount, // Receive unreadInquiryCount
 }: SideMenuSheetProps) {
     const { data: session, status } = useSession();
     const { theme, setTheme } = useTheme();
+    const { unreadCount } = useNotifications();
     const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -249,14 +249,14 @@ export function SideMenuSheet({
 
                     {isMounted && status === 'authenticated' && (
                         <div className="px-4 mb-4">
-                            <ContactAdminDialog>
+                            <NotificationsDialog>
                                 <Button variant="ghost" className="justify-start w-full flex items-center">
-                                    <span>문의</span>
-                                    {unreadInquiryCount && unreadInquiryCount > 0 ? (
-                                        <Badge className="ml-auto">{unreadInquiryCount}</Badge>
-                                    ) : null}
+                                    <span>알림 및 문의</span>
+                                    {unreadCount > 0 && (
+                                        <Badge className="ml-auto">{unreadCount}</Badge>
+                                    )}
                                 </Button>
-                            </ContactAdminDialog>
+                            </NotificationsDialog>
                         </div>
                     )}
 
