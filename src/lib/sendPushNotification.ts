@@ -1,11 +1,12 @@
+import '@/lib/firebase-admin'; // Ensures Firebase Admin SDK is initialized
+import { getMessaging } from 'firebase-admin/messaging';
 import prisma from "@/lib/prisma";
-import { adminMessaging } from "@/lib/firebase-admin";
 
 export async function sendPushNotification(userId: string, title: string, body: string) {
   try {
     const fcmTokens = await prisma.fcmToken.findMany({ where: { userId } });
 
-    if (fcmTokens.length > 0 && adminMessaging) {
+    if (fcmTokens.length > 0) {
       // Calculate unread count from both notifications and inquiries
       const unreadNotifications = await prisma.notification.count({
         where: { userId, read: false },
@@ -32,10 +33,8 @@ export async function sendPushNotification(userId: string, title: string, body: 
         tokens: tokens,
       };
 
-      await adminMessaging.sendMulticast(message);
+      await getMessaging().sendMulticast(message);
       console.log("Push notification sent successfully for user:", userId);
-    } else if (!adminMessaging) {
-      console.warn("Firebase Admin SDK is not initialized. Cannot send push notification.");
     }
   } catch (pushError) {
     console.error("Failed to send push notification:", pushError);
