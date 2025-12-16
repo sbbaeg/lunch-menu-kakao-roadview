@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { NotificationType } from '@prisma/client';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 export async function PUT(
   request: Request,
@@ -38,25 +39,30 @@ export async function PUT(
           user: {
             select: {
               id: true,
-              name: true,
-              email: true,
             },
           },
         },
       });
 
-      // Create a notification for the user
+      // Create a notification for the user with the actual reply content
       await tx.notification.create({
         data: {
           userId: inquiry.userId,
-          type: NotificationType.GENERAL,
-          message: inquiry.title,
+          type: NotificationType.INQUIRY_REPLY,
+          message: adminReply, // Use the admin reply as the message
           inquiryId: inquiry.id,
         }
       });
 
       return inquiry;
     });
+
+    // Send push notification immediately after successful transaction
+    await sendPushNotification(
+      updatedInquiry.userId,
+      `Re: ${updatedInquiry.title}`, // Push notification title
+      adminReply                      // Push notification body
+    );
 
     return NextResponse.json(updatedInquiry);
   } catch (error) {
