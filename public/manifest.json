@@ -2,6 +2,7 @@
   "name": "오늘 뭐 먹지?",
   "short_name": "오늘 뭐 먹지?",
   "description": "주변 맛집을 추천하고 룰렛을 돌려 식사 메뉴를 결정해주는 앱",
+  "id": "toDaysLunch",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -15,8 +16,8 @@
     {
       "src": "/icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ],
-  "gcm_sender_id": "766499284858"
+  ]
 }

@@ -84,6 +84,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 # Copy the full node_modules from builder to ensure Prisma client is included
 COPY --from=builder /app/node_modules ./node_modules
+# Prisma 디렉토리 복사 추가
+COPY --from=builder /app/prisma ./prisma
 
 # Copy ENV variables from builder stage
 ENV DATABASE_URL=$DATABASE_URL

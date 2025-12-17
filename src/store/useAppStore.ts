@@ -65,7 +65,11 @@ export interface AppState {
   notificationsLoading: boolean;
   notificationError: string | null;
 
+  // Debugging State
+  debugLogs: string[];
+
   // Actions
+  addDebugLog: (log: string) => void;
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
   resetResultPanelState: () => void;
   setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
@@ -106,6 +110,7 @@ export interface AppState {
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotificationsByIds: (ids: string[]) => Promise<void>;
+  initializeServiceWorker: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -153,7 +158,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   notificationsLoading: true,
   notificationError: null,
 
+  // Initial Debugging State
+  debugLogs: [],
+
   // --- ALL ACTIONS CONSOLIDATED HERE ---
+
+  // Debugging Actions
+  addDebugLog: (log) => set((state) => ({
+    debugLogs: [`[${new Date().toLocaleTimeString()}] ${log}`, ...state.debugLogs].slice(0, 50) // Keep last 50 logs
+  })),
 
   // Notification Actions
   fetchNotifications: async () => {
@@ -362,6 +375,22 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (err: any) {
       console.error('Failed to delete notifications:', err);
       set({ notifications: originalNotifications, unreadCount: originalUnreadCount });
+    }
+  },
+
+  initializeServiceWorker: () => {
+    const { addDebugLog } = get();
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      addDebugLog('[SW_Init] Service Worker is supported. Registering...');
+      navigator.serviceWorker.register('/sw.js')
+        .then(registration => {
+          addDebugLog(`[SW_Init] Registration successful. Scope: ${registration.scope}`);
+        })
+        .catch(error => {
+          addDebugLog(`[SW_Init] Registration failed: ${error.message}`);
+        });
+    } else {
+      addDebugLog('[SW_Init] Service Worker not supported.');
     }
   },
 

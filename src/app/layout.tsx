@@ -68,20 +68,6 @@ export default function RootLayout({
           </Providers>
           <Toaster position="top-center" />
         </ThemeProvider>
-        {/* --- 서비스 워커 수동 등록 스크립트 --- */}
-        <Script id="service-worker-manual-registration" strategy="afterInteractive">
-          {`
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(registration => {
-                  console.log('Manual SW registered: ', registration);
-                }).catch(registrationError => {
-                  console.error('Manual SW registration failed: ', registrationError);
-                });
-              });
-            }
-          `}
-        </Script>
       </body>
     </html>
   );

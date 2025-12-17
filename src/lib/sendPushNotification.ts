@@ -49,7 +49,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
       
       const message = {
         data: { 
-          title, 
+          title: title || '새 알림', 
           body, 
           badgeCount: String(totalUnreadCount) 
         },

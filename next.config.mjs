@@ -1,6 +1,7 @@
 // next.config.mjs
 
 import withPWA from 'next-pwa';
+import runtimeCaching from 'next-pwa/cache.js';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -35,6 +36,7 @@ const pwaConfig = {
   disable: process.env.NODE_ENV === 'development',
   importScripts: ['/firebase-messaging-sw.js'],
   buildExcludes: [/app-build-manifest\.json$/],
+  runtimeCaching,
 };
 
 export default withPWA(pwaConfig)(nextConfig); // PWA 활성화
