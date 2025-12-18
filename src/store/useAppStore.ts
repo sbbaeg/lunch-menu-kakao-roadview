@@ -382,7 +382,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { addDebugLog } = get();
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       addDebugLog('[SW_Init] Service Worker is supported. Registering...');
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
         .then(registration => {
           addDebugLog(`[SW_Init] Registration successful. Scope: ${registration.scope}`);
         })

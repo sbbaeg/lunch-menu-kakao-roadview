@@ -20,6 +20,8 @@ const roboto_mono = localFont({
 }); 
 
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
 export const metadata: Metadata = {
   title: "오늘 뭐 먹지? - 식사 메뉴 추천",
   description: "사용자 위치 기반 음식점 추천 및 랜덤 추첨앱",
@@ -31,14 +33,14 @@ export const metadata: Metadata = {
     description: "내 주변 맛집, 검색과 룰렛으로 결정하세요!",
     images: [
       {
-        url: "https://lunch-menu-kakao.vercel.app/icon.png",
+        url: `${appUrl}/icon.png`,
         width: 256,
         height: 256,
         alt: "오늘 뭐 먹지? 로고",
       },
     ],
     type: "website",
-    url: "https://lunch-menu-kakao.vercel.app",
+    url: appUrl,
   },
   manifest: '/manifest.json',
 };

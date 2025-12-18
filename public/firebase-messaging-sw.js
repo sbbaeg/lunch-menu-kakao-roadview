@@ -1,98 +1,64 @@
-self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push event received!');
-  
-  let data;
-  try {
-    data = event.data?.json() || {};
-  } catch (e) {
-    console.error('[Service Worker] Failed to parse push data:', e);
-    data = {};
-  }
+// public/firebase-messaging-sw.js
 
-  const { title, body, icon, badgeCount } = data;
+// Import the Firebase libraries for Firebase products that you want to use in your SW.
+importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
 
-  const broadcastDebug = (message) => {
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      for (const client of clientList) {
-        client.postMessage({ type: 'debug', message });
-      }
+// Fetch the Firebase configuration from our custom API endpoint
+let firebaseConfig = {};
+fetch('/api/firebase-config')
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Firebase config: ${response.statusText}`);
+    }
+    return response.json();
+  })
+  .then(config => {
+    firebaseConfig = config;
+    if (Object.values(firebaseConfig).some(value => !value)) {
+      console.error('Firebase configuration is incomplete from API.');
+      return;
+    }
+    
+    // Initialize the Firebase app in the service worker by passing the generated config
+    firebase.initializeApp(firebaseConfig);
+
+    // Retrieve an instance of Firebase Messaging so that it can handle background messages.
+    const messaging = firebase.messaging();
+
+    messaging.onBackgroundMessage((payload) => {
+      console.log('[firebase-messaging-sw.js] Received background message ', payload);
+
+      // Customize notification here
+      const notificationTitle = payload.data.title || '새 알림';
+      const notificationOptions = {
+        body: payload.data.body || '새로운 알림이 도착했습니다.',
+        icon: '/icon.png',
+        badge: '/icon.png',
+        data: payload.data, // Attach the full data payload
+      };
+
+      self.registration.showNotification(notificationTitle, notificationOptions);
     });
-  };
 
-  broadcastDebug(`[SW] Push received. Raw data: ${JSON.stringify(data)}`);
-  broadcastDebug(`[SW] Parsed - Title: ${title}, Body: ${body}, Badge: ${badgeCount}`);
-
-  // 뱃지 카운트 업데이트
-  if ('setAppBadge' in navigator) {
-    broadcastDebug('[SW] Badging API is supported.');
-    if (badgeCount !== undefined) {
-      const count = parseInt(badgeCount, 10);
-      if (!isNaN(count)) {
-        navigator.setAppBadge(count)
-          .then(() => broadcastDebug(`[SW] App badge set to ${count}.`))
-          .catch(error => {
-            console.error('[Service Worker] Failed to set app badge:', error);
-            broadcastDebug(`[SW] Error setting badge: ${error.message}`);
-          });
-      } else {
-        broadcastDebug(`[SW] badgeCount is not a number: ${badgeCount}`);
-      }
-    } else {
-      broadcastDebug('[SW] badgeCount is undefined.');
-    }
-  } else {
-    broadcastDebug('[SW] Badging API not supported.');
-  }
-
-  // 알림 표시 로직
-  const notificationPromise = new Promise((resolve, reject) => {
-    if (!title) {
-      broadcastDebug('[SW] Notification title is missing, skipping showNotification.');
-      // A push event must be handled by showing a notification, so show a default one.
-      self.registration.showNotification('새 알림', { body: '새로운 알림이 도착했습니다.' })
-        .then(resolve)
-        .catch(e => {
-            broadcastDebug(`[SW] Default notification failed: ${e.message}`);
-            reject(e);
-        });
-    } else {
-      broadcastDebug('[SW] Attempting to show notification...');
-      self.registration.showNotification(title, {
-        body: body || '새로운 알림이 도착했습니다.',
-        icon: icon || '/icon.png',
-      })
-      .then(() => {
-        broadcastDebug('[SW] showNotification successful.');
-        resolve();
-      })
-      .catch(e => {
-        console.error('[Service Worker] Failed to show notification:', e);
-        broadcastDebug(`[SW] showNotification failed: ${e.message}`);
-        reject(e);
-      });
-    }
+  })
+  .catch(error => {
+    console.error('Error fetching or initializing Firebase in service worker:', error);
   });
 
-  // UI 업데이트를 위한 메시지 브로드캐스트
-  const clientsPromise = self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-    if (clientList.length > 0) {
-      broadcastDebug(`[SW] Broadcasting 'new-notification' to ${clientList.length} clients.`);
-      for (const client of clientList) {
-        client.postMessage({ type: 'new-notification' });
-      }
-    } else {
-      broadcastDebug('[SW] No clients to broadcast to.');
-    }
-  });
-
-  event.waitUntil(Promise.all([notificationPromise, clientsPromise]));
-});
-
-// 알림 클릭 이벤트 리스너
+// Optionally, handle other events like 'notificationclick'
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close(); // 알림 닫기
+  console.log('[firebase-messaging-sw.js] Notification click received.', event);
+  event.notification.close();
 
-  event.waitUntil(
-    self.clients.openWindow('/') // 알림 클릭 시 메인 페이지로 이동
-  );
+  // Handle opening a URL based on notification data
+  if (event.action === 'open_url' && event.notification.data && event.notification.data.url) {
+    clients.openWindow(event.notification.data.url);
+  } else {
+    // Default: open the root URL or a specific path
+    clients.openWindow('/'); 
+  }
 });
+
+// To avoid caching issues during development, consider adding a versioning or cache busting mechanism
+// For production, ensure proper caching strategies are in place for the service worker itself.
