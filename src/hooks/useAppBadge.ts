@@ -43,14 +43,7 @@ export function useAppBadge() {
             });
           });
 
-          // 포그라운드에서 푸시 메시지 수신
-          onMessage(messaging, (payload) => {
-            console.log('Foreground message received. ', payload);
-            toast.info(`새로운 메시지: ${payload.notification?.title || '알림'}`);
-            // 메시지를 받으면, 전역 스토어의 fetchNotifications를 호출하여 모든 관련 상태를 업데이트합니다.
-            fetchNotifications();
-          });
-
+          // 포그라운드 메시지 수신 로직은 FcmListener 컴포넌트가 전담합니다.
         } else {
           console.log('Notification permission denied.');
         }

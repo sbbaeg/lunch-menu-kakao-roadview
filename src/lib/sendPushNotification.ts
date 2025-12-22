@@ -23,11 +23,13 @@ function ensureFirebaseInitialized() {
 }
 
 export async function sendPushNotification(userId: string, title: string, body: string) {
+  console.log(`[Push] Starting to send notification for userId: ${userId}`);
   try {
     // Ensure the SDK is initialized before trying to use it
     ensureFirebaseInitialized();
 
     const fcmTokens = await prisma.fcmToken.findMany({ where: { userId } });
+    console.log(`[Push] Found ${fcmTokens.length} tokens for user.`);
 
     if (fcmTokens.length > 0) {
       // Calculate unread count from both notifications and inquiries
@@ -44,6 +46,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
       });
 
       const totalUnreadCount = unreadNotifications + unreadInquiries;
+      console.log(`[Push] Calculated badge count: ${totalUnreadCount}`);
 
       const tokens = fcmTokens.map(t => t.token);
       
@@ -55,13 +58,27 @@ export async function sendPushNotification(userId: string, title: string, body: 
         },
         tokens: tokens,
       };
+      
+      console.log('[Push] Constructed message payload:', JSON.stringify(message, null, 2));
 
       // Now that we're sure the app is initialized, get the messaging service and send.
-      await getMessaging().sendEachForMulticast(message);
-      console.log("Push notification sent successfully for user:", userId);
+      const response = await getMessaging().sendEachForMulticast(message);
+      console.log('[Push] Received response from Firebase:', JSON.stringify(response, null, 2));
+      
+      if (response.failureCount > 0) {
+        console.error(`[Push] Failed to send to ${response.failureCount} tokens.`);
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            console.error(`  - Token[${idx}]: ${tokens[idx]}, Error: ${resp.error?.message}`);
+          }
+        });
+      }
+      
+      console.log("[Push] Notification process completed for user:", userId);
+
     }
   } catch (pushError) {
-    console.error("Failed to send push notification:", pushError);
+    console.error("[Push] A critical error occurred in sendPushNotification function:", pushError);
   }
 }
 

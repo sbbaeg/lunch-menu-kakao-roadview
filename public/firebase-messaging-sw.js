@@ -1,64 +1,64 @@
-// public/firebase-messaging-sw.js
+// Import necessary scripts. The order is important.
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+importScripts('/firebase-config.js'); 
 
-// Import the Firebase libraries for Firebase products that you want to use in your SW.
-importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
+console.log('[firebase-messaging-sw.js] Service Worker starting (v5 - Focused Fix).');
 
-// Fetch the Firebase configuration from our custom API endpoint
-let firebaseConfig = {};
-fetch('/api/firebase-config')
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`Failed to fetch Firebase config: ${response.statusText}`);
-    }
-    return response.json();
-  })
-  .then(config => {
-    firebaseConfig = config;
-    if (Object.values(firebaseConfig).some(value => !value)) {
-      console.error('Firebase configuration is incomplete from API.');
-      return;
-    }
-    
-    // Initialize the Firebase app in the service worker by passing the generated config
+if (typeof firebaseConfig !== 'undefined') {
+  try {
     firebase.initializeApp(firebaseConfig);
-
-    // Retrieve an instance of Firebase Messaging so that it can handle background messages.
     const messaging = firebase.messaging();
+    console.log('[firebase-messaging-sw.js] Firebase initialized successfully.');
 
     messaging.onBackgroundMessage((payload) => {
-      console.log('[firebase-messaging-sw.js] Received background message ', payload);
+      console.log('[firebase-messaging-sw.js] Received background message: ', payload);
 
-      // Customize notification here
-      const notificationTitle = payload.data.title || '새 알림';
+      // ** FIX: Handle both FCM payload (nested in .data) and DevTools payload (direct) **
+      const notificationData = payload.data || payload;
+
+      const notificationTitle = notificationData.title;
+      const notificationBody = notificationData.body;
+
+      if (!notificationTitle) {
+        console.error('[firebase-messaging-sw.js] No title found in payload. Cannot show notification.');
+        return;
+      }
+
       const notificationOptions = {
-        body: payload.data.body || '새로운 알림이 도착했습니다.',
+        body: notificationBody,
         icon: '/icon.png',
-        badge: '/icon.png',
-        data: payload.data, // Attach the full data payload
+        data: {
+          url: notificationData.url || '/',
+        },
       };
 
-      self.registration.showNotification(notificationTitle, notificationOptions);
+      // Display the notification. The browser handles waiting for this promise.
+      return self.registration.showNotification(notificationTitle, notificationOptions);
     });
 
-  })
-  .catch(error => {
-    console.error('Error fetching or initializing Firebase in service worker:', error);
-  });
+  } catch(error) {
+     console.error('[firebase-messaging-sw.js] Error during Firebase initialization:', error);
+  }
+} else {
+  console.error('[firebase-messaging-sw.js] FATAL: firebaseConfig variable not found.');
+}
 
-// Optionally, handle other events like 'notificationclick'
 self.addEventListener('notificationclick', (event) => {
   console.log('[firebase-messaging-sw.js] Notification click received.', event);
   event.notification.close();
-
-  // Handle opening a URL based on notification data
-  if (event.action === 'open_url' && event.notification.data && event.notification.data.url) {
-    clients.openWindow(event.notification.data.url);
-  } else {
-    // Default: open the root URL or a specific path
-    clients.openWindow('/'); 
-  }
+  const urlToOpen = event.notification.data.url || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        const clientUrl = new URL(client.url);
+        if (clientUrl.pathname === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    }),
+  );
 });
-
-// To avoid caching issues during development, consider adding a versioning or cache busting mechanism
-// For production, ensure proper caching strategies are in place for the service worker itself.
