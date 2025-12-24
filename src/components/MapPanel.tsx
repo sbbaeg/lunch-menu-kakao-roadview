@@ -35,10 +35,12 @@ export function MapPanel({
 }: MapPanelProps) {
   const hoveredRestaurantId = useAppStore((state) => state.hoveredRestaurantId);
   const setHoveredRestaurantId = useAppStore((state) => state.setHoveredRestaurantId);
+  const setSelectedItemId = useAppStore((state) => state.setSelectedItemId);
 
   const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawStraightLine, clearDirections, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap(
     hoveredRestaurantId,
-    setHoveredRestaurantId
+    setHoveredRestaurantId,
+    setSelectedItemId
   );
   
   const [searchAddress, setSearchAddress] = useState("");
@@ -69,7 +71,7 @@ export function MapPanel({
 
     clearOverlays();
 
-    const markersToDisplay = selectedRestaurant ? [selectedRestaurant] : restaurants;
+    const markersToDisplay = restaurants;
     displayMarkers(markersToDisplay);
 
     if (userLocation) {

@@ -113,7 +113,7 @@ export default function Home() {
             <AppHeader />
             
             <div className="w-full max-w-6xl p-6 md:p-8 flex flex-col md:flex-row gap-6 flex-1 min-h-0">
-                <div className="w-full md:w-3/5 h-[400px] md:h-auto">
+                <div className="w-full md:w-3/5 h-[400px] md:h-full">
                     <MapPanel
                         restaurants={restaurantList}
                         selectedRestaurant={selectedRestaurant}

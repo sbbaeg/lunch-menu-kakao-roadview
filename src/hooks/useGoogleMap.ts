@@ -18,7 +18,8 @@ interface DirectionPoint { lat: number; lng: number; }
 
 export function useGoogleMap(
     hoveredRestaurantId: string | null,
-    setHoveredRestaurantId: (id: string | null) => void
+    setHoveredRestaurantId: (id: string | null) => void,
+    setSelectedItemId: (id: string) => void
 ) {
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapInstance = useRef<google.maps.Map | null>(null);
@@ -60,21 +61,23 @@ export function useGoogleMap(
         if (!mapInstance.current || !window.google) return;
 
         const defaultMarkerIcon = {
-            path: window.google.maps.SymbolPath.CIRCLE,
+            path: 'M 12 2 C 8.13 2 5 5.13 5 9 c 0 5.25 7 13 7 13 s 7 -7.75 7 -13 c 0 -3.87 -3.13 -7 -7 -7 Z',
             fillColor: '#FF0000', // Red
-            fillOpacity: 0.8,
-            strokeColor: '#FFFFFF',
-            strokeWeight: 1,
-            scale: 6,
+            fillOpacity: 0.9,
+            strokeWeight: 0,
+            rotation: 0,
+            scale: 1.5,
+            anchor: new window.google.maps.Point(12, 24)
         };
     
         const hoveredMarkerIcon = {
-            path: window.google.maps.SymbolPath.CIRCLE,
+            path: 'M 12 2 C 8.13 2 5 5.13 5 9 c 0 5.25 7 13 7 13 s 7 -7.75 7 -13 c 0 -3.87 -3.13 -7 -7 -7 Z',
             fillColor: '#0000FF', // Blue
-            fillOpacity: 0.9,
-            strokeColor: '#FFFFFF',
-            strokeWeight: 2,
-            scale: 8,
+            fillOpacity: 1.0,
+            strokeWeight: 0,
+            rotation: 0,
+            scale: 2.0,
+            anchor: new window.google.maps.Point(12, 24)
         };
 
         markers.current.forEach((marker) => marker.setMap(null));
@@ -97,10 +100,14 @@ export function useGoogleMap(
                 setHoveredRestaurantId(null);
             });
 
+            marker.addListener('click', () => {
+                setSelectedItemId(place.id);
+            });
+
             return marker;
         });
         markers.current = newMarkers;
-    }, [mapInstance, hoveredRestaurantId, setHoveredRestaurantId]);
+    }, [mapInstance, hoveredRestaurantId, setHoveredRestaurantId, setSelectedItemId]);
 
 
     const drawUserLocationMarker = useCallback((lat: number, lng: number) => {
@@ -270,7 +277,7 @@ export function useGoogleMap(
         drawDirections, drawStraightLine, drawUserLocationMarker, clearDirections,
         clearOverlays, displayStreetView, relayout, streetViewImageDate,
         mapInstance.current, streetviewPanorama.current,
-        hoveredRestaurantId, setHoveredRestaurantId,
+        hoveredRestaurantId, setHoveredRestaurantId, setSelectedItemId,
     ]);
 
     return memoizedValue;
