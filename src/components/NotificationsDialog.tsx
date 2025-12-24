@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Import useRouter
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ interface NotificationsDialogProps {
 export function NotificationsDialog({ children }: NotificationsDialogProps) {
   const showNotificationsDialog = useAppStore((state) => state.showNotificationsDialog);
   const setShowNotificationsDialog = useAppStore((state) => state.setShowNotificationsDialog);
+  const router = useRouter(); // Get router instance
 
   const [view, setView] = useState<'list' | 'detail' | 'create'>('list');
   const [selectedNotification, setSelectedNotification] = useState<UnifiedNotification | null>(null);
@@ -149,12 +151,12 @@ export function NotificationsDialog({ children }: NotificationsDialogProps) {
         <DialogTitle>알림 및 문의</DialogTitle>
         <DialogDescription>전체 알림을 확인하거나 새 문의를 작성할 수 있습니다.</DialogDescription>
       </DialogHeader>
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs defaultValue="all" className="w-full flex-grow flex flex-col overflow-hidden">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all">전체 알림</TabsTrigger>
           <TabsTrigger value="unread">읽지 않은 알림</TabsTrigger>
         </TabsList>
-        <div className="max-h-[50vh] min-h-[300px] overflow-y-auto pr-2 py-4">
+        <div className="flex-grow overflow-y-auto overflow-x-hidden pr-2 py-4">
           <TabsContent value="all">
             <NotificationListComponent
               notifications={notifications}
@@ -177,7 +179,7 @@ export function NotificationsDialog({ children }: NotificationsDialogProps) {
           </TabsContent>
         </div>
       </Tabs>
-      <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
+      <DialogFooter className="flex-shrink-0 flex flex-col sm:flex-row sm:justify-between gap-2 pt-4">
         <Button onClick={() => setView('create')} className="w-full sm:w-auto">새 문의 작성</Button>
         <div className="flex gap-2 w-full sm:w-auto">
           <Button variant="outline" onClick={() => handleSelectAll('all')} className="flex-grow">모두 선택</Button>
@@ -191,15 +193,13 @@ export function NotificationsDialog({ children }: NotificationsDialogProps) {
 
   const renderDetailView = () => {
     if (!selectedNotification) return null;
-    const { inquiry } = selectedNotification;
+    const { inquiry, link } = selectedNotification;
 
-    // For inquiries, use their specific title. For general notifications, use the category label as the title
-    // to avoid showing the same message content in both the title and the body.
-    const finalTitle = inquiry ? selectedNotification.title : getCategoryLabel(selectedNotification);
+    const finalTitle = selectedNotification.title;
 
     return (
       <>
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setView('list')}><ArrowLeft className="h-4 w-4" /></Button>
             <DialogTitle className="truncate">{finalTitle}</DialogTitle>
@@ -215,7 +215,7 @@ export function NotificationsDialog({ children }: NotificationsDialogProps) {
               </div>
           </DialogDescription>
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto space-y-4 py-4">
+        <div className="flex-grow overflow-y-auto overflow-x-hidden space-y-4 py-4">
           {inquiry ? (
             <>
               {inquiry.isFromAdmin ? (
@@ -242,7 +242,17 @@ export function NotificationsDialog({ children }: NotificationsDialogProps) {
             <p className="p-4">{selectedNotification.message}</p>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 justify-between pt-4">
+          <div>
+            {link && link !== '#' && (
+              <Button onClick={() => {
+                router.push(link);
+                handleOpenChange(false);
+              }}>
+                페이지로 이동
+              </Button>
+            )}
+          </div>
           <Button variant="outline" onClick={() => setView('list')}>목록으로</Button>
         </DialogFooter>
       </>
@@ -251,13 +261,13 @@ export function NotificationsDialog({ children }: NotificationsDialogProps) {
   
   const renderCreateView = () => (
      <>
-      <DialogHeader>
+      <DialogHeader className="flex-shrink-0">
           <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setView('list')}><ArrowLeft className="h-4 w-4" /></Button>
           <DialogTitle>새 문의 작성</DialogTitle>
         </div>
       </DialogHeader>
-      <div className="space-y-4 py-4">
+      <div className="flex-grow overflow-y-auto overflow-x-hidden space-y-4 py-4">
         <div>
           <Label htmlFor="title">제목</Label>
           <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="문의 제목을 입력하세요." />
@@ -267,7 +277,7 @@ export function NotificationsDialog({ children }: NotificationsDialogProps) {
           <Textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} rows={8} placeholder="여기에 문의 내용을 입력하세요." />
         </div>
       </div>
-      <DialogFooter>
+      <DialogFooter className="flex-shrink-0 pt-4">
         <Button variant="secondary" onClick={() => setView('list')}>취소</Button>
         <Button onClick={handleSubmitInquiry} disabled={isSubmitting}>{isSubmitting ? '제출 중...' : '제출하기'}</Button>
       </DialogFooter>
@@ -277,7 +287,7 @@ export function NotificationsDialog({ children }: NotificationsDialogProps) {
   return (
     <Dialog open={showNotificationsDialog} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg w-[90vw] h-[70vh] flex flex-col">
         {view === 'list' && renderListView()}
         {view === 'detail' && renderDetailView()}
         {view === 'create' && renderCreateView()}

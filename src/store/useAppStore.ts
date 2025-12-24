@@ -65,11 +65,7 @@ export interface AppState {
   notificationsLoading: boolean;
   notificationError: string | null;
 
-  // Debugging State
-  debugLogs: string[];
-
   // Actions
-  addDebugLog: (log: string) => void;
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
   resetResultPanelState: () => void;
   setActiveTab: (tab: 'map' | 'favorites' | 'roulette' | 'my-page') => void;
@@ -158,15 +154,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   notificationsLoading: true,
   notificationError: null,
 
-  // Initial Debugging State
-  debugLogs: [],
-
   // --- ALL ACTIONS CONSOLIDATED HERE ---
-
-  // Debugging Actions
-  addDebugLog: (log) => set((state) => ({
-    debugLogs: [`[${new Date().toLocaleTimeString()}] ${log}`, ...state.debugLogs].slice(0, 50) // Keep last 50 logs
-  })),
 
   // Notification Actions
   fetchNotifications: async () => {
@@ -186,7 +174,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (!notificationsRes.ok) throw new Error('알림 목록을 불러오는 데 실패했습니다.');
       if (!inquiriesRes.ok) throw new Error('문의 목록을 불러오는 데 실패했습니다.');
 
-      const notificationsData: PrismaNotification[] = await notificationsRes.json();
+      const notificationsData: any[] = await notificationsRes.json();
       const inquiriesData: InquiryForNotification[] = await inquiriesRes.json();
       
       const inquiryMap = new Map<number, InquiryForNotification>(
@@ -203,6 +191,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             message: linkedInquiry.isFromAdmin ? linkedInquiry.message : linkedInquiry.adminReply || '관리자 답변이 등록되었습니다.',
             read: linkedInquiry.isReadByUser,
             type: linkedInquiry.isFromAdmin ? 'ADMIN_MESSAGE' : 'INQUIRY_REPLY',
+            link: `/my-page/inquiries/${linkedInquiry.id}`,
             inquiry: {
               id: linkedInquiry.id,
               title: linkedInquiry.title,
@@ -212,7 +201,11 @@ export const useAppStore = create<AppState>((set, get) => ({
             },
           };
         } else {
-          return { ...n, id: n.id.toString(), title: n.message };
+           let title = n.message;
+          if (n.type === 'TAG_SUBSCRIPTION' && n.tag) {
+            title = `"${n.tag.name}" 태그에 새로운 장소 추가`;
+          }
+          return { ...n, id: n.id.toString(), title };
         }
       });
       
@@ -228,7 +221,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           createdAt: new Date(inq.createdAt),
           updatedAt: new Date(inq.updatedAt),
           inquiryId: inq.id,
+          tagId: null,
+          reviewId: null,
           title: inq.title,
+          link: `/my-page/inquiries/${inq.id}`,
           inquiry: {
             id: inq.id,
             title: inq.title,
@@ -379,18 +375,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   initializeServiceWorker: () => {
-    const { addDebugLog } = get();
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      addDebugLog('[SW_Init] Service Worker is supported. Registering...');
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
         .then(registration => {
-          addDebugLog(`[SW_Init] Registration successful. Scope: ${registration.scope}`);
+          console.log(`[SW_Init] Registration successful. Scope: ${registration.scope}`);
         })
         .catch(error => {
-          addDebugLog(`[SW_Init] Registration failed: ${error.message}`);
+          console.error(`[SW_Init] Registration failed: ${error.message}`);
         });
     } else {
-      addDebugLog('[SW_Init] Service Worker not supported.');
+      console.warn('[SW_Init] Service Worker not supported.');
     }
   },
 

@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { NotificationType } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
-import { AppRestaurant } from '@/lib/types'; // Restaurant 타입을 가져옵니다.
+import { AppRestaurant } from '@/lib/types';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 // 타입을 별도로 정의
 type RouteContext = {
@@ -63,12 +64,58 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             });
             return NextResponse.json({ message: '태그가 음식점에서 삭제되었습니다.', action: 'detached' });
         } else {
-            await prisma.tagsOnRestaurants.create({
+            const createdLink = await prisma.tagsOnRestaurants.create({
                 data: {
                     restaurantId: restaurantId,
                     tagId: tagId,
                 },
+                include: {
+                    tag: true,
+                }
             });
+
+            // --- Start of Notification Logic ---
+            try {
+                const subscribers = await prisma.tagSubscription.findMany({
+                    where: {
+                        tagId: tagId,
+                        userId: {
+                            not: session.user.id, // Exclude the current user
+                        },
+                    },
+                });
+
+                if (subscribers.length > 0) {
+                    const tagName = createdLink.tag.name;
+                    const notificationTitle = `"${tagName}" 태그에 새로운 장소 추가`;
+                    const notificationBody = `회원님이 구독중인 "${tagName}" 태그에 새로운 장소 "${dbRestaurant.placeName}"이(가) 추가되었습니다.`;
+                    
+                    for (const sub of subscribers) {
+                        const newNotification = await prisma.notification.create({
+                            data: {
+                                userId: sub.userId,
+                                type: NotificationType.TAG_SUBSCRIPTION,
+                                message: notificationBody,
+                                tagId: tagId,
+                            },
+                        });
+
+                        await sendPushNotification(
+                            sub.userId,
+                            notificationTitle,
+                            notificationBody,
+                            { 
+                                url: `/tags/${tagId}`,
+                                notificationId: newNotification.id.toString(),
+                            }
+                        );
+                    }
+                }
+            } catch (notificationError) {
+                console.error("태그 구독 알림 전송 중 오류 발생:", notificationError);
+                // We don't return an error response here, just log it.
+            }
+            // --- End of Notification Logic ---
 
             return NextResponse.json({ message: '태그가 음식점에 추가되었습니다.', action: 'attached' });
         }

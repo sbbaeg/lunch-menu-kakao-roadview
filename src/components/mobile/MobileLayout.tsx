@@ -60,7 +60,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export default function MobileLayout() {
+export default function MobileLayout({ pathname }: { pathname: string }) {
     const activeTab = useAppStore((state) => state.activeTab);
     const activeView = useAppStore((state) => state.activeView);
     const setActiveTab = useAppStore((state) => state.setActiveTab);
@@ -70,6 +70,32 @@ export default function MobileLayout() {
     const showNotifications = useAppStore((state) => state.showNotifications);
     const hideSettingsPage = useAppStore((state) => state.hideSettingsPage);
     const fetchNotifications = useAppStore((state) => state.fetchNotifications);
+
+    // Actions for deep linking
+    const showTagDetail = useAppStore((state) => state.showTagDetail);
+    const showRestaurantDetail = useAppStore((state) => state.showRestaurantDetail);
+
+    // Deep linking effect
+    useEffect(() => {
+        if (!pathname) return;
+
+        // Match /tags/[id]
+        const tagMatch = pathname.match(/\/tags\/(\d+)/);
+        if (tagMatch) {
+            const tagId = parseInt(tagMatch[1], 10);
+            showTagDetail(tagId);
+            return; 
+        }
+
+        // Match /restaurants/[id]
+        const restaurantMatch = pathname.match(/\/restaurants\/([a-zA-Z0-9_-]+)/);
+        if (restaurantMatch) {
+            const restaurantId = restaurantMatch[1];
+            showRestaurantDetail(restaurantId);
+            return;
+        }
+
+    }, [pathname, showTagDetail, showRestaurantDetail]);
 
     // All hooks and state management from the original page component
     const { data: session, status } = useSession();

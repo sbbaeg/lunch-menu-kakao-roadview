@@ -19,11 +19,48 @@ export async function GET(req: Request) {
       where: {
         userId: session.user.id,
       },
+      include: {
+        tag: true, // For TAG_SUBSCRIPTION
+        review: { // For review-related notifications
+          include: {
+            restaurant: true,
+          }
+        },
+        inquiry: true, // For inquiry-related notifications
+      },
       orderBy: {
         createdAt: "desc",
       },
     });
-    return NextResponse.json(notifications);
+
+    // Dynamically create a link for each notification
+    const notificationsWithLinks = notifications.map(n => {
+      let link = '#'; // Default link
+      switch (n.type) {
+        case 'TAG_SUBSCRIPTION':
+          if (n.tag) {
+            link = `/tags/${n.tag.id}`;
+          }
+          break;
+        case 'REVIEW_UPVOTE':
+        case 'BEST_REVIEW':
+          if (n.review && n.review.restaurant) {
+            link = `/restaurants/${n.review.restaurant.googlePlaceId}?highlightReviewId=${n.review.id}`;
+          }
+          break;
+        case 'INQUIRY_REPLY':
+        case 'ADMIN_MESSAGE':
+          if (n.inquiryId) {
+            link = `/my-page/inquiries/${n.inquiryId}`;
+          }
+          break;
+        default:
+          break;
+      }
+      return { ...n, link };
+    });
+
+    return NextResponse.json(notificationsWithLinks);
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return NextResponse.json(

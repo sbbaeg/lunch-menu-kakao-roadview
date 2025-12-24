@@ -22,7 +22,7 @@ function ensureFirebaseInitialized() {
   }
 }
 
-export async function sendPushNotification(userId: string, title: string, body: string) {
+export async function sendPushNotification(userId: string, title: string, body: string, notificationData?: { [key: string]: string }) {
   console.log(`[Push] Starting to send notification for userId: ${userId}`);
   try {
     // Ensure the SDK is initialized before trying to use it
@@ -32,7 +32,6 @@ export async function sendPushNotification(userId: string, title: string, body: 
     console.log(`[Push] Found ${fcmTokens.length} tokens for user.`);
 
     if (fcmTokens.length > 0) {
-      // Calculate unread count from both notifications and inquiries
       const unreadNotifications = await prisma.notification.count({
         where: { userId, read: false },
       });
@@ -40,8 +39,8 @@ export async function sendPushNotification(userId: string, title: string, body: 
       const unreadInquiries = await prisma.inquiry.count({
         where: {
           userId,
-          isResolved: true, // Admin has replied
-          isReadByUser: false, // User has not read it
+          isResolved: true,
+          isReadByUser: false,
         },
       });
 
@@ -54,14 +53,14 @@ export async function sendPushNotification(userId: string, title: string, body: 
         data: { 
           title: title || '새 알림', 
           body, 
-          badgeCount: String(totalUnreadCount) 
+          badgeCount: String(totalUnreadCount),
+          ...(notificationData || {}), // Merge additional data like URL
         },
         tokens: tokens,
       };
       
       console.log('[Push] Constructed message payload:', JSON.stringify(message, null, 2));
 
-      // Now that we're sure the app is initialized, get the messaging service and send.
       const response = await getMessaging().sendEachForMulticast(message);
       console.log('[Push] Received response from Firebase:', JSON.stringify(response, null, 2));
       

@@ -3,7 +3,7 @@ importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 importScripts('/firebase-config.js'); 
 
-console.log('[firebase-messaging-sw.js] Service Worker starting (v5 - Focused Fix).');
+console.log('[firebase-messaging-sw.js] Service Worker starting (v6 - Mark as Read).');
 
 if (typeof firebaseConfig !== 'undefined') {
   try {
@@ -14,7 +14,6 @@ if (typeof firebaseConfig !== 'undefined') {
     messaging.onBackgroundMessage((payload) => {
       console.log('[firebase-messaging-sw.js] Received background message: ', payload);
 
-      // ** FIX: Handle both FCM payload (nested in .data) and DevTools payload (direct) **
       const notificationData = payload.data || payload;
 
       const notificationTitle = notificationData.title;
@@ -30,10 +29,13 @@ if (typeof firebaseConfig !== 'undefined') {
         icon: '/icon.png',
         data: {
           url: notificationData.url || '/',
+          notificationId: notificationData.notificationId, // Pass notificationId
         },
+        actions: [
+          { action: 'open_url', title: '자세히 보기' }
+        ]
       };
 
-      // Display the notification. The browser handles waiting for this promise.
       return self.registration.showNotification(notificationTitle, notificationOptions);
     });
 
@@ -45,20 +47,49 @@ if (typeof firebaseConfig !== 'undefined') {
 }
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('[firebase-messaging-sw.js] Notification click received.', event);
+  console.log('[SW] notificationclick event received.', event.notification.data);
   event.notification.close();
-  const urlToOpen = event.notification.data.url || '/';
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        const clientUrl = new URL(client.url);
-        if (clientUrl.pathname === urlToOpen && 'focus' in client) {
-          return client.focus();
-        }
+
+  const urlToOpen = new URL(event.notification.data.url || '/', self.location.origin).href;
+  const notificationId = event.notification.data.notificationId;
+
+  const openWindowPromise = clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true
+  }).then((clientList) => {
+    for (const client of clientList) {
+      if (client.url === urlToOpen && 'focus' in client) {
+        return client.focus();
       }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
+    }
+    if (clientList.length > 0) {
+      return clientList[0].navigate(urlToOpen).then(client => client.focus());
+    }
+    if (clients.openWindow) {
+      return clients.openWindow(urlToOpen);
+    }
+  });
+
+  const promisesToWait = [openWindowPromise];
+
+  if (notificationId) {
+    const markAsReadPromise = fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ notificationIds: [parseInt(notificationId, 10)] }),
+    }).then(response => {
+      if (!response.ok) {
+        console.error('[SW] Failed to mark notification as read. Status:', response.status);
+      } else {
+        console.log('[SW] Successfully marked notification as read.');
       }
-    }),
-  );
+    }).catch(error => {
+      console.error('[SW] Error marking notification as read:', error);
+    });
+    promisesToWait.push(markAsReadPromise);
+  }
+
+  event.waitUntil(Promise.all(promisesToWait));
 });

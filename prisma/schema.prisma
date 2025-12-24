@@ -3,7 +3,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -134,6 +135,7 @@ model Review {
 
   votes        ReviewVote[]
   reports      Report[]
+  notifications Notification[] // Notification 모델의 review 필드에 대한 역참조
 
   // 한 명의 유저는 한 식당에 하나의 리뷰만 작성 가능
   @@unique([userId, restaurantId])
@@ -208,12 +210,9 @@ model Tag {
   restaurants TagsOnRestaurants[]
   subscribers TagSubscription[]
 
-  // 한 명의 유저는 동일한 이름의 태그를 중복 생성할 수 없음
-  @@unique([name, userId])
-  @@index([needsModeration])
-
   reviews TagReview[]
   reports Report[]
+  notifications Notification[] // Notification 모델의 tag 필드에 대한 역참조
 }
 
 model TagReview {
@@ -327,11 +326,19 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Link to the source of the notification
-  inquiryId Int?      @unique // Each inquiry should only have one notification
+  inquiryId Int?      @unique
   inquiry   Inquiry?  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  tagId     Int?
+  tag       Tag?      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  reviewId  Int?
+  review    Review?   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([inquiryId])
+  @@index([tagId])
+  @@index([reviewId])
 }
 
 

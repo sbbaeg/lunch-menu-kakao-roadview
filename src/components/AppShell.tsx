@@ -5,6 +5,7 @@ import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import MobileLayout from "./mobile/MobileLayout";
 import { useAppStore } from '@/store/useAppStore';
 import { useEffect } from 'react';
+import PwaInstallBanner from './PwaInstallBanner';
 
 // This component manages the global font size based on user settings
 function FontSizeManager() {
@@ -42,7 +43,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <FontSizeManager />
-      {isAdminPage ? children : (isStandalone ? <MobileLayout /> : children)}
+      <PwaInstallBanner />
+      {isAdminPage ? children : (isStandalone ? <MobileLayout pathname={pathname} /> : children)}
     </>
   );
 }

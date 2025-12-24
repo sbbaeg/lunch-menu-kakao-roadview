@@ -6,28 +6,37 @@ import { useAppBadge } from '@/hooks/useAppBadge';
 import { getFirebaseMessaging } from '@/lib/firebase';
 import { onMessage } from 'firebase/messaging';
 import { toast } from 'sonner';
-import { DebugDisplay } from '@/components/DebugDisplay';
+
+import { useRouter } from 'next/navigation';
 
 // This component handles foreground FCM messages and displays toasts.
 function FcmListener() {
   const { data: session } = useSession();
   const fetchNotifications = useAppStore((state) => state.fetchNotifications);
-  const addDebugLog = useAppStore((state) => state.addDebugLog);
+  const markAsRead = useAppStore((state) => state.markAsRead);
+  const router = useRouter();
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && session) {
       const messaging = getFirebaseMessaging();
       if (messaging) {
-        addDebugLog('[FcmListener] Setting up foreground message listener...');
         const unsubscribe = onMessage(messaging, (payload) => {
-          addDebugLog(`[FcmListener] Foreground message received! Data: ${JSON.stringify(payload.data)}`);
           console.log('>>> [FcmListener] Foreground message received!', payload);
 
           // Show a toast notification from the data payload
-          const { title, body } = payload.data || {};
+          const { title, body, url, notificationId } = payload.data || {};
           if (title) {
             toast.info(title, {
               description: body,
+              action: url ? {
+                label: "보러가기",
+                onClick: () => {
+                  if (notificationId) {
+                    markAsRead(notificationId as string);
+                  }
+                  router.push(url as string);
+                },
+              } : undefined,
             });
           }
           
@@ -35,12 +44,11 @@ function FcmListener() {
         });
 
         return () => {
-          addDebugLog('[FcmListener] Cleaning up foreground message listener.');
           unsubscribe();
         };
       }
     }
-  }, [session, fetchNotifications, addDebugLog]);
+  }, [session, fetchNotifications, router, markAsRead]);
 
   return null;
 }
@@ -55,53 +63,35 @@ function AppBadgeManager() {
 function NotificationInitializer() {
   const { data: session } = useSession();
   const fetchNotifications = useAppStore((state) => state.fetchNotifications);
-  const addDebugLog = useAppStore((state) => state.addDebugLog);
 
   useEffect(() => {
-    addDebugLog('[Initializer] useEffect triggered.');
     if (session) {
-      addDebugLog('[Initializer] Session OK, fetching initial notifications.');
       fetchNotifications();
 
       const handleServiceWorkerMessage = (event: Event) => {
           const messageEvent = event as MessageEvent;
-          addDebugLog(`[Initializer] Message from SW. Type: ${messageEvent.data?.type}`);
           
           if (messageEvent.data?.type === 'new-notification') {
-              addDebugLog('[Initializer] "new-notification" received, refetching.');
               fetchNotifications();
-          } else if (messageEvent.data?.type === 'debug') {
-              addDebugLog(messageEvent.data.message);
           }
       };
 
       if ('serviceWorker' in navigator) {
-          addDebugLog('[Initializer] SW supported. Waiting for SW to be ready...');
           navigator.serviceWorker.ready.then(registration => {
-            addDebugLog(`[Initializer] SW is ready. Controller: ${registration.active ? 'ACTIVE' : 'INACTIVE'}`);
-            // Add listener here to ensure it's set up after SW is ready.
             navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
-            addDebugLog('[Initializer] "message" listener ADDED.');
           }).catch(error => {
-            addDebugLog(`[Initializer] SW Ready registration failed: ${error.message}`);
+            console.error(`[Initializer] SW Ready registration failed: ${error.message}`);
           });
           
-      } else {
-        addDebugLog('[Initializer] SW not supported.');
       }
 
       return () => {
           if ('serviceWorker' in navigator) {
-            // No need to wait for .ready to remove, just try to remove.
             navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
-            addDebugLog('[Initializer] "message" listener REMOVED.');
           }
-          addDebugLog('[Initializer] useEffect cleanup finished.');
       };
-    } else {
-      addDebugLog('[Initializer] No session found.');
     }
-  }, [session, fetchNotifications, addDebugLog]);
+  }, [session, fetchNotifications]);
 
   return null;
 }
@@ -163,7 +153,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <AppBadgeManager />
       <NotificationInitializer />
       {children}
-      <DebugDisplay />
     </SessionProvider>
   );
 }
