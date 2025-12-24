@@ -9,7 +9,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { StarRating } from "./ui/StarRating";
-import { ThumbsUp, ThumbsDown, Map, Globe } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Map, Globe, Share2 } from 'lucide-react';
+import { toast } from "sonner";
 import { VoteType } from '@prisma/client';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -49,6 +50,30 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
     isVoting,
   } = props;
 
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/restaurants/${restaurant.id}`;
+    const shareData: ShareData = {
+      title: restaurant.placeName,
+      text: `${restaurant.placeName} - ${restaurant.address}`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast.success("식당 정보가 공유되었습니다.");
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.info("링크가 클립보드에 복사되었습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to share:", error);
+      if (error instanceof Error && error.name !== 'AbortError') {
+        toast.error("공유에 실패했습니다.");
+      }
+    }
+  };
+
   const details = restaurant.googleDetails;
   const [isMounted, setIsMounted] = useState(false);
 
@@ -58,7 +83,7 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-start">
+      <div className="flex justify-start items-center gap-1">
         {props.session?.user &&
           props.isFavorite &&
           props.isBlacklisted &&
@@ -67,6 +92,10 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
           props.onTagManagement && (
             <RestaurantActionButtons {...props} showTextLabels={true} />
           )}
+        <Button variant="ghost" className="px-3 py-1 h-auto" onClick={handleShare} title="공유하기">
+          <Share2 className="h-5 w-5 text-gray-400 mr-2" />
+          <span>공유</span>
+        </Button>
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-4 border-t">

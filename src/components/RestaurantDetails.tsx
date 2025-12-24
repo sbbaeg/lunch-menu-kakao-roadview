@@ -11,7 +11,7 @@ import { usePwaDisplayMode } from "@/hooks/usePwaDisplayMode";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Car, Footprints, Bus } from "lucide-react";
+import { Car, Footprints, Bus, Share2 } from "lucide-react";
 
 type TravelMode = 'CAR' | 'FOOT' | 'PUBLICTRANSIT';
 
@@ -65,6 +65,30 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
       console.error("Failed to navigate to details page:", error);
       toast.error("상세 페이지로 이동하는 데 실패했습니다.");
       setIsNavigating(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/restaurants/${restaurant.id}`;
+    const shareData: ShareData = {
+      title: restaurant.placeName,
+      text: `${restaurant.placeName} - ${restaurant.address}`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast.success("식당 정보가 공유되었습니다.");
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.info("링크가 클립보드에 복사되었습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to share:", error);
+      if (error instanceof Error && error.name !== 'AbortError') {
+        toast.error("공유에 실패했습니다.");
+      }
     }
   };
 
@@ -183,12 +207,17 @@ export function RestaurantDetails(props: RestaurantDetailsProps) {
         <p className="text-xs text-gray-500">
           {restaurant.categoryName?.split('>').pop()?.trim()}
         </p>
-        {props.session?.user &&
-          props.isFavorite &&
-          props.isBlacklisted &&
-          props.onToggleFavorite &&
-          props.onToggleBlacklist &&
-          props.onTagManagement && <RestaurantActionButtons {...props} />}
+        <div className="flex items-center gap-1">
+          {props.session?.user &&
+            props.isFavorite &&
+            props.isBlacklisted &&
+            props.onToggleFavorite &&
+            props.onToggleBlacklist &&
+            props.onTagManagement && <RestaurantActionButtons {...props} />}
+          <Button variant="ghost" size="icon" onClick={handleShare} title="공유하기">
+            <Share2 className="h-5 w-5 text-gray-400" />
+          </Button>
+        </div>
       </div>
 
       {/* Kakao Map Actions */}

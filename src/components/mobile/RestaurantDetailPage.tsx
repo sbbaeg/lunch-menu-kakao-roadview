@@ -6,7 +6,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { AppRestaurant } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Map, Heart, EyeOff, Tags, ThumbsUp, ThumbsDown } from 'lucide-react'; 
+import { ArrowLeft, Map, Heart, EyeOff, Tags, ThumbsUp, ThumbsDown, Share2 } from 'lucide-react'; 
 import { VoteType } from '@prisma/client';
 import { RestaurantDetails } from '@/components/RestaurantDetails';
 import { ReviewSection } from '@/components/ReviewSection';
@@ -144,6 +144,32 @@ export default function RestaurantDetailPage({
         }
     };
 
+    const handleShare = async () => {
+        if (!restaurant) return;
+        
+        const shareUrl = `${window.location.origin}/restaurants/${restaurant.id}`;
+        const shareData: ShareData = {
+            title: restaurant.placeName,
+            text: `${restaurant.placeName} - ${restaurant.address}`,
+            url: shareUrl,
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+                toast.success("식당 정보가 공유되었습니다.");
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                toast.info("링크가 클립보드에 복사되었습니다.");
+            }
+        } catch (error) {
+            console.error("Failed to share:", error);
+            if (error instanceof Error && error.name !== 'AbortError') {
+                toast.error("공유에 실패했습니다.");
+            }
+        }
+    };
+
     if (loading) {
         return (
             <div className="p-4 h-full space-y-4">
@@ -213,11 +239,20 @@ export default function RestaurantDetailPage({
                     />
                 )}
             </div>
-            <div className="flex items-center gap-2 mb-3 px-1 pt-4">
+            <div className="flex items-center gap-2 mb-3 px-1 pt-4 overflow-x-auto whitespace-nowrap">
                 <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1"
+                    className="flex-shrink-0"
+                    onClick={handleShare}
+                >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    공유
+                </Button>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-shrink-0"
                     onClick={handleTagClick}
                     disabled={!session}
                 >
@@ -227,7 +262,7 @@ export default function RestaurantDetailPage({
                 <Button 
                     variant={isBlacklisted(restaurant.id) ? "destructive" : "outline"}
                     size="sm" 
-                    className="flex-1"
+                    className="flex-shrink-0"
                     onClick={handleBlacklistClick}
                     disabled={!session}
                 >
@@ -237,7 +272,7 @@ export default function RestaurantDetailPage({
                 <Button 
                     variant={isFavorite(restaurant.id) ? "default" : "outline"}
                     size="sm" 
-                    className="flex-1"
+                    className="flex-shrink-0"
                     onClick={handleFavoriteClick}
                     disabled={!session}
                 >
