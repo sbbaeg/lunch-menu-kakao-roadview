@@ -7,6 +7,12 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 import { RestaurantActionButtons } from "./RestaurantActionButtons";
 import { StarRating } from "./ui/StarRating";
 import { ThumbsUp, ThumbsDown, Map, Globe, Share2 } from 'lucide-react';
@@ -159,10 +165,40 @@ export function RestaurantInfoPanel(props: RestaurantInfoPanelProps) {
         {(details?.rating || (restaurant.appReview && restaurant.appReview.reviewCount > 0)) && (
             <div className="flex space-x-8">
                 {details?.rating && 
-                    <div>
-                        <p className="text-sm font-semibold text-muted-foreground">구글 별점</p>
-                        <StarRating rating={details.rating} reviewCount={details.reviews?.length || 0} />
-                    </div>
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="reviews" className="border-none">
+                            <AccordionTrigger className="hover:no-underline py-1">
+                                <div>
+                                    <p className="text-sm font-semibold text-muted-foreground text-left">구글 별점</p>
+                                    <StarRating rating={details.rating} reviewCount={details.reviews?.length || 0} isTrigger={true} />
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <div className="max-h-[300px] overflow-y-auto pr-2">
+                                    {details?.reviews && details.reviews.length > 0 ? (
+                                        details.reviews.map((review, index) => (
+                                            <div key={index} className="border-b py-4">
+                                                                                                <div className="flex items-center mb-2">
+                                                                                                    <img
+                                                                                                      src={review.profile_photo_url || '/google_icon.png'}
+                                                                                                      alt={review.author_name}
+                                                                                                      width={40}
+                                                                                                      height={40}
+                                                                                                      className="rounded-full mr-3"
+                                                                                                    />
+                                                                                                    <div>
+                                                                                                        <p className="font-semibold">{review.author_name}</p>
+                                                                                                        <p className="text-xs text-gray-500">{review.relative_time_description}</p>
+                                                                                                    </div>
+                                                                                                </div>                                                <div><StarRating rating={review.rating} /></div>
+                                                <p className="mt-2 text-sm">{review.text}</p>
+                                            </div>
+                                        ))
+                                    ) : <p className="py-4 text-center text-gray-500">표시할 리뷰가 없습니다.</p>}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
                 }
                 {restaurant.appReview && restaurant.appReview.reviewCount > 0 && (
                     <div>
