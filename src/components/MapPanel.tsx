@@ -33,7 +33,13 @@ export function MapPanel({
   hideControls = false,
   showSearchBar = true, // 기본값은 true
 }: MapPanelProps) {
-  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawStraightLine, clearDirections, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap();
+  const hoveredRestaurantId = useAppStore((state) => state.hoveredRestaurantId);
+  const setHoveredRestaurantId = useAppStore((state) => state.setHoveredRestaurantId);
+
+  const { isMapReady, mapContainerRef, mapInstance, streetviewContainerRef, streetviewPanorama, clearOverlays, displayMarkers, setCenter, drawStraightLine, clearDirections, drawUserLocationMarker, displayStreetView, relayout, streetViewImageDate } = useGoogleMap(
+    hoveredRestaurantId,
+    setHoveredRestaurantId
+  );
   
   const [searchAddress, setSearchAddress] = useState("");
   const [searchMode, setSearchMode] = useState<'place' | 'food'>('place');
@@ -69,8 +75,8 @@ export function MapPanel({
     if (userLocation) {
       drawUserLocationMarker(userLocation.lat, userLocation.lng);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMapReady, restaurants, selectedRestaurant, userLocation, displayMarkers, drawUserLocationMarker, clearOverlays]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMapReady, restaurants, selectedRestaurant, userLocation, displayMarkers, drawUserLocationMarker, clearOverlays, hoveredRestaurantId]);
 
   // Effect for drawing straight line or clearing it
   useEffect(() => {

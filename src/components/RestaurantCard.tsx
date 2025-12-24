@@ -12,6 +12,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { usePwaDisplayMode } from '@/hooks/usePwaDisplayMode';
 import { RestaurantDetails } from "./RestaurantDetails";
 import { Users, Utensils, ThumbsUp, ThumbsDown, Dog, ParkingSquare, Accessibility } from 'lucide-react';
+import clsx from 'clsx';
 import {
     Tooltip,
     TooltipContent,
@@ -41,6 +42,8 @@ export function RestaurantCard({
   const details = restaurant.googleDetails;
   const { isStandalone } = usePwaDisplayMode();
   const showTagDetail = useAppStore((state) => state.showTagDetail);
+  const hoveredRestaurantId = useAppStore((state) => state.hoveredRestaurantId);
+  const setHoveredRestaurantId = useAppStore((state) => state.setHoveredRestaurantId);
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -62,7 +65,17 @@ export function RestaurantCard({
     : null;
 
   return (
-    <AccordionItem value={restaurant.id} key={restaurant.id} className="border mb-2 shadow-sm rounded-lg overflow-hidden group transition-colors data-[state=closed]:hover:bg-accent data-[state=open]:bg-muted">
+    <AccordionItem 
+      value={restaurant.id} 
+      key={restaurant.id}
+      id={`restaurant-card-${restaurant.id}`}
+      className={clsx(
+        "border mb-2 shadow-sm rounded-lg overflow-hidden group transition-colors data-[state=closed]:hover:bg-accent data-[state=open]:bg-muted",
+        { "ring-2 ring-primary": restaurant.id === hoveredRestaurantId }
+      )}
+      onMouseEnter={() => setHoveredRestaurantId(restaurant.id)}
+      onMouseLeave={() => setHoveredRestaurantId(null)}
+    >
       <AccordionTrigger className="text-left hover:no-underline p-4 w-full">
         <div className="w-full flex flex-col gap-2 text-xs">
             <div className="flex flex-row items-center justify-between">

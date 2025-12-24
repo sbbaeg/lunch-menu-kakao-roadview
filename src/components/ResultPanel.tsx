@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,11 +48,21 @@ export function ResultPanel({
   ...cardProps // session, onToggleFavorite 등 RestaurantCard에 필요한 나머지 props
 }: ResultPanelProps) {
 
-  const { resultPanelState, setResultPanelState } = useAppStore();
+  const { resultPanelState, setResultPanelState, hoveredRestaurantId } = useAppStore();
   const { isStandalone } = usePwaDisplayMode();
   const touchStartY = useRef(0);
   const touchMoveY = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Effect to scroll to hovered item
+  useEffect(() => {
+    if (hoveredRestaurantId) {
+      const element = document.getElementById(`restaurant-card-${hoveredRestaurantId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [hoveredRestaurantId]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.targetTouches[0].clientY;

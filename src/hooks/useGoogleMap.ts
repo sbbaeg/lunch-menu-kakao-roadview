@@ -16,7 +16,10 @@ declare global {
 
 interface DirectionPoint { lat: number; lng: number; }
 
-export function useGoogleMap() {
+export function useGoogleMap(
+    hoveredRestaurantId: string | null,
+    setHoveredRestaurantId: (id: string | null) => void
+) {
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapInstance = useRef<google.maps.Map | null>(null);
     const [isMapInitialized, setIsMapInitialized] = useState(false);
@@ -54,21 +57,51 @@ export function useGoogleMap() {
     }, [isMapReady]);
 
     const displayMarkers = useCallback((places: AppRestaurant[]) => {
-        console.log('displayMarkers is called with places:', places);
-        if (!mapInstance.current) return;
-        markers.current.forEach((marker) => marker.setMap(null)); // Clear existing markers
+        if (!mapInstance.current || !window.google) return;
+
+        const defaultMarkerIcon = {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: '#FF0000', // Red
+            fillOpacity: 0.8,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 1,
+            scale: 6,
+        };
+    
+        const hoveredMarkerIcon = {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: '#0000FF', // Blue
+            fillOpacity: 0.9,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+            scale: 8,
+        };
+
+        markers.current.forEach((marker) => marker.setMap(null));
         markers.current = [];
 
         const newMarkers = places.map((place) => {
+            const isHovered = place.id === hoveredRestaurantId;
             const marker = new window.google.maps.Marker({
                 position: { lat: Number(place.y), lng: Number(place.x) },
                 map: mapInstance.current,
-                title: place.placeName, // Fix: place_name -> placeName
+                title: place.placeName,
+                icon: isHovered ? hoveredMarkerIcon : defaultMarkerIcon,
+                zIndex: isHovered ? 2 : 1, // Bring hovered marker to front
             });
+
+            marker.addListener('mouseover', () => {
+                setHoveredRestaurantId(place.id);
+            });
+            marker.addListener('mouseout', () => {
+                setHoveredRestaurantId(null);
+            });
+
             return marker;
         });
         markers.current = newMarkers;
-    }, []);
+    }, [mapInstance, hoveredRestaurantId, setHoveredRestaurantId]);
+
 
     const drawUserLocationMarker = useCallback((lat: number, lng: number) => {
         if (!mapInstance.current) return;
@@ -236,7 +269,8 @@ export function useGoogleMap() {
         isMapReady, isMapInitialized, displayMarkers, setCenter, setZoom,
         drawDirections, drawStraightLine, drawUserLocationMarker, clearDirections,
         clearOverlays, displayStreetView, relayout, streetViewImageDate,
-        mapInstance.current, streetviewPanorama.current
+        mapInstance.current, streetviewPanorama.current,
+        hoveredRestaurantId, setHoveredRestaurantId,
     ]);
 
     return memoizedValue;

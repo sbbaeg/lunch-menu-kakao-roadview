@@ -49,6 +49,7 @@ export interface AppState {
   fontSize: FontSize;
   showAppBadge: boolean;
   showNotificationsDialog: boolean;
+  hoveredRestaurantId: string | null;
 
   // Filter State
   filters: Omit<FilterState, 'categories' | 'allowsDogsOnly' | 'hasParkingOnly'> & { categories: string[]; allowsDogsOnly: boolean; hasParkingOnly: boolean; };
@@ -92,6 +93,7 @@ export interface AppState {
   setFontSize: (size: FontSize) => void;
   setShowAppBadge: (show: boolean) => void;
   setShowNotificationsDialog: (show: boolean) => void;
+  setHoveredRestaurantId: (id: string | null) => void;
   
   clearMapAndResults: () => void;
   getNearbyRestaurants: (center: { lat: number; lng: number }, query?: string) => Promise<AppRestaurant[]>;
@@ -123,6 +125,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   fontSize: 'normal',
   showAppBadge: true,
   showNotificationsDialog: false,
+  hoveredRestaurantId: null,
   
   filters: {
     categories: [],
@@ -439,6 +442,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setFontSize: (size) => set({ fontSize: size }),
   setShowAppBadge: (show) => set({ showAppBadge: show }),
   setShowNotificationsDialog: (show) => set({ showNotificationsDialog: show }),
+  setHoveredRestaurantId: (id) => set({ hoveredRestaurantId: id }),
     
   clearMapAndResults: () => { set({ selectedItemId: '', restaurantList: [] }); },
   
