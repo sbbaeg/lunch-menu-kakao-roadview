@@ -1,25 +1,23 @@
+import { awardBadge } from '@/lib/awardBadge';
 import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-// Prisma.TagGetPayload를 사용하여 쿼리 결과에 대한 정확한 타입을 생성합니다.
-type TagWithCountsAndUser = Prisma.TagGetPayload<{
-    include: {
-        user: {
-            select: {
-                name: true;
-            };
-        };
-        _count: {
-            select: {
-                restaurants: true;
-                subscribers: true;
-            };
-        };
+// Define a manual type based on the query's shape
+type TagWithCountsAndUser = {
+    id: number;
+    name: string;
+    userId: string;
+    user: {
+        name: string | null;
     };
-}>;
+    _count: {
+        restaurants: number;
+        subscribers: number;
+    };
+};
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -27,22 +25,24 @@ export async function GET(request: Request) {
     const sort = searchParams.get('sort'); // 'popular' 또는 'subscribers'
 
     try {
-        let tags: TagWithCountsAndUser[]; // 정확한 타입을 변수에 적용합니다.
+        let tags: TagWithCountsAndUser[]; // Apply the manual type
+
+        const includeAndCount = {
+            user: { select: { name: true } },
+            _count: { select: { restaurants: true, subscribers: true } },
+        };
 
         if (sort) {
             // 정렬 기능: 인기순 또는 구독자순으로 전체 공개 태그를 정렬
-            const orderBy: Prisma.TagOrderByWithRelationInput = sort === 'popular' 
-                ? { restaurants: { _count: 'desc' } } 
-                : { subscribers: { _count: 'desc' } };
+            const orderBy = sort === 'popular' 
+                ? { restaurants: { _count: 'desc' } as const } 
+                : { subscribers: { _count: 'desc' } as const };
 
             tags = await prisma.tag.findMany({
                 where: {
                     isPublic: true,
                 },
-                include: {
-                    user: { select: { name: true } },
-                    _count: { select: { restaurants: true, subscribers: true } },
-                },
+                include: includeAndCount,
                 orderBy: orderBy,
                 take: 20, // 상위 20개 결과
             });
@@ -50,17 +50,11 @@ export async function GET(request: Request) {
             if (sort === 'subscribers' && tags.length > 0) {
                 const topRank = tags[0]._count.subscribers;
                 if (topRank > 0) { // 최소 1명 이상의 구독자가 있는 경우에만 뱃지 수여
-                    const topRankedTags = tags.filter(tag => tag._count.subscribers === topRank);
-                    const tagRankerBadge = await prisma.badge.findUnique({ where: { name: '태그 랭킹 1위' } });
+                    const topRankedTags = tags.filter((tag: TagWithCountsAndUser) => tag._count.subscribers === topRank);
+                    const badgeName = '태그 랭킹 1위';
 
-                    if (tagRankerBadge) {
-                        for (const tag of topRankedTags) {
-                            await prisma.userBadge.upsert({
-                                where: { userId_badgeId: { userId: tag.userId, badgeId: tagRankerBadge.id } },
-                                update: {},
-                                create: { userId: tag.userId, badgeId: tagRankerBadge.id },
-                            });
-                        }
+                    for (const tag of topRankedTags) {
+                        await awardBadge(tag.userId, badgeName);
                     }
                 }
             }
@@ -75,10 +69,7 @@ export async function GET(request: Request) {
                         mode: 'insensitive',
                     },
                 },
-                include: {
-                    user: { select: { name: true } },
-                    _count: { select: { restaurants: true, subscribers: true } },
-                },
+                include: includeAndCount, // Ensure this query also has the includes
                 take: 10, 
             });
         } else {
@@ -86,7 +77,7 @@ export async function GET(request: Request) {
             return NextResponse.json([]);
         }
         
-        const formattedTags = tags.map(tag => ({
+        const formattedTags = tags.map((tag: TagWithCountsAndUser) => ({
             id: tag.id,
             name: tag.name,
             creatorName: tag.user.name,

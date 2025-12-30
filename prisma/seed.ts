@@ -58,6 +58,27 @@ async function main() {
     });
     console.log(`Created or found badge: ${result.name}`);
   }
+
+  // --- Set Admin User ---
+  // This will update the user to be an admin if they exist.
+  // It will do nothing if they don't exist yet.
+  // The user should be created by signing in for the first time.
+  const adminEmail = 'sbbaeg6@gmail.com';
+  try {
+    await prisma.user.update({
+      where: { email: adminEmail },
+      data: { isAdmin: true },
+    });
+    console.log(`Successfully set ${adminEmail} as an admin.`);
+  } catch (e) {
+    if (e instanceof Error && e.message.includes('Record to update not found')) {
+      console.log(`Admin user ${adminEmail} not found, skipping. Please log in once to create the user, then run seed again.`);
+    } else {
+      console.error(e);
+    }
+  }
+  // --- End of Set Admin User ---
+
   console.log(`Seeding finished.`);
 }
 

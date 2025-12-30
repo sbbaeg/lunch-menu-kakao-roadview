@@ -1,5 +1,6 @@
 // app/api/tags/[id]/subscribe/route.ts
 
+import { awardBadge } from '@/lib/awardBadge';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
@@ -77,16 +78,12 @@ export async function POST(
 
             for (const threshold of Object.keys(badgeThresholds).map(Number)) {
                 if (newSubscriberCount >= threshold && oldSubscriberCount < threshold) {
-                    const badge = await prisma.badge.findUnique({ where: { name: badgeThresholds[threshold] } });
-                    if (badge) {
-                        await prisma.userBadge.upsert({
-                            where: { userId_badgeId: { userId: tagToSubscribe.userId, badgeId: badge.id } },
-                            update: {},
-                            create: { userId: tagToSubscribe.userId, badgeId: badge.id },
-                        });
-                        if (badge.tier === 'GOLD') {
-                            await checkAndAwardMasteryBadges(tagToSubscribe.userId);
-                        }
+                    const badgeName = badgeThresholds[threshold];
+                    await awardBadge(tagToSubscribe.userId, badgeName);
+                    
+                    const badge = await prisma.badge.findUnique({ where: { name: badgeName } });
+                    if (badge && badge.tier === 'GOLD') {
+                        await checkAndAwardMasteryBadges(tagToSubscribe.userId);
                     }
                 }
             }
@@ -101,16 +98,12 @@ export async function POST(
             };
 
             if (userBadgeThresholds[userSubscriptionCount]) {
-                const badge = await prisma.badge.findUnique({ where: { name: userBadgeThresholds[userSubscriptionCount] } });
-                if (badge) {
-                    await prisma.userBadge.upsert({
-                        where: { userId_badgeId: { userId: session.user.id, badgeId: badge.id } },
-                        update: {},
-                        create: { userId: session.user.id, badgeId: badge.id },
-                    });
-                    if (badge.tier === 'GOLD') {
-                        await checkAndAwardMasteryBadges(session.user.id);
-                    }
+                const badgeName = userBadgeThresholds[userSubscriptionCount];
+                await awardBadge(session.user.id, badgeName);
+                
+                const badge = await prisma.badge.findUnique({ where: { name: badgeName } });
+                if (badge && badge.tier === 'GOLD') {
+                    await checkAndAwardMasteryBadges(session.user.id);
                 }
             }
             // --- End of Badge Logic ---

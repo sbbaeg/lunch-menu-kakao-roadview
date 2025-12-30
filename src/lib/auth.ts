@@ -1,3 +1,4 @@
+import { awardBadge } from "@/lib/awardBadge";
 // src/lib/auth.ts (새 파일)
 
 import { NextAuthOptions } from "next-auth";
@@ -51,14 +52,7 @@ export const authOptions: NextAuthOptions = {
         const userCreatedAt = dbUser?.createdAt ? new Date(dbUser.createdAt) : new Date();
 
         if (userCreatedAt < new Date(LAUNCH_DATE.getTime() + ONE_MONTH_IN_MS)) {
-          const earlyBirdBadge = await prisma.badge.findUnique({ where: { name: '얼리버드' } });
-          if (earlyBirdBadge) {
-            await prisma.userBadge.upsert({
-              where: { userId_badgeId: { userId: user.id, badgeId: earlyBirdBadge.id } },
-              update: {},
-              create: { userId: user.id, badgeId: earlyBirdBadge.id },
-            });
-          }
+          await awardBadge(user.id, '얼리버드');
         }
         // --- End of Early Bird Badge Logic ---
       } 

@@ -96,6 +96,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 # Prisma 디렉토리 복사 추가
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Copy ENV variables from builder stage
 ENV DATABASE_URL=$DATABASE_URL

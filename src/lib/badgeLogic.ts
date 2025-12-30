@@ -1,5 +1,6 @@
 // src/lib/badgeLogic.ts
-import prisma from '@/lib/prisma';
+import { awardBadge } from './awardBadge';
+import prisma from './prisma';
 
 export async function checkAndAwardMasteryBadges(userId: string) {
   const goldBadgesCount = await prisma.userBadge.count({
@@ -19,13 +20,8 @@ export async function checkAndAwardMasteryBadges(userId: string) {
 
   for (const threshold of Object.keys(masteryBadgeThresholds).map(Number)) {
     if (goldBadgesCount >= threshold) {
-        const currentMasteryBadge = await prisma.badge.findUnique({ where: { name: masteryBadgeThresholds[threshold] } });
-        if(currentMasteryBadge){
-            const hasMasteryBadge = await prisma.userBadge.findFirst({where: {userId, badgeId: currentMasteryBadge.id}})
-            if(!hasMasteryBadge){
-                await prisma.userBadge.create({data: {userId, badgeId: currentMasteryBadge.id}})
-            }
-        }
+      const badgeName = masteryBadgeThresholds[threshold];
+      await awardBadge(userId, badgeName);
     }
   }
 }

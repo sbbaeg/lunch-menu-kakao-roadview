@@ -1,3 +1,4 @@
+import { awardBadge } from '@/lib/awardBadge';
 // src/app/api/restaurants/[id]/reviews/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -142,69 +143,27 @@ export async function POST(
       },
     });
 
-    // --- Badge Awarding Logic for '첫 발자국' ---
+    // --- Badge Awarding Logic ---
     const reviewCount = await prisma.review.count({
       where: { userId: userId },
     });
 
-    if (reviewCount === 1) {
-      const firstStepBadge = await prisma.badge.findUnique({
-        where: { name: '첫 발자국' },
-      });
+    const badgeThresholds: { [key: number]: string } = {
+        1: '첫 발자국',
+        10: '리뷰어',
+        50: '프로 리뷰어'
+    };
 
-      if (firstStepBadge) {
-        await prisma.userBadge.upsert({
-          where: { userId_badgeId: { userId: userId, badgeId: firstStepBadge.id } },
-          update: {},
-          create: {
-            userId: userId,
-            badgeId: firstStepBadge.id,
-          },
-        });
-        await checkAndAwardMasteryBadges(userId);
-      }
+    if (badgeThresholds[reviewCount]) {
+        const badgeName = badgeThresholds[reviewCount];
+        await awardBadge(userId, badgeName);
+        
+        const badge = await prisma.badge.findUnique({ where: { name: badgeName } });
+        if (badge && badge.tier === 'GOLD') {
+            await checkAndAwardMasteryBadges(userId);
+        }
     }
-    // --- End of Badge Logic for '첫 발자국' ---
-
-    // --- Badge Awarding Logic for '리뷰어' (10 reviews) ---
-    if (reviewCount === 10) {
-      const reviewerBadge = await prisma.badge.findUnique({
-        where: { name: '리뷰어' },
-      });
-
-      if (reviewerBadge) {
-        await prisma.userBadge.upsert({
-          where: { userId_badgeId: { userId: userId, badgeId: reviewerBadge.id } },
-          update: {},
-          create: {
-            userId: userId,
-            badgeId: reviewerBadge.id,
-          },
-        });
-        await checkAndAwardMasteryBadges(userId);
-      }
-    }
-    // --- End of Badge Logic for '리뷰어' ---
-
-    // --- Badge Awarding Logic for '프로 리뷰어' (50 reviews) ---
-    if (reviewCount === 50) {
-      const proReviewerBadge = await prisma.badge.findUnique({
-        where: { name: '프로 리뷰어' },
-      });
-
-      if (proReviewerBadge) {
-        await prisma.userBadge.upsert({
-          where: { userId_badgeId: { userId: userId, badgeId: proReviewerBadge.id } },
-          update: {},
-          create: {
-            userId: userId,
-            badgeId: proReviewerBadge.id,
-          },
-        });
-        await checkAndAwardMasteryBadges(userId);
-      }
-    }
-    // --- End of Badge Logic for '프로 리뷰어' ---
+    // --- End of Badge Logic ---
 
     return NextResponse.json(review);
   } catch (error) {

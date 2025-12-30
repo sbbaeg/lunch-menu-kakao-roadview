@@ -1,3 +1,4 @@
+import { awardBadge } from '@/lib/awardBadge';
 // src/app/api/users/me/roulette-spin/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
@@ -22,6 +23,7 @@ export async function POST() {
     });
 
     const rouletteSpins = updatedUser.rouletteSpins;
+    console.log(`[RouletteSpin] Current rouletteSpins for user ${userId}: ${rouletteSpins}`);
 
     // --- Badge Awarding Logic ---
     const badgeNames: { [key: number]: string } = {
@@ -31,16 +33,13 @@ export async function POST() {
     };
 
     if (badgeNames[rouletteSpins]) {
-        const badge = await prisma.badge.findUnique({ where: { name: badgeNames[rouletteSpins] } });
-        if (badge) {
-            await prisma.userBadge.upsert({
-                where: { userId_badgeId: { userId: userId, badgeId: badge.id } },
-                update: {},
-                create: { userId: userId, badgeId: badge.id },
-            });
-            if (badge.tier === 'GOLD') {
-                await checkAndAwardMasteryBadges(userId);
-            }
+        const badgeName = badgeNames[rouletteSpins];
+        await awardBadge(userId, badgeName);
+        
+        // After awarding, check if it was a GOLD badge to trigger mastery check
+        const badge = await prisma.badge.findUnique({ where: { name: badgeName } });
+        if (badge && badge.tier === 'GOLD') {
+            await checkAndAwardMasteryBadges(userId);
         }
     }
     // --- End of Badge Logic ---

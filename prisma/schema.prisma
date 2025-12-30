@@ -27,6 +27,7 @@ enum NotificationType {
   BEST_REVIEW
   INQUIRY_REPLY
   ADMIN_MESSAGE
+  NEW_BADGE
 }
 
 // 1. 사용자 계정 모델 (NextAuth.js와 연동)
@@ -374,7 +375,8 @@ model Badge {
 model UserBadge {
   userId    String
   badgeId   Int
-  isFeatured Boolean @default(false) // New field for featured badges
+  isFeatured Boolean @default(false)
+  isViewed  Boolean  @default(false)
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

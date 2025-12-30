@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Trash2, Edit, UserX, Users, Utensils, MessageSquare, Tag, ThumbsUp, GitCompareArrows, Search, ArrowLeft } from 'lucide-react';
+import { Trash2, Edit, UserX, Users, Utensils, MessageSquare, Tag, ThumbsUp, GitCompareArrows, Search, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AdminEditDialog } from '@/components/ui/AdminEditDialog';
 import {
@@ -148,6 +148,7 @@ export default function AdminPageClient() {
     const [replyText, setReplyText] = useState('');
     const [messagingUser, setMessagingUser] = useState<UserForManagement | null>(null);
     const [isSendingMessage, setIsSendingMessage] = useState(false);
+    const [userToReset, setUserToReset] = useState<UserForManagement | null>(null); // State for reset confirmation
 
     const fetchInquiries = useCallback(async () => {
         try {
@@ -387,6 +388,37 @@ export default function AdminPageClient() {
         }
     };
 
+    const handleResetUserActivity = async () => {
+        if (!userToReset) return;
+        
+        const toastId = toast.loading(`${userToReset.name || userToReset.email} 님의 활동 기록을 초기화하는 중...`);
+
+        try {
+            const res = await fetch('/api/debug/reset-badges', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userToReset.id }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || '사용자 기록 초기화에 실패했습니다.');
+            }
+            
+            const resultData = await res.json();
+            toast.success(`${userToReset.name || userToReset.email} 님의 활동 기록이 초기화되었습니다.`, {
+                id: toastId,
+                description: `삭제된 뱃지: ${resultData.details.deletedBadges}, 삭제된 리뷰: ${resultData.details.deletedReviews}`,
+            });
+
+        } catch (e: any) {
+            toast.error(`오류: ${e.message}`, { id: toastId });
+        } finally {
+            setUserToReset(null);
+        }
+    };
+
+
     const chartTitles: { [key in ActiveChart]: string } = {
         users: '신규 사용자',
         reviews: '신규 리뷰',
@@ -615,6 +647,10 @@ export default function AdminPageClient() {
                                                     {user.isAdmin && <Badge variant="secondary">Admin</Badge>}
                                                     <Button variant="outline" size="sm" onClick={() => setMessagingUser(user)}>메시지</Button>
                                                     <Button variant="outline" size="sm" onClick={() => router.push(`/admin/users/${user.id}`)}>상세보기</Button>
+                                                    <Button variant="destructive" size="sm" onClick={() => setUserToReset(user)}>
+                                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                                        초기화
+                                                    </Button>
                                                 </div>
                                             </div>
                                         ))}
@@ -786,6 +822,24 @@ export default function AdminPageClient() {
             )}
 
             {itemToEdit && <AdminEditDialog isOpen={!!itemToEdit} onClose={() => setItemToEdit(null)} itemType={itemToEdit.type} initialText={itemToEdit.text} onSave={handleSaveItem} />}
+
+            {userToReset && (
+                <AlertDialog open={!!userToReset} onOpenChange={() => setUserToReset(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>사용자 기록을 초기화하시겠습니까?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                이 작업은 되돌릴 수 없습니다. <span className="font-bold">{userToReset.name || userToReset.email}</span> 님의 모든 뱃지, 리뷰, 태그 및 기타 활동 기록이 영구적으로 삭제됩니다.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setUserToReset(null)}>취소</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleResetUserActivity}>초기화</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
+
             {itemToDelete && (
                 <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
                     <AlertDialogContent>

@@ -1,9 +1,18 @@
+import { awardBadge } from '@/lib/awardBadge';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'; // Correct import for PrismaClientKnownRequestError
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
+
+// Manual type definition as a workaround for TS resolution issues
+type ProfanityWord = {
+    id: number;
+    word: string;
+    createdAt: Date;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -22,8 +31,8 @@ export async function GET() {
             orderBy: { name: 'asc' }, // 이름순으로 정렬
         });
         return NextResponse.json(tags);
-    } catch (error) {
-        console.error('태그 조회 오류:', error);
+    } catch (error: unknown) {
+        console.error('태그 조회 오류:', error instanceof Error ? error.message : error);
         return NextResponse.json({ error: '태그를 조회하는 중 오류가 발생했습니다.' }, { status: 500 });
     }
 }
@@ -52,7 +61,7 @@ export async function POST(request: Request) {
 
         // 비속어 검사 로직 추가
         const profanityWords = await prisma.profanityWord.findMany();
-        const needsModeration = profanityWords.some(badWord => trimmedName.includes(badWord.word));
+        const needsModeration = profanityWords.some((badWord: ProfanityWord) => trimmedName.includes(badWord.word));
 
         const newTag = await prisma.tag.create({
             data: {
@@ -72,29 +81,25 @@ export async function POST(request: Request) {
         };
 
         if (badgeNames[tagCount]) {
-            const badge = await prisma.badge.findUnique({ where: { name: badgeNames[tagCount] } });
-            if (badge) {
-                await prisma.userBadge.upsert({
-                    where: { userId_badgeId: { userId: session.user.id, badgeId: badge.id } },
-                    update: {},
-                    create: { userId: session.user.id, badgeId: badge.id },
-                });
-                if (badge.tier === 'GOLD') {
-                    await checkAndAwardMasteryBadges(session.user.id);
-                }
+            const badgeName = badgeNames[tagCount];
+            await awardBadge(session.user.id, badgeName);
+            
+            const badge = await prisma.badge.findUnique({ where: { name: badgeName } });
+            if (badge && badge.tier === 'GOLD') {
+                await checkAndAwardMasteryBadges(session.user.id);
             }
         }
         // --- End of Badge Logic ---
 
         return NextResponse.json(newTag, { status: 201 }); // 201 Created
     } catch (error: unknown) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error instanceof PrismaClientKnownRequestError) { // Use imported type from runtime/library
             // Prisma 고유 제약 조건 위반 오류 코드 (P2002) - 중복된 태그 생성 시도
             if (error.code === 'P2002') {
                 return NextResponse.json({ error: '이미 존재하는 태그입니다.' }, { status: 409 });
             }
         }
-        console.error('태그 생성 오류:', error);
+        console.error('태그 생성 오류:', error instanceof Error ? error.message : error);
         return NextResponse.json({ error: '태그를 생성하는 중 오류가 발생했습니다.' }, { status: 500 });
     }
 }

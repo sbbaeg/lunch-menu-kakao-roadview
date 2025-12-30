@@ -1,11 +1,20 @@
 // src/app/api/reviews/[reviewId]/vote/route.ts
+import { awardBadge } from '@/lib/awardBadge';
 import { NextResponse } from 'next/server';
-import { VoteType } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { checkAndAwardMasteryBadges } from '@/lib/badgeLogic';
 import { sendPushNotification } from '@/lib/sendPushNotification';
+
+// Manual type definitions to work around TS resolution issues
+type VoteType = 'UPVOTE' | 'DOWNVOTE';
+type VoteCount = {
+    type: VoteType;
+    _count: {
+        type: number;
+    };
+};
 
 export async function POST(
   request: Request,
@@ -57,7 +66,7 @@ export async function POST(
       where: { reviewId },
       _count: { type: true },
     });
-    const previousUpvotes = initialVoteCounts.find(vc => vc.type === 'UPVOTE')?._count.type || 0;
+    const previousUpvotes = initialVoteCounts.find((vc: VoteCount) => vc.type === 'UPVOTE')?._count.type || 0;
 
     const existingVote = await prisma.reviewVote.findUnique({
       where: {
@@ -118,8 +127,8 @@ export async function POST(
       },
     });
 
-    const upvotes = voteCounts.find(vc => vc.type === 'UPVOTE')?._count.type || 0;
-    const downvotes = voteCounts.find(vc => vc.type === 'DOWNVOTE')?._count.type || 0;
+    const upvotes = voteCounts.find((vc: VoteCount) => vc.type === 'UPVOTE')?._count.type || 0;
+    const downvotes = voteCounts.find((vc: VoteCount) => vc.type === 'DOWNVOTE')?._count.type || 0;
 
     // Send notification on new upvote
     if ((action === 'created' || action === 'updated') && voteType === 'UPVOTE') {
@@ -158,17 +167,13 @@ export async function POST(
 
       for (const threshold of Object.keys(badgeThresholds).map(Number)) {
         if (upvotes >= threshold && previousUpvotes < threshold) {
-          const badge = await prisma.badge.findUnique({ where: { name: badgeThresholds[threshold] } });
-          if (badge) {
-            await prisma.userBadge.upsert({
-              where: { userId_badgeId: { userId: review.userId, badgeId: badge.id } },
-              update: {},
-              create: { userId: review.userId, badgeId: badge.id },
-            });
-            if (badge.tier === 'GOLD') {
-              await checkAndAwardMasteryBadges(review.userId);
+            const badgeName = badgeThresholds[threshold];
+            await awardBadge(review.userId, badgeName);
+
+            const badge = await prisma.badge.findUnique({ where: { name: badgeName } });
+            if (badge && badge.tier === 'GOLD') {
+                await checkAndAwardMasteryBadges(review.userId);
             }
-          }
         }
       }
       // --- End of Badge Logic ---

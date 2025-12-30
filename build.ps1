@@ -1,4 +1,5 @@
 docker build `
+--no-cache `
 --build-arg "DATABASE_URL=postgresql://food_roulette_user:2461@db:5432/food_roulette_db" `
 --build-arg "NEXT_PUBLIC_GOOGLE_MAPS_JS_KEY=AIzaSyDJ-d4Se0CJS3EE_wNx0iDktKnunsgIrqE" `
 --build-arg "NEXT_PUBLIC_KAKAOMAP_JS_KEY=b1e093a79b0462697357a22065985ff3" `

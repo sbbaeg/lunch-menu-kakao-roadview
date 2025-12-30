@@ -1,0 +1,1 @@
+ALTER TABLE "UserBadge" ADD COLUMN "isViewed" BOOLEAN NOT NULL DEFAULT false;
