@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 function FcmListener() {
   const { data: session } = useSession();
   const fetchNotifications = useAppStore((state) => state.fetchNotifications);
+  const fetchNewBadgesCount = useAppStore((state) => state.fetchNewBadgesCount);
   const markAsRead = useAppStore((state) => state.markAsRead);
   const markNewBadgesAsViewed = useAppStore((state) => state.markNewBadgesAsViewed);
   const setIsBadgeManagementOpen = useAppStore((state) => state.setIsBadgeManagementOpen);
@@ -71,6 +72,7 @@ function FcmListener() {
           }
           
           fetchNotifications();
+          fetchNewBadgesCount(); // Fetch new badge count on any new notification
         });
 
         return () => {
@@ -78,7 +80,7 @@ function FcmListener() {
         };
       }
     }
-  }, [session, fetchNotifications, router, markAsRead, markNewBadgesAsViewed]);
+  }, [session, fetchNotifications, fetchNewBadgesCount, router, markAsRead, markNewBadgesAsViewed]);
 
   return (
     <>
@@ -106,16 +108,19 @@ function AppBadgeManager() {
 function NotificationInitializer() {
   const { data: session } = useSession();
   const fetchNotifications = useAppStore((state) => state.fetchNotifications);
+  const fetchNewBadgesCount = useAppStore((state) => state.fetchNewBadgesCount);
 
   useEffect(() => {
     if (session) {
       fetchNotifications();
+      fetchNewBadgesCount();
 
       const handleServiceWorkerMessage = (event: Event) => {
           const messageEvent = event as MessageEvent;
           
           if (messageEvent.data?.type === 'new-notification') {
               fetchNotifications();
+              fetchNewBadgesCount();
           }
       };
 
@@ -134,7 +139,7 @@ function NotificationInitializer() {
           }
       };
     }
-  }, [session, fetchNotifications]);
+  }, [session, fetchNotifications, fetchNewBadgesCount]);
 
   return null;
 }
