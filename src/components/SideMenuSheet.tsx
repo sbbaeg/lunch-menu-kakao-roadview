@@ -60,18 +60,33 @@ export function SideMenuSheet({
     const { data: session, status } = useSession();
     const { theme, setTheme } = useTheme();
     const { unreadCount } = useNotifications();
-    const isBadgeManagementOpen = useAppStore((state) => state.isBadgeManagementOpen);
-    const setIsBadgeManagementOpen = useAppStore((state) => state.setIsBadgeManagementOpen);
+    const { 
+      isBadgeManagementOpen, 
+      setIsBadgeManagementOpen, 
+      newBadgesCount, 
+      fetchNewBadgesCount 
+    } = useAppStore(state => ({
+      isBadgeManagementOpen: state.isBadgeManagementOpen,
+      setIsBadgeManagementOpen: state.setIsBadgeManagementOpen,
+      newBadgesCount: state.newBadgesCount,
+      fetchNewBadgesCount: state.fetchNewBadgesCount,
+    }));
+    
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
-
     const [isMounted, setIsMounted] = useState(false);
-
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    // Fetch new badge count when authenticated and when badge dialog closes
+    useEffect(() => {
+        if (status === 'authenticated') {
+            fetchNewBadgesCount();
+        }
+    }, [status, isBadgeManagementOpen, fetchNewBadgesCount]);
 
     const handleBadgeManagementOpenChange = (isOpen: boolean) => {
         setIsBadgeManagementOpen(isOpen);
@@ -82,22 +97,18 @@ export function SideMenuSheet({
 
     useEffect(() => {
         const scrollArea = scrollRef.current;
-
         const handleWheel = (event: WheelEvent) => {
             event.stopPropagation();
         };
-
         if (scrollArea) {
             scrollArea.addEventListener('wheel', handleWheel);
         }
-
         return () => {
             if (scrollArea) {
                 scrollArea.removeEventListener('wheel', handleWheel);
             }
         };
     }, [isHelpOpen]);
-
 
     return (
         <Sheet>
@@ -216,8 +227,9 @@ export function SideMenuSheet({
                         <Button variant="ghost" className="justify-start" onClick={onShowBlacklist}>
                             블랙리스트 관리
                         </Button>
-                        <Button variant="ghost" className="justify-start" onClick={() => setIsBadgeManagementOpen(true)}>
-                            내 뱃지 관리
+                        <Button variant="ghost" className="relative justify-start" onClick={() => setIsBadgeManagementOpen(true)}>
+                            <span>내 뱃지 관리</span>
+                            <NotificationCountBadge count={newBadgesCount} />
                         </Button>
                         <Link href="/ranking" passHref>
                             <Button variant="ghost" className="justify-start w-full">음식점 랭킹</Button>

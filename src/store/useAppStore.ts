@@ -66,6 +66,7 @@ export interface AppState {
   unreadCount: number;
   notificationsLoading: boolean;
   notificationError: string | null;
+  newBadgesCount: number;
 
   // Actions
   setResultPanelState: (state: 'collapsed' | 'default' | 'expanded') => void;
@@ -112,6 +113,7 @@ export interface AppState {
   deleteNotificationsByIds: (ids: string[]) => Promise<void>;
   markNewBadgesAsViewed: () => Promise<void>;
   initializeServiceWorker: () => void;
+  fetchNewBadgesCount: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -160,6 +162,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   unreadCount: 0,
   notificationsLoading: true,
   notificationError: null,
+  newBadgesCount: 0,
 
   // --- ALL ACTIONS CONSOLIDATED HERE ---
 
@@ -408,6 +411,26 @@ export const useAppStore = create<AppState>((set, get) => ({
         });
     } else {
       console.warn('[SW_Init] Service Worker not supported.');
+    }
+  },
+
+  fetchNewBadgesCount: async () => {
+    const session = await getSession();
+    if (!session?.user?.id) {
+      set({ newBadgesCount: 0 });
+      return;
+    }
+    try {
+      const response = await fetch('/api/users/me/badges/new-count');
+      if (response.ok) {
+        const data = await response.json();
+        set({ newBadgesCount: data.count });
+      } else {
+        set({ newBadgesCount: 0 });
+      }
+    } catch (error) {
+      console.error('Failed to fetch new badges count:', error);
+      set({ newBadgesCount: 0 });
     }
   },
 

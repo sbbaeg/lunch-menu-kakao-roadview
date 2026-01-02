@@ -49,14 +49,29 @@ export default function MyPage({
     onShowNotifications,
 }: MyPageProps) {
     const { data: session, status } = useSession();
-    const showFavoritesPage = useAppStore((state) => state.showFavoritesPage);
-    const showLikedRestaurantsPage = useAppStore((state) => state.showLikedRestaurantsPage);
-    const showTagExplore = useAppStore((state) => state.showTagExplore);
-    const showMyReviews = useAppStore((state) => state.showMyReviews);
-    const showSettingsPage = useAppStore((state) => state.showSettingsPage);
+    const {
+        showFavoritesPage,
+        showLikedRestaurantsPage,
+        showTagExplore,
+        showMyReviews,
+        showSettingsPage,
+        isBadgeManagementOpen,
+        setIsBadgeManagementOpen,
+        newBadgesCount,
+        fetchNewBadgesCount,
+    } = useAppStore(state => ({
+        showFavoritesPage: state.showFavoritesPage,
+        showLikedRestaurantsPage: state.showLikedRestaurantsPage,
+        showTagExplore: state.showTagExplore,
+        showMyReviews: state.showMyReviews,
+        showSettingsPage: state.showSettingsPage,
+        isBadgeManagementOpen: state.isBadgeManagementOpen,
+        setIsBadgeManagementOpen: state.setIsBadgeManagementOpen,
+        newBadgesCount: state.newBadgesCount,
+        fetchNewBadgesCount: state.fetchNewBadgesCount,
+    }));
     const { unreadCount } = useNotifications();
-    const isBadgeManagementOpen = useAppStore((state) => state.isBadgeManagementOpen);
-    const setIsBadgeManagementOpen = useAppStore((state) => state.setIsBadgeManagementOpen);
+    
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
@@ -65,6 +80,13 @@ export default function MyPage({
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    // Fetch new badge count when authenticated and when badge dialog closes
+    useEffect(() => {
+        if (status === 'authenticated') {
+            fetchNewBadgesCount();
+        }
+    }, [status, isBadgeManagementOpen, fetchNewBadgesCount]);
 
     const handleBadgeManagementOpenChange = (isOpen: boolean) => {
         setIsBadgeManagementOpen(isOpen);
@@ -177,8 +199,10 @@ export default function MyPage({
                         <Button variant="ghost" className="justify-start w-full p-2" onClick={onShowBlacklist}>
                             <EyeOff className="mr-2 h-4 w-4" /> 블랙리스트 관리
                         </Button>
-                        <Button variant="ghost" className="justify-start w-full p-2" onClick={() => setIsBadgeManagementOpen(true)}>
-                            <Trophy className="mr-2 h-4 w-4" /> 내 뱃지 관리
+                        <Button variant="ghost" className="relative justify-start w-full p-2" onClick={() => setIsBadgeManagementOpen(true)}>
+                            <Trophy className="mr-2 h-4 w-4" /> 
+                            <span>내 뱃지 관리</span>
+                            <NotificationCountBadge count={newBadgesCount} />
                         </Button>
                         <Accordion type="single" collapsible>
                             <AccordionItem value="item-1" className="border-none">
