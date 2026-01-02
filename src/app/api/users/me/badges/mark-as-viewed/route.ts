@@ -47,9 +47,6 @@ export async function POST(request: Request) {
       prisma.notification.updateMany({
         where: {
           userId: userId,
-          badgeId: {
-            in: badgeIdsToUpdate,
-          },
           type: 'NEW_BADGE',
           read: false,
         },
