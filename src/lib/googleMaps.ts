@@ -35,7 +35,7 @@ export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<Go
       url: detailsData.url,
       rating: detailsData.rating,
       userRatingCount: detailsData.user_ratings_total,
-      photos: detailsData.photos?.map((p: { photo_reference: string }) => p.photo_reference) || [],
+      photos: detailsData.photos?.map((p: { photo_reference: string }) => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${p.photo_reference}&key=${GOOGLE_API_KEY}`) || [],
       opening_hours: detailsData.opening_hours,
       phone: detailsData.international_phone_number,
       reviews: detailsData.reviews,
