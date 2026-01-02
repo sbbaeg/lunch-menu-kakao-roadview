@@ -40,6 +40,7 @@ import { NotificationsDialog } from "@/components/NotificationsDialog";
 import { HelpDialog } from "@/components/HelpDialog";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { useAppStore } from "@/store/useAppStore";
+import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
 
 interface SideMenuSheetProps {
     onShowFavorites: () => void;

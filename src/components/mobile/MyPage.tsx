@@ -28,6 +28,7 @@ import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useAppStore } from "@/store/useAppStore";
+import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
 import { useNotifications } from "@/hooks/useNotifications";
 import BadgeDisplay from "@/components/BadgeDisplay";
 import BadgeManagementDialog from "@/components/BadgeManagementDialog";
