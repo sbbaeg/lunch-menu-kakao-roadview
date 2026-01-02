@@ -13,6 +13,7 @@ import { toast } from '@/components/ui/toast';
 import { CheckCircle } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Badge } from '@/components/ui/badge';
+import { useAppStore } from '@/store/useAppStore';
 
 const MAX_FEATURED_BADGES = 5;
 
@@ -55,13 +56,13 @@ interface UserStats {
   goldBadgesCount: number;
 }
 
-import { useAppStore } from '@/store/useAppStore';
-
-// ... (imports and constants)
-
 export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeManagementDialogProps) {
   const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
-  // ... (other state variables)
+  const [myBadges, setMyBadges] = useState<(BadgeType & { isFeatured: boolean; isViewed: boolean; })[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [selectedBadgeIds, setSelectedBadgeIds] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const markNewBadgesAsViewed = useAppStore((state) => state.markNewBadgesAsViewed);
 
@@ -72,7 +73,6 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
       const fetchData = async () => {
         setLoading(true);
         try {
-          // ... (rest of the fetchData function)
           const [allBadgesRes, myBadgesRes] = await Promise.all([
             fetch('/api/badges'),
             fetch('/api/users/me/badges'),
@@ -109,7 +109,7 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
       };
       fetchData();
     }
-  }, [isOpen]);
+  }, [isOpen, markNewBadgesAsViewed]);
 
   const handleSelectBadge = (badgeId: number) => {
     const newSelection = new Set(selectedBadgeIds);
