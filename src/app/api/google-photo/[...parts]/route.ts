@@ -15,12 +15,10 @@ export async function GET(
       return new NextResponse('Photo reference is missing', { status: 400 });
     }
 
-    // Reconstruct the photo name from the URL parts
-    // e.g., /api/google-photo/places/ChIJ.../photos/Aap_...
-    // becomes "places/ChIJ.../photos/Aap_..."
-    const photoName = params.parts.join('/');
+    // The photo reference is passed as the URL part(s)
+    const photoReference = params.parts.join('/');
 
-    const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=1024&key=${GOOGLE_API_KEY}`;
+    const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1024&photoreference=${photoReference}&key=${GOOGLE_API_KEY}`;
 
     // Fetch the photo from Google. This will likely be a redirect.
     const googleResponse = await fetch(photoUrl, {
