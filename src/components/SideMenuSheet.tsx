@@ -249,14 +249,16 @@ export function SideMenuSheet({
                     </div>
                     <Separator className="my-4" />
 
+import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
+
+...
+
                     {isMounted && status === 'authenticated' && (
                         <div className="px-4 mb-4">
                             <NotificationsDialog>
-                                <Button variant="ghost" className="justify-start w-full flex items-center">
+                                <Button variant="ghost" className="relative justify-start w-full flex items-center">
                                     <span>알림 및 문의</span>
-                                    {unreadCount > 0 && (
-                                        <Badge className="ml-auto">{unreadCount}</Badge>
-                                    )}
+                                    <NotificationCountBadge count={unreadCount} />
                                 </Button>
                             </NotificationsDialog>
                         </div>

@@ -232,15 +232,19 @@ export default function MyPage({
                         </>
                     )}
 
+import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
+
+...
+
                     {status === 'authenticated' && (
                         <>
                             <Separator className="my-4" />
                             <div className="px-4">
                                 <h3 className="text-lg font-semibold mb-2">지원</h3>
                                 <NotificationsDialog>
-                                    <Button variant="ghost" className="justify-start w-full p-2">
+                                    <Button variant="ghost" className="relative justify-start w-full p-2">
                                         <Bell className="mr-2 h-4 w-4" /> 알림 및 문의
-                                        {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
+                                        <NotificationCountBadge count={unreadCount} />
                                     </Button>
                                 </NotificationsDialog>
                             </div>

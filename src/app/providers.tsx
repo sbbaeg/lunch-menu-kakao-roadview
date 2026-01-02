@@ -45,7 +45,12 @@ function FcmListener() {
                   description: body,
                   action: {
                     label: "확인하기",
-                    onClick: () => setIsBadgeManagementOpen(true),
+                    onClick: () => {
+                      if (notificationId) {
+                        markAsRead(notificationId as string);
+                      }
+                      setIsBadgeManagementOpen(true);
+                    },
                   },
                 });
               }, 100); // 100ms delay
