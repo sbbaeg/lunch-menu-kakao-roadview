@@ -14,23 +14,6 @@ export async function POST(request: Request) {
   try {
     const userId = session.user.id;
 
-    // Find unread badges to identify which notifications to update
-    const unreadUserBadges = await prisma.userBadge.findMany({
-      where: {
-        userId: userId,
-        isViewed: false,
-      },
-      select: {
-        badgeId: true,
-      },
-    });
-
-    if (unreadUserBadges.length === 0) {
-      return NextResponse.json({ count: 0, message: 'No new badges to mark.' });
-    }
-
-    const badgeIdsToUpdate = unreadUserBadges.map(ub => ub.badgeId);
-
     // Use a transaction to ensure both updates succeed or fail together
     const [updateBadgesResult, updateNotificationsResult] = await prisma.$transaction([
       // Mark the badges as viewed
