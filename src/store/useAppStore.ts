@@ -110,6 +110,7 @@ export interface AppState {
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotificationsByIds: (ids: string[]) => Promise<void>;
+  markNewBadgesAsViewed: () => Promise<void>;
   initializeServiceWorker: () => void;
 }
 
@@ -292,6 +293,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
     } catch (err: any) {
       console.error('Failed to mark all as read:', err);
+    }
+  },
+
+  markNewBadgesAsViewed: async () => {
+    const session = await getSession();
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch('/api/users/me/badges/mark-as-viewed', {
+        method: 'POST',
+      });
+      if (response.ok) {
+        get().fetchNotifications();
+      }
+    } catch (error) {
+      console.error('Failed to mark new badges as viewed:', error);
     }
   },
 

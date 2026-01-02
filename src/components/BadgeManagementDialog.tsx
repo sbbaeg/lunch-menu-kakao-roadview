@@ -55,20 +55,24 @@ interface UserStats {
   goldBadgesCount: number;
 }
 
+import { useAppStore } from '@/store/useAppStore';
+
+// ... (imports and constants)
+
 export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeManagementDialogProps) {
   const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
-  const [myBadges, setMyBadges] = useState<(BadgeType & { isFeatured: boolean; isViewed: boolean; })[]>([]);
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [selectedBadgeIds, setSelectedBadgeIds] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // ... (other state variables)
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const markNewBadgesAsViewed = useAppStore((state) => state.markNewBadgesAsViewed);
 
   useEffect(() => {
     if (isOpen) {
+      markNewBadgesAsViewed(); // Mark new badges as viewed
+      
       const fetchData = async () => {
         setLoading(true);
         try {
+          // ... (rest of the fetchData function)
           const [allBadgesRes, myBadgesRes] = await Promise.all([
             fetch('/api/badges'),
             fetch('/api/users/me/badges'),

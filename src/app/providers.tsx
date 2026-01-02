@@ -15,6 +15,7 @@ function FcmListener() {
   const { data: session } = useSession();
   const fetchNotifications = useAppStore((state) => state.fetchNotifications);
   const markAsRead = useAppStore((state) => state.markAsRead);
+  const markNewBadgesAsViewed = useAppStore((state) => state.markNewBadgesAsViewed);
   const setIsBadgeManagementOpen = useAppStore((state) => state.setIsBadgeManagementOpen);
   const router = useRouter();
 
@@ -46,9 +47,7 @@ function FcmListener() {
                   action: {
                     label: "확인하기",
                     onClick: () => {
-                      if (notificationId) {
-                        markAsRead(notificationId as string);
-                      }
+                      markNewBadgesAsViewed();
                       setIsBadgeManagementOpen(true);
                     },
                   },
@@ -79,7 +78,7 @@ function FcmListener() {
         };
       }
     }
-  }, [session, fetchNotifications, router, markAsRead]);
+  }, [session, fetchNotifications, router, markAsRead, markNewBadgesAsViewed]);
 
   return (
     <>
