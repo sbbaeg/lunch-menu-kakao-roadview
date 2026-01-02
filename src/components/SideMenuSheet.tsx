@@ -1,5 +1,7 @@
 "use client";
 
+import { shallow } from 'zustand/shallow';
+
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import {
@@ -70,7 +72,7 @@ export function SideMenuSheet({
       setIsBadgeManagementOpen: state.setIsBadgeManagementOpen,
       newBadgesCount: state.newBadgesCount,
       fetchNewBadgesCount: state.fetchNewBadgesCount,
-    }));
+    }), shallow);
     
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);

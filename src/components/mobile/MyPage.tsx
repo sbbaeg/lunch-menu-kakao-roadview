@@ -1,5 +1,7 @@
 'use client';
 
+import { shallow } from 'zustand/shallow';
+
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
@@ -69,7 +71,7 @@ export default function MyPage({
         setIsBadgeManagementOpen: state.setIsBadgeManagementOpen,
         newBadgesCount: state.newBadgesCount,
         fetchNewBadgesCount: state.fetchNewBadgesCount,
-    }));
+    }), shallow);
     const { unreadCount } = useNotifications();
     
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
