@@ -28,12 +28,12 @@ import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useAppStore } from "@/store/useAppStore";
-import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
 import { useNotifications } from "@/hooks/useNotifications";
 import BadgeDisplay from "@/components/BadgeDisplay";
 import BadgeManagementDialog from "@/components/BadgeManagementDialog";
 import { NotificationsDialog } from "@/components/NotificationsDialog";
 import { HelpDialog } from "@/components/HelpDialog";
+import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
 
 interface MyPageProps {
     onShowBlacklist: () => void;
@@ -73,8 +73,6 @@ export default function MyPage({
         }
     };
 
-    // This useEffect is for stopping wheel propagation on the help dialog, 
-    // which might not be necessary in this page layout, but we keep it for consistency.
     useEffect(() => {
         const scrollArea = scrollRef.current;
         const handleWheel = (event: WheelEvent) => {
@@ -232,11 +230,7 @@ export default function MyPage({
                             </div>
                         </>
                     )}
-
-import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
-
-...
-
+                    
                     {status === 'authenticated' && (
                         <>
                             <Separator className="my-4" />

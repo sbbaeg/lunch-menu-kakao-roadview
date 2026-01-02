@@ -96,7 +96,7 @@ export function SideMenuSheet({
                 scrollArea.removeEventListener('wheel', handleWheel);
             }
         };
-    }, [isHelpOpen]); // 도움말이 열릴 때마다 이벤트 리스너를 설정합니다.
+    }, [isHelpOpen]);
 
 
     return (
@@ -111,9 +111,6 @@ export function SideMenuSheet({
                     <SheetTitle>메뉴</SheetTitle>
                 </SheetHeader>
                 <div className="py-4 h-full overflow-y-auto">
-                    {/* --- [수정된 부분 시작] --- */}
-
-                    {/* 3. [추가] 마운트 전(!isMounted)에는 무조건 스켈레톤을 렌더링합니다. (서버와 동일한 화면) */}
                     {!isMounted && (
                         <div className="flex flex-col items-center gap-2 p-4">
                             <Skeleton className="h-20 w-20 rounded-full" />
@@ -122,9 +119,6 @@ export function SideMenuSheet({
                         </div>
                     )}
 
-                    {/* 4. [수정] 'isMounted &&' 조건을 모든 status 블록에 추가합니다. */}
-                    
-                    {/* 로딩 중 (마운트된 후) */}
                     {isMounted && status === 'loading' && (
                         <div className="flex flex-col items-center gap-2 p-4">
                             <Skeleton className="h-20 w-20 rounded-full" />
@@ -133,7 +127,6 @@ export function SideMenuSheet({
                         </div>
                     )}
 
-                    {/* 비로그인 상태 (마운트된 후) */}
                     {isMounted && status === 'unauthenticated' && (
                         <div className="flex flex-col items-center gap-2 p-4">
                             <Avatar className="h-20 w-20">
@@ -178,7 +171,6 @@ export function SideMenuSheet({
                         </div>
                     )}
 
-                    {/* 로그인 상태 (마운트된 후) */}
                     {isMounted && status === 'authenticated' && session?.user && (
                         <div className="flex flex-col items-center gap-2 p-4">
                             <Avatar className="h-20 w-20">
@@ -192,7 +184,6 @@ export function SideMenuSheet({
                             </Button>
                         </div>
                     )}
-                    {/* --- [수정된 부분 끝] --- */}
 
                     {isMounted && session?.user?.isAdmin && (
                         <>
@@ -214,7 +205,6 @@ export function SideMenuSheet({
                         <Button variant="ghost" className="justify-start" onClick={onShowFavorites}>
                             즐겨찾기 목록
                         </Button>
-                        {/* 3. 버튼 조건부 렌더링 */}
                         {onShowLikedRestaurants && (
                             <Button variant="ghost" className="justify-start" onClick={onShowLikedRestaurants}>
                                 좋아요한 음식점
@@ -250,10 +240,6 @@ export function SideMenuSheet({
                     </div>
                     <Separator className="my-4" />
 
-import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
-
-...
-
                     {isMounted && status === 'authenticated' && (
                         <div className="px-4 mb-4">
                             <NotificationsDialog>
@@ -273,14 +259,12 @@ import { NotificationCountBadge } from "@/components/ui/NotificationCountBadge";
                         </SettingsDialog>
                     </div>
 
-
-
                     <div className="px-4 mt-4">
                         <HelpDialog />
                     </div>
                 </div>
             </SheetContent>
-                    <BadgeManagementDialog isOpen={isBadgeManagementOpen} onOpenChange={handleBadgeManagementOpenChange} />
+            <BadgeManagementDialog isOpen={isBadgeManagementOpen} onOpenChange={handleBadgeManagementOpenChange} />
         </Sheet>
     );
 }
