@@ -54,7 +54,8 @@ export default function MyPage({
     const showMyReviews = useAppStore((state) => state.showMyReviews);
     const showSettingsPage = useAppStore((state) => state.showSettingsPage);
     const { unreadCount } = useNotifications();
-    const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
+    const isBadgeManagementOpen = useAppStore((state) => state.isBadgeManagementOpen);
+    const setIsBadgeManagementOpen = useAppStore((state) => state.setIsBadgeManagementOpen);
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);

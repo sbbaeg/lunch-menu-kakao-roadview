@@ -1,11 +1,12 @@
 'use client'
 import { SessionProvider, useSession } from 'next-auth/react'
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAppBadge } from '@/hooks/useAppBadge';
 import { getFirebaseMessaging } from '@/lib/firebase';
 import { onMessage } from 'firebase/messaging';
 import { toast } from 'sonner';
+import ReactConfetti from 'react-confetti';
 
 import { useRouter } from 'next/navigation';
 
@@ -14,7 +15,16 @@ function FcmListener() {
   const { data: session } = useSession();
   const fetchNotifications = useAppStore((state) => state.fetchNotifications);
   const markAsRead = useAppStore((state) => state.markAsRead);
+  const setIsBadgeManagementOpen = useAppStore((state) => state.setIsBadgeManagementOpen);
   const router = useRouter();
+
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    // Set dimensions on client side
+    setDimensions({ width: window.innerWidth, height: window.innerHeight });
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && session) {
@@ -24,20 +34,36 @@ function FcmListener() {
           console.log('>>> [FcmListener] Foreground message received!', payload);
 
           // Show a toast notification from the data payload
-          const { title, body, url, notificationId } = payload.data || {};
+          const { title, body, url, notificationId, type, action } = payload.data || {};
           if (title) {
-            toast.info(title, {
-              description: body,
-              action: url ? {
-                label: "보러가기",
-                onClick: () => {
-                  if (notificationId) {
-                    markAsRead(notificationId as string);
-                  }
-                  router.push(url as string);
-                },
-              } : undefined,
-            });
+            // If it's a new badge, show confetti and a toast with a button
+            if (type === 'NEW_BADGE') {
+              setShowConfetti(true);
+              // Delay toast slightly to appear simultaneously with confetti
+              setTimeout(() => {
+                toast.info(title, {
+                  description: body,
+                  action: {
+                    label: "확인하기",
+                    onClick: () => setIsBadgeManagementOpen(true),
+                  },
+                });
+              }, 100); // 100ms delay
+            } else {
+              // For other notifications, show toast immediately
+              toast.info(title, {
+                description: body,
+                action: url ? {
+                  label: "보러가기",
+                  onClick: () => {
+                    if (notificationId) {
+                      markAsRead(notificationId as string);
+                    }
+                    router.push(url as string);
+                  },
+                } : undefined,
+              });
+            }
           }
           
           fetchNotifications();
@@ -50,7 +76,20 @@ function FcmListener() {
     }
   }, [session, fetchNotifications, router, markAsRead]);
 
-  return null;
+  return (
+    <>
+      {showConfetti && (
+        <ReactConfetti
+          width={dimensions.width}
+          height={dimensions.height}
+          numberOfPieces={500} // Increased number of pieces for more density
+          gravity={0.15}       // Increased gravity for faster fall
+          recycle={false}
+          onConfettiComplete={() => setShowConfetti(false)}
+        />
+      )}
+    </>
+  );
 }
 
 // This component manages the app badge functionality globally.

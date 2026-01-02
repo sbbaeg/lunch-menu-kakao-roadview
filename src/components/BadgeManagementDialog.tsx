@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { CheckCircle } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { Badge } from '@/components/ui/badge';
 
 const MAX_FEATURED_BADGES = 5;
 
@@ -56,7 +57,7 @@ interface UserStats {
 
 export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeManagementDialogProps) {
   const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
-  const [myBadges, setMyBadges] = useState<(BadgeType & { isFeatured: boolean })[]>([]);
+  const [myBadges, setMyBadges] = useState<(BadgeType & { isFeatured: boolean; isViewed: boolean; })[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [selectedBadgeIds, setSelectedBadgeIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -78,7 +79,7 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
           }
 
           const allBadgesData: BadgeType[] = await allBadgesRes.json();
-          const myBadgesData: (BadgeType & { isFeatured: boolean })[] = await myBadgesRes.json();
+          const myBadgesData: (BadgeType & { isFeatured: boolean; isViewed: boolean; })[] = await myBadgesRes.json();
 
           setAllBadges(allBadgesData);
           setMyBadges(myBadgesData);
@@ -160,8 +161,10 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">
               {allBadges.map(badge => {
-                const isEarned = myBadgeIds.has(badge.id);
+                const myBadge = myBadges.find(mb => mb.id === badge.id);
+                const isEarned = !!myBadge;
                 const isSelected = selectedBadgeIds.has(badge.id);
+                const isNew = isEarned && !myBadge.isViewed;
 
                 const BadgeContent = (
                   <div className="flex items-center gap-2">
@@ -196,6 +199,9 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
                     className={`relative p-2 border rounded-md aspect-square flex items-center justify-center transition-all ${isEarned ? 'cursor-pointer hover:border-primary' : 'opacity-30'} ${isSelected ? 'border-primary border-2' : ''}`}
                     onClick={() => isMobile ? null : (isEarned && handleSelectBadge(badge.id))}
                   >
+                    {isNew && (
+                      <Badge variant="destructive" className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 text-xs px-1 py-0.5">NEW</Badge>
+                    )}
                     <div className="relative w-full h-full">
                         <Image 
                           src={badge.iconUrl} 

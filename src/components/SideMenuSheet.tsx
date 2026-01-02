@@ -39,6 +39,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationsDialog } from "@/components/NotificationsDialog";
 import { HelpDialog } from "@/components/HelpDialog";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { useAppStore } from "@/store/useAppStore";
 
 interface SideMenuSheetProps {
     onShowFavorites: () => void;
@@ -58,7 +59,8 @@ export function SideMenuSheet({
     const { data: session, status } = useSession();
     const { theme, setTheme } = useTheme();
     const { unreadCount } = useNotifications();
-    const [isBadgeManagementOpen, setIsBadgeManagementOpen] = useState(false);
+    const isBadgeManagementOpen = useAppStore((state) => state.isBadgeManagementOpen);
+    const setIsBadgeManagementOpen = useAppStore((state) => state.setIsBadgeManagementOpen);
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
 

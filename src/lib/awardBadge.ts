@@ -57,8 +57,9 @@ export async function awardBadge(userId: string, badgeName: string) {
       '새로운 뱃지 획득!',
       `'${badge.name}' 뱃지를 획득하셨습니다!`,
       {
-        url: '/ranking',
+        action: 'OPEN_BADGE_MANAGEMENT', // Instruct client to open badge dialog
         notificationId: newNotification.id.toString(),
+        type: 'NEW_BADGE', // Add this line to identify badge notifications
       }
     );
     console.log(`[awardBadge] Push notification process initiated for user ${userId}.`);

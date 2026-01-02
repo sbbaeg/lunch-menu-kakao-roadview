@@ -1,129 +1,50 @@
 
 import { GooglePlaceItem, GoogleDetails, GoogleOpeningHours, Review, GoogleParkingOptions } from './types';
 
-// --- NEW API Type Definitions ---
-
-interface NewGooglePhoto {
-  name: string; // e.g. "places/ChIJ.../photos/Aap_..."
-}
-
-interface NewGoogleReview {
-  authorAttribution?: {
-    displayName: string;
-    photoUri: string;
-  };
-  rating: number;
-  relativePublishTimeDescription: string;
-  text?: {
-    text: string;
-  };
-}
-
-interface NewGooglePlace {
-  id: string;
-  displayName?: {
-    text: string;
-  };
-  internationalPhoneNumber?: string;
-  regularOpeningHours?: GoogleOpeningHours;
-  rating?: number;
-  websiteUri?: string;
-  reviews?: NewGoogleReview[];
-  photos?: NewGooglePhoto[];
-  dineIn?: boolean;
-  takeout?: boolean;
-  allowsDogs?: boolean;
-  parkingOptions?: GoogleParkingOptions;
-  userRatingCount?: number;
-  adrFormatAddress?: string;
-  geometry?: {
-    location: {
-      latitude: number;
-      longitude: number;
-    }
-  };
-  types?: string[];
-  accessibilityOptions?: {
-    wheelchairAccessibleParking?: boolean;
-    wheelchairAccessibleEntrance?: boolean;
-    wheelchairAccessibleRestroom?: boolean;
-    wheelchairAccessibleSeating?: boolean;
-  }
-}
-
-// --- Migration of fetchFullGoogleDetails ---
-
 export async function fetchFullGoogleDetails(place: GooglePlaceItem): Promise<GooglePlaceItem & { types?: any }> {
   try {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
     if (!GOOGLE_API_KEY) throw new Error("Google API Key is not configured");
 
-    const placeId = place.id; // The ID from the candidate is now the Google Place ID.
+    const placeId = place.id; 
 
     if (!placeId) {
-      // console.log(`[Google API Info] for ${place.place_name}: No placeId provided.`);
       return place;
     }
 
-    // Step 2: Get Place Details using Place Details (New)
-    const detailsUrl = `https://places.googleapis.com/v1/places/${placeId}?languageCode=ko`;
-    const fieldMask = [
-      'id', 'displayName', 'rating', 'regularOpeningHours', 'internationalPhoneNumber',
-      'websiteUri', 'reviews', 'photos', 'dineIn', 'takeout',
-      'allowsDogs', 'parkingOptions', 'userRatingCount', 'adrFormatAddress', 'types',
-      'accessibilityOptions.wheelchairAccessibleParking', 
-      'accessibilityOptions.wheelchairAccessibleEntrance', 
-      'accessibilityOptions.wheelchairAccessibleRestroom', 
-      'accessibilityOptions.wheelchairAccessibleSeating'
+    const fields = [
+      'place_id', 'name', 'url', 'rating', 'user_ratings_total', 
+      'photos', 'opening_hours', 'international_phone_number', 
+      'reviews', 'type', 'formatted_address'
     ].join(',');
 
-    const detailsResponse = await fetch(detailsUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': GOOGLE_API_KEY,
-        'X-Goog-FieldMask': fieldMask,
-      },
-    });
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?placeid=${placeId}&key=${GOOGLE_API_KEY}&language=ko&fields=${fields}`;
 
-    const detailsData: NewGooglePlace = await detailsResponse.json();
+    const detailsResponse = await fetch(detailsUrl);
+    const responseData = await detailsResponse.json();
 
-    if (!detailsData) {
-      // console.log(`[Google API Info] for ${place.place_name}: Could not find details for placeId ${placeId}.`);
+    if (responseData.status !== 'OK' || !responseData.result) {
+      // console.log(`[Google API Info] for ${place.place_name}: Could not find details for placeId ${placeId}. Status: ${responseData.status}`);
       return place;
     }
 
-    // Map the new response to the existing GoogleDetails structure
+    const detailsData = responseData.result;
+
     const googleDetails: GoogleDetails = {
-      placeId: detailsData.id,
-      url: detailsData.websiteUri,
+      placeId: detailsData.place_id,
+      url: detailsData.url,
       rating: detailsData.rating,
-      userRatingCount: detailsData.userRatingCount,
-      photos: detailsData.photos?.map(p => p.name) || [],
-      opening_hours: detailsData.regularOpeningHours,
-      phone: detailsData.internationalPhoneNumber,
-      reviews: detailsData.reviews?.map(review => ({
-        author_name: review.authorAttribution?.displayName || '익명',
-        profile_photo_url: review.authorAttribution?.photoUri || '',
-        rating: review.rating || 0,
-        relative_time_description: review.relativePublishTimeDescription || '',
-        text: review.text?.text || '',
-      })) || [],
-      dine_in: detailsData.dineIn,
-      takeout: detailsData.takeout,
-      allowsDogs: detailsData.allowsDogs,
-      parkingOptions: detailsData.parkingOptions,
-      wheelchairAccessibleParking: detailsData.accessibilityOptions?.wheelchairAccessibleParking,
-      wheelchairAccessibleEntrance: detailsData.accessibilityOptions?.wheelchairAccessibleEntrance,
-      wheelchairAccessibleRestroom: detailsData.accessibilityOptions?.wheelchairAccessibleRestroom,
-      wheelchairAccessibleSeating: detailsData.accessibilityOptions?.wheelchairAccessibleSeating,
+      userRatingCount: detailsData.user_ratings_total,
+      photos: detailsData.photos?.map((p: { photo_reference: string }) => p.photo_reference) || [],
+      opening_hours: detailsData.opening_hours,
+      phone: detailsData.international_phone_number,
+      reviews: detailsData.reviews,
     };
 
     return {
       ...place,
-      // Google의 이름과 주소가 더 정확할 수 있으므로 덮어씁니다.
-      place_name: detailsData.displayName?.text || place.place_name,
-      road_address_name: detailsData.adrFormatAddress ? detailsData.adrFormatAddress.replace(/<[^>]*>?/gm, '') : place.road_address_name,
+      place_name: detailsData.name || place.place_name,
+      road_address_name: detailsData.formatted_address || place.road_address_name,
       googleDetails,
       types: detailsData.types,
     };

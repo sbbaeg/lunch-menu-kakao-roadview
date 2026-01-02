@@ -49,6 +49,7 @@ export interface AppState {
   fontSize: FontSize;
   showAppBadge: boolean;
   showNotificationsDialog: boolean;
+  isBadgeManagementOpen: boolean;
   hoveredRestaurantId: string | null;
 
   // Filter State
@@ -93,6 +94,7 @@ export interface AppState {
   setFontSize: (size: FontSize) => void;
   setShowAppBadge: (show: boolean) => void;
   setShowNotificationsDialog: (show: boolean) => void;
+  setIsBadgeManagementOpen: (isOpen: boolean) => void;
   setHoveredRestaurantId: (id: string | null) => void;
   
   clearMapAndResults: () => void;
@@ -125,6 +127,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   fontSize: 'normal',
   showAppBadge: true,
   showNotificationsDialog: false,
+  isBadgeManagementOpen: false,
   hoveredRestaurantId: null,
   
   filters: {
@@ -442,6 +445,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setFontSize: (size) => set({ fontSize: size }),
   setShowAppBadge: (show) => set({ showAppBadge: show }),
   setShowNotificationsDialog: (show) => set({ showNotificationsDialog: show }),
+  setIsBadgeManagementOpen: (isOpen) => set({ isBadgeManagementOpen: isOpen }),
   setHoveredRestaurantId: (id) => set({ hoveredRestaurantId: id }),
     
   clearMapAndResults: () => { set({ selectedItemId: '', restaurantList: [] }); },

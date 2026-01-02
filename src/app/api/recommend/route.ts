@@ -51,65 +51,45 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
     }
 
-    // Helper function for Text Search
-    async function performTextSearch(term: string, sort: string, lat: string, lng: string, radius: string, apiKey: string) {
-        const searchUrl = 'https://places.googleapis.com/v1/places:searchText';
-        const requestBody: any = {
-            textQuery: term,
-            locationRestriction: {
-                circle: { center: { latitude: Number(lat), longitude: Number(lng) }, radius: Number(radius) },
-            },
-            languageCode: "ko",
-            maxResultCount: 20,
-        };
-        if (sort === 'distance') {
-            requestBody.rankPreference = 'DISTANCE';
-            delete requestBody.locationRestriction.circle.radius;
-        }
-        const searchResponse = await fetch(searchUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types,places.primaryTypeDisplayName,places.location' },
-            body: JSON.stringify(requestBody),
+    // Helper function for Text Search (Legacy)
+    async function performTextSearch(term: string, lat: string, lng: string, radius: string, apiKey: string) {
+        const params = new URLSearchParams({
+            query: term,
+            location: `${lat},${lng}`,
+            radius: radius,
+            language: 'ko',
+            key: apiKey
         });
+        const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?${params.toString()}`;
+        const searchResponse = await fetch(searchUrl, { method: 'GET' });
         return searchResponse.json();
     }
 
-    // Helper function for Category Search
-    async function performCategorySearch(type: string, sort: string, lat: string, lng: string, radius: string, apiKey: string) {
-        const searchUrl = 'https://places.googleapis.com/v1/places:searchNearby';
-        const requestBody: any = {
-            includedTypes: [type],
-            locationRestriction: {
-                circle: { center: { latitude: Number(lat), longitude: Number(lng) }, radius: Number(radius) },
-            },
-            languageCode: "ko",
-            maxResultCount: 20,
-        };
-        if (sort === 'distance') {
-            requestBody.rankPreference = 'DISTANCE';
-            delete requestBody.locationRestriction.circle.radius;
-        } else {
-            requestBody.rankPreference = 'POPULARITY';
-        }
-        const searchResponse = await fetch(searchUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types,places.primaryTypeDisplayName,places.location' },
-            body: JSON.stringify(requestBody),
+    // Helper function for Category Search (Legacy)
+    async function performCategorySearch(type: string, lat: string, lng: string, radius: string, apiKey: string) {
+        const params = new URLSearchParams({
+            location: `${lat},${lng}`,
+            radius: radius,
+            type: type,
+            language: 'ko',
+            key: apiKey,
         });
+        const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params.toString()}`;
+        const searchResponse = await fetch(searchUrl, { method: 'GET' });
         return searchResponse.json();
     }
 
-    // Common mapping function
+    // Common mapping function for Legacy API response
     function mapGoogleToAppPlace(places: any[]): GooglePlaceItem[] {
         return places.map((place: any) => ({
-            id: place.id,
-            place_name: place.displayName?.text || '',
+            id: place.place_id,
+            place_name: place.name || '',
             category_name: getDisplayCategoryLabel(place.types),
-            road_address_name: place.formattedAddress || '',
-            address_name: place.formattedAddress || '',
-            x: String(place.location?.longitude || 0),
-            y: String(place.location?.latitude || 0),
-            place_url: `https://www.google.com/maps/place/?q=place_id:${place.id}`,
+            road_address_name: place.vicinity || '',
+            address_name: place.vicinity || place.formatted_address || '',
+            x: String(place.geometry?.location?.lng || 0),
+            y: String(place.geometry?.location?.lat || 0),
+            place_url: `https://www.google.com/maps/place/?q=place_id:${place.place_id}`,
             distance: '', // This will be calculated later
             googleTypes: place.types || [],
         }));
@@ -123,7 +103,7 @@ export async function GET(request: Request) {
                 where: { userId: session.user.id },
                 select: { restaurant: { select: { googlePlaceId: true } } },
             });
-            blacklistIds = blacklistEntries.map(entry => entry.restaurant.googlePlaceId);
+            blacklistIds = blacklistEntries.map(entry => entry.restaurant.googlePlaceId).filter((id): id is string => id !== null);
         }
 
         let candidates: GooglePlaceItem[] = [];
@@ -140,7 +120,7 @@ export async function GET(request: Request) {
                 }))
                 .filter(restaurant => restaurant.calculatedDistance <= Number(radius))
                 .map(restaurant => ({
-                    id: restaurant.googlePlaceId,
+                    id: restaurant.googlePlaceId!,
                     place_name: restaurant.placeName,
                     category_name: restaurant.categoryName || '',
                     road_address_name: restaurant.address || '',
@@ -161,16 +141,13 @@ export async function GET(request: Request) {
             if (source === 'search_bar') {
                 const searchTerm = (query.split(',')[0].trim()) || '음식점';
                 if (searchTerm) {
-                    const searchData = await performTextSearch(searchTerm, sort, lat, lng, radius, GOOGLE_API_KEY);
-                    if (searchData.places) {
-                        allPlaces.push(...searchData.places);
+                    const searchData = await performTextSearch(searchTerm, lat, lng, radius, GOOGLE_API_KEY);
+                    if (searchData.results) { // Legacy API uses 'results'
+                        allPlaces.push(...searchData.results);
                     }
                 }
             } else {
-                // Category Search Logic (from filter)
                 let searchTerms = (query || 'restaurant').split(',').map(term => term.trim()).filter(term => term);
-
-                // If "음식점" is present and it's the only term, expand it to meal-focused categories
                 if (searchTerms.length === 1 && searchTerms[0] === '음식점') {
                     searchTerms = [
                         'korean_restaurant', 'korean_bbq_restaurant', 'korean_noodles_restaurant', 'korean_soup_restaurant',
@@ -182,21 +159,19 @@ export async function GET(request: Request) {
                         'vegetarian_restaurant', 'buffet', 'restaurant'
                     ];
                 } else {
-                    // Otherwise, translate "음식점" if it's part of a list, or just use the term
                     searchTerms = searchTerms.map(term => (term === '음식점' ? 'restaurant' : term));
                 }
 
-                // Execute all category searches in parallel
-                const searchPromises = searchTerms.map(term => performCategorySearch(term, sort, lat, lng, radius, GOOGLE_API_KEY));
+                const searchPromises = searchTerms.map(term => performCategorySearch(term, lat, lng, radius, GOOGLE_API_KEY));
                 const results = await Promise.all(searchPromises);
 
                 results.forEach(searchData => {
-                    if (searchData.places) {
-                        allPlaces.push(...searchData.places);
+                    if (searchData.results) { // Legacy API uses 'results'
+                        allPlaces.push(...searchData.results);
                     }
                 });
             }
-            const uniquePlaces = allPlaces.filter((place, index, self) => index === self.findIndex(p => p.id === place.id));
+            const uniquePlaces = allPlaces.filter((place, index, self) => index === self.findIndex(p => p.place_id === place.place_id));
             candidates = mapGoogleToAppPlace(uniquePlaces);
         }
 
@@ -210,7 +185,7 @@ export async function GET(request: Request) {
                 },
                 select: { googlePlaceId: true }
             });
-            taggedRestaurantIds = new Set(taggedRestaurants.map(r => r.googlePlaceId));
+            taggedRestaurantIds = new Set(taggedRestaurants.map(r => r.googlePlaceId).filter((id): id is string => id !== null));
         }
 
         const countBeforeBlacklist = candidates.length;
@@ -286,7 +261,7 @@ export async function GET(request: Request) {
             sortedResults = finalResults;
         }
 
-        const resultIds = sortedResults.map(r => r.id);
+        const resultIds = sortedResults.map(r => r.id).filter((id): id is string => id !== null);
         const dbRestaurants = await prisma.restaurant.findMany({
             where: { googlePlaceId: { in: resultIds } },
             select: {
