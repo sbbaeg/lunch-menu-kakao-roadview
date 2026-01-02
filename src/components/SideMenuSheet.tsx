@@ -1,7 +1,5 @@
 "use client";
 
-import { shallow } from 'zustand/shallow';
-
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import {
@@ -28,13 +26,10 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Menu, Heart, EyeOff, Tags, FileText, HelpCircle, Shield } from "lucide-react";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BadgeManagementDialog from "@/components/BadgeManagementDialog";
 import BadgeDisplay from "@/components/BadgeDisplay";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -62,17 +57,10 @@ export function SideMenuSheet({
     const { data: session, status } = useSession();
     const { theme, setTheme } = useTheme();
     const { unreadCount } = useNotifications();
-    const { 
-      isBadgeManagementOpen, 
-      setIsBadgeManagementOpen, 
-      newBadgesCount, 
-      fetchNewBadgesCount 
-    } = useAppStore(state => ({
-      isBadgeManagementOpen: state.isBadgeManagementOpen,
-      setIsBadgeManagementOpen: state.setIsBadgeManagementOpen,
-      newBadgesCount: state.newBadgesCount,
-      fetchNewBadgesCount: state.fetchNewBadgesCount,
-    }), shallow);
+    const isBadgeManagementOpen = useAppStore(state => state.isBadgeManagementOpen);
+    const setIsBadgeManagementOpen = useAppStore(state => state.setIsBadgeManagementOpen);
+    const newBadgesCount = useAppStore(state => state.newBadgesCount);
+    const fetchNewBadgesCount = useAppStore(state => state.fetchNewBadgesCount);
     
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -99,18 +87,22 @@ export function SideMenuSheet({
 
     useEffect(() => {
         const scrollArea = scrollRef.current;
+
         const handleWheel = (event: WheelEvent) => {
             event.stopPropagation();
         };
+
         if (scrollArea) {
             scrollArea.addEventListener('wheel', handleWheel);
         }
+
         return () => {
             if (scrollArea) {
                 scrollArea.removeEventListener('wheel', handleWheel);
             }
         };
     }, [isHelpOpen]);
+
 
     return (
         <Sheet>

@@ -1,7 +1,5 @@
 'use client';
 
-import { shallow } from 'zustand/shallow';
-
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
@@ -22,12 +20,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Badge } from "@/components/ui/badge";
-import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, MessageSquare, HelpCircle, Shield, Cog } from "lucide-react";
+import { Heart, EyeOff, Tags, FileText, ThumbsUp, Trophy, Bell, Shield, Cog } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useAppStore } from "@/store/useAppStore";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -51,27 +46,15 @@ export default function MyPage({
     onShowNotifications,
 }: MyPageProps) {
     const { data: session, status } = useSession();
-    const {
-        showFavoritesPage,
-        showLikedRestaurantsPage,
-        showTagExplore,
-        showMyReviews,
-        showSettingsPage,
-        isBadgeManagementOpen,
-        setIsBadgeManagementOpen,
-        newBadgesCount,
-        fetchNewBadgesCount,
-    } = useAppStore(state => ({
-        showFavoritesPage: state.showFavoritesPage,
-        showLikedRestaurantsPage: state.showLikedRestaurantsPage,
-        showTagExplore: state.showTagExplore,
-        showMyReviews: state.showMyReviews,
-        showSettingsPage: state.showSettingsPage,
-        isBadgeManagementOpen: state.isBadgeManagementOpen,
-        setIsBadgeManagementOpen: state.setIsBadgeManagementOpen,
-        newBadgesCount: state.newBadgesCount,
-        fetchNewBadgesCount: state.fetchNewBadgesCount,
-    }), shallow);
+    const showFavoritesPage = useAppStore(state => state.showFavoritesPage);
+    const showLikedRestaurantsPage = useAppStore(state => state.showLikedRestaurantsPage);
+    const showTagExplore = useAppStore(state => state.showTagExplore);
+    const showMyReviews = useAppStore(state => state.showMyReviews);
+    const showSettingsPage = useAppStore(state => state.showSettingsPage);
+    const isBadgeManagementOpen = useAppStore(state => state.isBadgeManagementOpen);
+    const setIsBadgeManagementOpen = useAppStore(state => state.setIsBadgeManagementOpen);
+    const newBadgesCount = useAppStore(state => state.newBadgesCount);
+    const fetchNewBadgesCount = useAppStore(state => state.fetchNewBadgesCount);
     const { unreadCount } = useNotifications();
     
     const [badgeDisplayKey, setBadgeDisplayKey] = useState(0);
