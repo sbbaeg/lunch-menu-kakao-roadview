@@ -25,6 +25,18 @@ function FcmListener() {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
+    const handleResize = () => {
+      setDimensions({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    window.addEventListener('resize', handleResize);
+    // 초기 크기 설정 (컴포넌트 마운트 시)
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []); // 의존성 배열이 비어있어서 한 번만 실행되도록 함
+
+  useEffect(() => {
     // Set dimensions on client side
     setDimensions({ width: window.innerWidth, height: window.innerHeight });
   }, []);
