@@ -199,13 +199,13 @@ export default function BadgeManagementDialog({ isOpen, onOpenChange }: BadgeMan
                 );
 
                 const BadgeTrigger = (
-                                    <div
-                                      className={`relative p-2 border rounded-md aspect-square flex items-center justify-center transition-all overflow-visible ${isEarned ? 'cursor-pointer hover:border-primary' : 'opacity-30'} ${isSelected ? 'border-primary border-2' : ''}`}
-                                      onClick={() => isMobile ? null : (isEarned && handleSelectBadge(badge.id))}
-                                    >
-                                      {isNew && (
-                                        <Badge variant="destructive" className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 text-xs px-1 py-0.5 z-50">NEW</Badge>
-                                      )}                    <div className="relative w-full h-full">
+                  <div
+                    className={`relative p-2 border rounded-md aspect-square flex items-center justify-center transition-all overflow-visible ${isEarned ? 'cursor-pointer hover:border-primary' : 'opacity-30'} ${isSelected ? 'border-primary border-2' : ''}`}
+                    onClick={() => isMobile ? null : (isEarned && handleSelectBadge(badge.id))}
+                  >
+                    {isNew && (
+                      <Badge variant="destructive" className="absolute top-1 right-1 text-xs px-1 py-0.5 z-10">NEW</Badge>
+                    )}                    <div className="relative w-full h-full">
                         <Image 
                           src={badge.iconUrl} 
                           alt={badge.name} 

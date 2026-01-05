@@ -7,8 +7,7 @@ import { getFirebaseMessaging } from '@/lib/firebase';
 import { onMessage } from 'firebase/messaging';
 import { toast } from 'sonner';
 import ReactConfetti from 'react-confetti';
-
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 // This component handles foreground FCM messages and displays toasts.
 function FcmListener() {
@@ -19,6 +18,8 @@ function FcmListener() {
   const markNewBadgesAsViewed = useAppStore((state) => state.markNewBadgesAsViewed);
   const setIsBadgeManagementOpen = useAppStore((state) => state.setIsBadgeManagementOpen);
   const router = useRouter();
+  const pathname = usePathname();
+  const isAdminPage = pathname.startsWith('/admin');
 
   const [showConfetti, setShowConfetti] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -34,6 +35,11 @@ function FcmListener() {
       if (messaging) {
         const unsubscribe = onMessage(messaging, (payload) => {
           console.log('>>> [FcmListener] Foreground message received!', payload);
+
+          if (isAdminPage) {
+            console.log('>>> [FcmListener] Admin page: Skipping toast and confetti.');
+            return;
+          }
 
           // Show a toast notification from the data payload
           const { title, body, url, notificationId, type, action } = payload.data || {};
@@ -80,7 +86,7 @@ function FcmListener() {
         };
       }
     }
-  }, [session, fetchNotifications, fetchNewBadgesCount, router, markAsRead, markNewBadgesAsViewed]);
+  }, [session, fetchNotifications, fetchNewBadgesCount, router, markAsRead, markNewBadgesAsViewed, isAdminPage]);
 
   return (
     <>
@@ -91,6 +97,7 @@ function FcmListener() {
           numberOfPieces={500} // Increased number of pieces for more density
           gravity={0.15}       // Increased gravity for faster fall
           recycle={false}
+          style={{ zIndex: 9999 }}
           onConfettiComplete={() => setShowConfetti(false)}
         />
       )}
