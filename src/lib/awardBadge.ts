@@ -60,6 +60,7 @@ export async function awardBadge(userId: string, badgeName: string) {
         action: 'OPEN_BADGE_MANAGEMENT', // Instruct client to open badge dialog
         notificationId: newNotification.id.toString(),
         type: 'NEW_BADGE', // Add this line to identify badge notifications
+        badgeIconUrl: badge.iconUrl, // 뱃지 이미지 URL 추가
       }
     );
     console.log(`[awardBadge] Push notification process initiated for user ${userId}.`);

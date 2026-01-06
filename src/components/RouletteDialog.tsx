@@ -57,8 +57,8 @@ export function RouletteDialog({ isOpen, onOpenChange, items, onResult }: Roulet
     };
 
     const handleStopSpinning = () => {
-        setMustSpin(false);
         setTimeout(() => {
+            setMustSpin(false);
             onOpenChange(false); // 다이얼로그 닫기
             const winner = items[prizeNumber];
             onResult(winner); // 부모 컴포넌트에 당첨 결과 전달

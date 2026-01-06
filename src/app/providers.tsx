@@ -1,13 +1,18 @@
 'use client'
-import { SessionProvider, useSession } from 'next-auth/react'
+
+import { SessionProvider, useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { toast, type ExternalToast } from 'sonner';
+import ReactConfetti from 'react-confetti';
+import { BellRing, Award, MessageCircle, Megaphone, Tag } from 'lucide-react';
+import Image from 'next/image';
+
 import { useAppStore } from '@/store/useAppStore';
 import { useAppBadge } from '@/hooks/useAppBadge';
 import { getFirebaseMessaging } from '@/lib/firebase';
 import { onMessage } from 'firebase/messaging';
-import { toast } from 'sonner';
-import ReactConfetti from 'react-confetti';
-import { useRouter, usePathname } from 'next/navigation';
+
 
 // This component handles foreground FCM messages and displays toasts.
 function FcmListener() {
@@ -24,23 +29,19 @@ function FcmListener() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
+  // Handle window resize for confetti dimensions
   useEffect(() => {
     const handleResize = () => {
       setDimensions({ width: window.innerWidth, height: window.innerHeight });
     };
 
     window.addEventListener('resize', handleResize);
-    // 초기 크기 설정 (컴포넌트 마운트 시)
-    handleResize();
+    handleResize(); // Set initial dimensions
 
     return () => window.removeEventListener('resize', handleResize);
-  }, []); // 의존성 배열이 비어있어서 한 번만 실행되도록 함
-
-  useEffect(() => {
-    // Set dimensions on client side
-    setDimensions({ width: window.innerWidth, height: window.innerHeight });
   }, []);
 
+  // FCM message listener
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && session) {
       const messaging = getFirebaseMessaging();
@@ -54,39 +55,74 @@ function FcmListener() {
           }
 
           // Show a toast notification from the data payload
-          const { title, body, url, notificationId, type, action } = payload.data || {};
+          const { title, body, url, notificationId, type, action, badgeIconUrl } = payload.data || {};
           if (title) {
-            // If it's a new badge, show confetti and a toast with a button
+            let toastOptions: ExternalToast = {
+              description: body,
+              action: url ? {
+                label: "보러가기",
+                onClick: () => {
+                  if (notificationId) {
+                    markAsRead(notificationId as string);
+                  }
+                  router.push(url as string);
+                },
+              } : undefined,
+              icon: <BellRing className="h-6 w-6" />, // 기본 아이콘 크기 변경
+              classNames: { // 기본 레이아웃 설정
+                icon: 'w-6',
+                title: 'pl-1',
+                description: 'pl-1',
+              }
+            };
+
             if (type === 'NEW_BADGE') {
               setShowConfetti(true);
-              // Delay toast slightly to appear simultaneously with confetti
-              setTimeout(() => {
-                toast.info(title, {
-                  description: body,
-                  action: {
-                    label: "확인하기",
-                    onClick: () => {
-                      markNewBadgesAsViewed();
-                      setIsBadgeManagementOpen(true);
-                    },
-                  },
-                });
-              }, 100); // 100ms delay
-            } else {
-              // For other notifications, show toast immediately
-              toast.info(title, {
-                description: body,
-                action: url ? {
-                  label: "보러가기",
-                  onClick: () => {
-                    if (notificationId) {
-                      markAsRead(notificationId as string);
-                    }
-                    router.push(url as string);
-                  },
-                } : undefined,
-              });
+                // 뱃지 알림일 경우 레이아웃 덮어쓰기
+                if (badgeIconUrl) {
+                  toastOptions.icon = (
+                    <div className="flex-shrink-0">
+                      <div className="relative h-12 w-12">
+                          <Image
+                              src={badgeIconUrl as string}
+                              alt="뱃지 아이콘"
+                              fill
+                              sizes="48px"
+                              style={{ objectFit: 'contain' }}
+                          />
+                      </div>
+                    </div>
+                  );
+                  
+                  toastOptions.classNames = {
+                    icon: 'p-0 m-0', // 아이콘 컨테이너 패딩/마진 초기화
+                    title: 'ml-8',   // 텍스트를 오른쪽으로 더 밀기 (ml-4 -> ml-8)
+                    description: 'ml-8', // 텍스트를 오른쪽으로 더 밀기
+                  };
+                } else {
+                toastOptions.icon = <Award className="h-6 w-6 text-yellow-500" />; // 크기 변경
+              }
+              toastOptions.action = {
+                label: "확인하기",
+                onClick: () => {
+                  markNewBadgesAsViewed();
+                  setIsBadgeManagementOpen(true);
+                },
+              };
+            } else if (type === 'NEW_REVIEW_COMMENT') {
+              toastOptions.icon = <MessageCircle className="h-6 w-6 text-blue-500" />; // 크기 변경
+            } else if (type === 'ANNOUNCEMENT') {
+              toastOptions.icon = <Megaphone className="h-6 w-6 text-red-500" />; // 크기 변경
+            } else if (type === 'TAG_SUBSCRIPTION') { // 태그 구독 알림 (예시)
+              toastOptions.icon = <Tag className="h-6 w-6 text-green-500" />; // 크기 변경
             }
+            // 다른 타입의 알림이 있다면 else if 블록을 추가합니다.
+
+            // Delay toast slightly to appear simultaneously with confetti for NEW_BADGE
+            // 다른 타입은 딜레이 없이 바로 표시
+            setTimeout(() => {
+              toast.info(title, toastOptions);
+            }, type === 'NEW_BADGE' ? 100 : 0);
           }
           
           fetchNotifications();
